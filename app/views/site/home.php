@@ -114,6 +114,9 @@
     <h2>Your Next Great Connection Starts Here!</h2>
     <p class="lead">One Sunday. One Location. Endless Connections.</p>
     <p>Join us at Revelation Cottages, Gulu City, for the next Chill &amp; Bite MEATINGS experience.</p>
-    <a class="btn btn-dark btn-lg" href="<?= h($reserve) ?>">Book your place today</a>
+    <div class="btn-row" style="justify-content:center">
+      <a class="btn btn-dark btn-lg" href="<?= h($reserve) ?>">Book your place today</a>
+      <?php if (setting('whatsapp_group')): ?><a class="btn btn-outline-dark btn-lg" style="border-color:#fff;color:#fff" href="<?= h(setting('whatsapp_group')) ?>" target="_blank" rel="noopener">Join our WhatsApp group</a><?php endif; ?>
+    </div>
   </div>
 </section>

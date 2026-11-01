@@ -4,6 +4,7 @@
     <h2>Find us</h2>
     <p><strong><?= h(setting('venue')) ?></strong><br><?= h(setting('location')) ?><br>Every first Sunday · 12:00 PM onwards</p>
     <?php if (setting('contact_phone')): ?><p>Phone: <a href="tel:<?= h(preg_replace('/\s+/', '', setting('contact_phone'))) ?>"><?= h(setting('contact_phone')) ?></a></p><?php endif; ?>
+    <?php if (setting('whatsapp_group')): ?><p><a class="btn btn-primary" href="<?= h(setting('whatsapp_group')) ?>" target="_blank" rel="noopener">Join our WhatsApp group</a></p><?php endif; ?>
     <?php if (setting('whatsapp')): ?><p><a class="btn btn-ghost-dark btn-sm" target="_blank" rel="noopener" href="https://wa.me/<?= h(preg_replace('/\D+/', '', setting('whatsapp'))) ?>">Chat on WhatsApp</a></p><?php endif; ?>
     <?php if (setting('contact_email')): ?><p>Email: <a href="mailto:<?= h(setting('contact_email')) ?>"><?= h(setting('contact_email')) ?></a></p><?php endif; ?>
     <p><?php foreach (social_links() as $n => $u): ?><a href="<?= h($u) ?>" target="_blank" rel="noopener"><?= h($n) ?></a> · <?php endforeach; ?></p>

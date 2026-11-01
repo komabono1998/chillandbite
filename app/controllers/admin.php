@@ -303,12 +303,17 @@ function admin_users_save(): void
 }
 
 /* ================= Settings & audit ================= */
-const SETTING_KEYS = ['site_name', 'tagline', 'announcement', 'venue', 'location', 'contact_phone', 'contact_email', 'whatsapp', 'host_bio',
+const SETTING_KEYS = ['site_name', 'tagline', 'announcement', 'venue', 'location', 'contact_phone', 'contact_email', 'whatsapp', 'whatsapp_group', 'host_bio',
     'social_facebook', 'social_instagram', 'social_youtube', 'social_tiktok', 'social_x'];
 function admin_settings(): void { require_can('settings'); admin_view('settings', ['title' => 'Website settings']); }
 function admin_settings_save(): void
 {
     require_can('settings');
+    $group = post_str('whatsapp_group', 300);
+    if ($group !== '' && !preg_match('#^https://chat\.whatsapp\.com/#', $group)) {
+        flash('WhatsApp group link must start with https://chat.whatsapp.com/', 'err');
+        redirect('admin/settings');
+    }
     foreach (SETTING_KEYS as $k) save_setting($k, post_str($k, 1000));
     save_setting('announcement_on', empty($_POST['announcement_on']) ? '0' : '1');
     audit('settings.update');

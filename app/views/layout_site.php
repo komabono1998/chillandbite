@@ -72,6 +72,7 @@ $pageDesc = $desc ?? setting('tagline');
       <h4>Find us</h4>
       <p class="muted"><?= h(setting('venue')) ?>, <?= h(setting('location')) ?><br>Every first Sunday · 12:00 PM</p>
       <?php if (setting('contact_phone')): ?><p><a href="tel:<?= h(preg_replace('/\s+/', '', setting('contact_phone'))) ?>"><?= h(setting('contact_phone')) ?></a></p><?php endif; ?>
+      <?php if (setting('whatsapp_group')): ?><p><a class="btn btn-primary btn-sm" href="<?= h(setting('whatsapp_group')) ?>" target="_blank" rel="noopener">Join our WhatsApp group</a></p><?php endif; ?>
       <p class="socials"><?php foreach (social_links() as $n => $u): ?><a href="<?= h($u) ?>" target="_blank" rel="noopener"><?= h($n) ?></a> <?php endforeach; ?></p>
     </div>
   </div>

@@ -34,7 +34,7 @@ $defaults = [
     'announcement' => 'THE NEXT CHILL & BITE MEATINGS IS COMING! | EVERY FIRST SUNDAY | GULU CITY',
     'announcement_on' => '1',
     'venue' => 'Revelation Cottages', 'location' => 'Gulu City, Uganda',
-    'contact_phone' => '', 'contact_email' => '', 'whatsapp' => '',
+    'contact_phone' => '', 'contact_email' => '', 'whatsapp' => '', 'whatsapp_group' => 'https://chat.whatsapp.com/HcYDbtQgRZN9LqnWogd8dZ?mode=gi_t',
     'social_facebook' => '', 'social_instagram' => '', 'social_youtube' => '', 'social_tiktok' => '', 'social_x' => '',
     'host_bio' => 'From electrifying crowds to creating memorable experiences, MC Kash Owakabi brings charisma, humor, and exceptional audience engagement to every event.',
 ];
