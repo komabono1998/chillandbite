@@ -332,3 +332,11 @@ function social_links(): array
         'X' => setting('social_x'),
     ]);
 }
+
+/** WhatsApp click-to-chat link; local numbers starting with 0 get Uganda's 256 prefix. */
+function wa_link(string $number, string $text = ''): string
+{
+    $d = preg_replace('/\D+/', '', $number);
+    if (str_starts_with($d, '0')) $d = '256' . substr($d, 1);
+    return 'https://wa.me/' . $d . ($text !== '' ? '?text=' . rawurlencode($text) : '');
+}

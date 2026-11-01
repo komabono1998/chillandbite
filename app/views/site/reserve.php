@@ -1,6 +1,7 @@
 <section class="page-hero compact"><div class="wrap"><span class="eyebrow gold">Book &amp; reserve</span><h1><?= h($e['title']) ?></h1>
   <p class="lead"><?= fmt_date($e['start_at'], 'l, j F Y') ?> · <?= fmt_time($e['start_at']) ?> · <?= h($e['venue']) ?>, <?= h($e['location']) ?></p></div></section>
 <section class="section section-cream"><div class="wrap narrow-wrap">
+<?php if (setting('contact_phone')): ?><p class="small">Bookings help: call <a href="tel:<?= h(preg_replace('/\s+/', '', setting('contact_phone'))) ?>"><?= h(setting('contact_phone')) ?></a><?php if (setting('whatsapp')): ?> or <a target="_blank" rel="noopener" href="<?= h(wa_link(setting('whatsapp'), 'Hello, I need help booking ' . $e['title'])) ?>">WhatsApp us</a><?php endif; ?>.</p><?php endif; ?>
 <?php if (!$open): ?>
   <div class="alert alert-err">Sorry, reservations are not open for this event right now.</div>
   <p><a class="btn btn-outline-dark" href="<?= url('events') ?>">Browse other events</a></p>
