@@ -1,0 +1,7 @@
+<h1>Gallery</h1>
+<form class="panel" method="post" action="<?= url('admin/gallery') ?>" enctype="multipart/form-data"><?= csrf_field() ?><h2>Upload photos</h2>
+  <div class="form-grid"><?php field('album_id', 'Album', ['type' => 'select', 'options' => ['' => 'No album'] + array_column($albums, 'name', 'id')]); field('caption', 'Caption (optional)', ['value' => '']); ?></div>
+  <div class="field"><label for="f_photos">Photos (JPG, PNG, WebP, GIF · max 5MB each)</label><input id="f_photos" type="file" name="photos[]" multiple accept="image/jpeg,image/png,image/webp,image/gif" required></div>
+  <button class="btn btn-primary">Upload</button></form>
+<div class="gallery-grid"><?php foreach ($images as $i): ?><figure class="panel" style="padding:8px"><img src="<?= h(upload_url($i['file'])) ?>" alt="<?= h($i['caption']) ?>" loading="lazy"><figcaption><?= h($i['album']) ?> <?= $i['featured'] ? '★' : '' ?></figcaption>
+  <div class="actions"><?php foreach (['feature' => $i['featured'] ? 'Unfeature' : 'Feature', 'delete' => 'Delete'] as $a => $l): ?><form class="inline" method="post" action="<?= url('admin/gallery') ?>"><?= csrf_field() ?><input type="hidden" name="action" value="<?= $a ?>"><input type="hidden" name="id" value="<?= $i['id'] ?>"><button class="btn btn-ghost btn-sm"<?= $a === 'delete' ? ' onclick="return confirm(\'Delete photo?\')"' : '' ?>><?= $l ?></button></form><?php endforeach; ?></div></figure><?php endforeach; ?></div>

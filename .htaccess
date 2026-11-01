@@ -1,0 +1,18 @@
+Options -Indexes
+RewriteEngine On
+
+# Never serve internal files
+RewriteRule ^(app|database|storage|\.git)(/|$) - [F,L]
+RewriteRule ^\.env - [F,L]
+RewriteRule ^(install\.php|composer\.(json|lock))$ - [F,L]
+
+# Front controller
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
