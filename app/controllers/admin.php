@@ -47,28 +47,6 @@ function admin_logout(): void
     redirect('admin/login');
 }
 
-/* ================= Dashboard ================= */
-function admin_dashboard(): void
-{
-    require_can('dashboard');
-    $s = [
-        'Upcoming events' => (int)val("SELECT COUNT(*) FROM events WHERE status='published' AND COALESCE(end_at,start_at) >= NOW()"),
-        'Pending reservations' => (int)val("SELECT COUNT(*) FROM reservations WHERE status='pending'"),
-        'Confirmed guests (upcoming)' => (int)val("SELECT COALESCE(SUM(r.guests),0) FROM reservations r JOIN events e ON e.id=r.event_id WHERE r.status='confirmed' AND e.start_at >= NOW()"),
-        'New inquiries' => (int)val("SELECT COUNT(*) FROM inquiries WHERE status='new'"),
-        'Pending partner applications' => (int)val("SELECT COUNT(*) FROM partner_applications WHERE status='pending'"),
-        'Published articles' => (int)val("SELECT COUNT(*) FROM articles WHERE status IN ('published','scheduled') AND published_at <= NOW()"),
-        'Outstanding balances' => money(val("SELECT COALESCE(SUM(GREATEST(r.amount_due - COALESCE((SELECT SUM(amount) FROM payments p WHERE p.reservation_id=r.id),0),0)),0) FROM reservations r WHERE r.status IN ('pending','confirmed')")),
-    ];
-    admin_view('dashboard', [
-        'title' => 'Dashboard', 's' => $s,
-        'events' => rows("SELECT e.*, (SELECT COALESCE(SUM(guests),0) FROM reservations r WHERE r.event_id=e.id AND r.status IN ('pending','confirmed')) AS booked
-                          FROM events e WHERE e.status='published' AND COALESCE(e.end_at,e.start_at) >= NOW() ORDER BY e.start_at LIMIT 5"),
-        'inq' => rows('SELECT * FROM inquiries ORDER BY id DESC LIMIT 6'),
-        'recent' => rows('SELECT r.*, e.title FROM reservations r JOIN events e ON e.id=r.event_id ORDER BY r.id DESC LIMIT 6'),
-    ]);
-}
-
 /* ================= Events ================= */
 function admin_events(): void
 {
@@ -221,21 +199,6 @@ function admin_reservations(): void
         'events' => rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 100'),
     ]);
 }
-function admin_reservations_export(): void
-{
-    require_can('reservations');
-    [$w, $p] = reservation_filters();
-    audit('reservations.export', json_encode($_GET));
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="guest-list-' . date('Ymd-His') . '.csv"');
-    $out = fopen('php://output', 'w');
-    fwrite($out, "\xEF\xBB\xBF");
-    $safe = fn($v) => is_string($v) && $v !== '' && strpbrk($v[0], "=+-@\t\r") ? "'" . $v : $v; // spreadsheet formula injection guard
-    fputcsv($out, ['Reference', 'Event', 'Name', 'Phone', 'Email', 'Company', 'Type', 'Package', 'Guests', 'Status', 'Amount due', 'Paid', 'Checked in', 'Requests', 'Booked at']);
-    foreach (rows(RES_SELECT . " WHERE $w ORDER BY e.start_at, r.full_name", $p) as $r)
-        fputcsv($out, array_map($safe, [$r['reference'], $r['event_title'], $r['full_name'], $r['phone'], $r['email'], $r['company'], RES_TYPES[$r['type']], $r['package'], $r['guests'], $r['status'], $r['amount_due'], $r['paid'], $r['checked_in_at'], $r['requests'], $r['created_at']]));
-    exit;
-}
 function admin_reservation(array $a): void
 {
     require_can('reservations');
@@ -251,19 +214,22 @@ function admin_reservation(array $a): void
 /** Door check-in: the ticket's QR code opens this page for logged-in staff. */
 function admin_checkin(array $a): void
 {
-    require_can('reservations');
+    require_can_any(['reservations', 'checkin']);
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) not_found();
     $r = row(RES_SELECT . ' WHERE r.ticket_token = ?', [$a['token']]);
     admin_view('checkin', ['title' => 'Check-in', 'r' => $r, 'token' => $a['token']]);
 }
 function admin_reservation_action(array $a): void
 {
-    require_can('reservations');
+    // Each action needs its own permission: door staff can only check in, finance can only record money.
+    $needs = ['checkin' => 'checkin', 'undo_checkin' => 'checkin', 'payment' => 'payments', 'refund' => 'payments'];
+    require_can($needs[$_POST['action'] ?? ''] ?? 'reservations_manage');
     $id = (int)$a['id'];
     $r = row('SELECT * FROM reservations WHERE id = ?', [$id]) ?? not_found();
     $act = $_POST['action'] ?? '';
     $back = $_POST['back'] ?? '';
-    $dest = (str_starts_with($back, 'admin/reservations') || preg_match('#^admin/checkin/[a-f0-9]{24}$#', $back)) ? $back : "admin/reservations/$id";
+    $dest = (str_starts_with($back, 'admin/reservations') || preg_match('#^admin/checkin(/[a-f0-9]{24}|\?[A-Za-z0-9=&_%.-]*)?$#', $back)) ? $back
+        : (can('reservations') ? "admin/reservations/$id" : 'admin/checkin');
     switch ($act) {
         case 'approve':
             if ($r['status'] !== 'pending') { flash('Only pending bookings can be approved.', 'err'); break; }
@@ -332,6 +298,11 @@ function admin_users_save(): void
             $pw = (string)($_POST['password'] ?? '');
             if (strlen($pw) < 10) flash('Password must be at least 10 characters.', 'err');
             else { q('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($pw, PASSWORD_DEFAULT), $id]); audit('user.password', "#$id"); flash('Password changed.'); }
+        } elseif ($act === 'profile') {
+            $name = post_str('name', 120); $email = strtolower(post_str('email', 190));
+            if (mb_strlen($name) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL)) flash('Enter a name and a valid email.', 'err');
+            elseif (val('SELECT id FROM users WHERE email = ? AND id <> ?', [$email, $id])) flash('That email belongs to another user.', 'err');
+            else { q('UPDATE users SET name = ?, email = ? WHERE id = ?', [$name, $email, $id]); audit('user.profile', "#$id $email"); flash('Details updated.'); }
         } else flash('You cannot change your own role or status.', 'err');
     }
     redirect('admin/users');

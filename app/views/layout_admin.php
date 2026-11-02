@@ -1,25 +1,84 @@
 <?php
 $u = current_user();
-$items = [['Dashboard', 'admin', 'dashboard'], ['Events', 'admin/events', 'events'], ['Reservations', 'admin/reservations', 'reservations'], ['News', 'admin/news', 'news'],
-    ['Comedy videos', 'admin/comedy', 'comedy'], ['Gallery', 'admin/gallery', 'gallery'], ['Sponsors & ads', 'admin/advertising', 'advertising'], ['Partner applications', 'admin/partners', 'advertising'], ['Inquiries', 'admin/inquiries', 'inquiries'],
-    ['Users', 'admin/users', 'users'], ['Settings', 'admin/settings', 'settings'], ['Audit log', 'admin/audit', 'audit']];
+// [label, path, module, icon]
+$groups = [
+    'Overview' => [['Dashboard', 'admin', 'dashboard', '🏠']],
+    'Website' => [
+        ['Pages & content', 'admin/pages', 'pages', '📄'],
+        ['News & articles', 'admin/news', 'news', '📰'],
+        ['Comedy videos', 'admin/comedy', 'comedy', '😂'],
+        ['Gallery', 'admin/gallery', 'gallery', '🖼️'],
+        ['Sponsors & ads', 'admin/advertising', 'advertising', '📣'],
+        ['Partner applications', 'admin/partners', 'advertising', '🤝'],
+    ],
+    'Operations' => [
+        ['Events', 'admin/events', 'events', '📅'],
+        ['Reservations', 'admin/reservations', 'reservations', '🎟️'],
+        ['Check-in desk', 'admin/checkin', 'checkin', '✅'],
+        ['Inquiries', 'admin/inquiries', 'inquiries', '📬'],
+    ],
+    'Insights' => [['Reports & exports', 'admin/reports', 'reports', '📊']],
+    'Administration' => [
+        ['Users & roles', 'admin/users', 'users', '👥'],
+        ['Settings', 'admin/settings', 'settings', '⚙️'],
+        ['Audit log', 'admin/audit', 'audit', '🕒'],
+    ],
+];
 $cur = trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE)), '/');
+$isActive = fn(string $p) => $p === 'admin' ? $cur === 'admin' : ($cur === $p || str_starts_with($cur, $p . '/'));
 ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title><?= h($title ?? 'Admin') ?> · Chill &amp; Bite Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="<?= asset_v('css/style.css') ?>"></head>
-<body class="admin">
-<div class="adm-bar">
-  <strong>Chill &amp; Bite · Admin</strong>
-  <span><?php if ($u): ?><?= h($u['name']) ?> (<?= h(ROLES[$u['role']]) ?>) · <?php endif; ?><a href="<?= url() ?>" target="_blank">View site</a>
-    <?php if ($u): ?><form class="inline" method="post" action="<?= url('admin/logout') ?>"><?= csrf_field() ?> <button class="btn btn-ghost btn-sm">Log out</button></form><?php endif; ?></span>
+<link rel="stylesheet" href="<?= asset_v('css/style.css') ?>">
+<link rel="stylesheet" href="<?= asset_v('css/admin.css') ?>">
+</head>
+<body class="admin<?= $u ? '' : ' admin-login' ?>">
+<?php if ($u): ?>
+<div class="ad-shell">
+  <aside class="ad-side" id="adSide" aria-label="Admin navigation">
+    <a class="ad-brand" href="<?= url('admin') ?>"><span class="brand-mark">C&amp;B</span><span>Chill &amp; Bite<small>Admin</small></span></a>
+    <nav>
+      <?php foreach ($groups as $gname => $items):
+          $vis = array_filter($items, fn($i) => can($i[2]));
+          if (!$vis) continue; ?>
+        <p class="ad-group"><?= h($gname) ?></p>
+        <?php foreach ($vis as [$label, $path, $mod, $icon]): ?>
+          <a href="<?= url($path) ?>"<?= $isActive($path) ? ' aria-current="page"' : '' ?>><span class="ic" aria-hidden="true"><?= $icon ?></span><?= h($label) ?></a>
+        <?php endforeach; ?>
+      <?php endforeach; ?>
+    </nav>
+    <div class="ad-side-foot"><a href="<?= url() ?>" target="_blank" rel="noopener">↗ View website</a></div>
+  </aside>
+  <div class="ad-main">
+    <header class="ad-top">
+      <button class="ad-burger" type="button" aria-label="Open menu" aria-controls="adSide" aria-expanded="false">☰</button>
+      <p class="ad-crumb"><a href="<?= url('admin') ?>">Admin</a> <span aria-hidden="true">›</span> <?= h($title ?? '') ?></p>
+      <div class="ad-user">
+        <span class="ad-avatar" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($u['name'], 0, 1))) ?></span>
+        <span class="ad-who"><b><?= h($u['name']) ?></b><small><?= h(ROLES[$u['role']] ?? $u['role']) ?></small></span>
+        <form class="inline" method="post" action="<?= url('admin/logout') ?>"><?= csrf_field() ?><button class="btn btn-ghost btn-sm">Log out</button></form>
+      </div>
+    </header>
+    <main class="ad-content">
+      <?php foreach (flash() as [$t, $m]): ?><div class="alert alert-<?= $t === 'err' ? 'err' : 'ok' ?>" role="<?= $t === 'err' ? 'alert' : 'status' ?>"><?= h($m) ?></div><?php endforeach; ?>
+      <?= $content ?>
+    </main>
+  </div>
 </div>
-<?php if ($u): ?><div class="adm"><nav class="adm-nav" aria-label="Admin">
-  <?php foreach ($items as [$l, $p, $m]) if (can($m)): ?><a href="<?= url($p) ?>"<?= ($cur === $p || ($p !== 'admin' && str_starts_with($cur, $p))) ? ' aria-current="page"' : '' ?>><?= h($l) ?></a><?php endif; ?>
-</nav><div class="adm-main"><?php else: ?><div class="adm-main"><?php endif; ?>
-<?php foreach (flash() as [$t, $m]): ?><div class="alert alert-<?= $t === 'err' ? 'err' : 'ok' ?>"><?= h($m) ?></div><?php endforeach; ?>
-<?= $content ?>
-</div><?php if ($u): ?></div><?php endif; ?>
+<script>
+(function () {
+  var b = document.querySelector('.ad-burger'), s = document.getElementById('adSide');
+  if (!b || !s) return;
+  b.addEventListener('click', function () { var o = s.classList.toggle('open'); b.setAttribute('aria-expanded', o ? 'true' : 'false'); });
+  document.addEventListener('click', function (e) { if (s.classList.contains('open') && !s.contains(e.target) && e.target !== b) { s.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); } });
+})();
+</script>
+<?php else: ?>
+<main class="ad-login-wrap">
+  <?php foreach (flash() as [$t, $m]): ?><div class="alert alert-<?= $t === 'err' ? 'err' : 'ok' ?>" role="alert"><?= h($m) ?></div><?php endforeach; ?>
+  <?= $content ?>
+</main>
+<?php endif; ?>
 </body></html>

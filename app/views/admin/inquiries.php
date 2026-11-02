@@ -1,4 +1,4 @@
-<h1>Inquiries</h1>
+<div class="adm-head"><div><h1>Inquiries</h1><p class="adm-sub">Messages, comedy bookings and advertising requests.</p></div><?= export_buttons('inquiries', $type ? ['type' => $type] : []) ?></div>
 <nav class="pills"><a href="<?= url('admin/inquiries') ?>"<?= !$type ? ' aria-current="true"' : '' ?>>All</a><?php foreach ($types as $t): ?><a href="<?= url('admin/inquiries?type=' . $t) ?>"<?= $type === $t ? ' aria-current="true"' : '' ?>><?= h(ucfirst($t)) ?></a><?php endforeach; ?></nav>
 <?php foreach ($list as $i): $d = json_decode((string)$i['details'], true) ?: []; ?>
 <div class="panel"><div class="adm-head"><h2><?= h($i['name']) ?><?= $i['organization'] ? ' · ' . h($i['organization']) : '' ?></h2><span><span class="tag"><?= h($i['type']) ?></span> <?= status_badge($i['status']) ?> <span class="small muted"><?= fmt_date($i['created_at'], 'j M Y H:i') ?></span></span></div>

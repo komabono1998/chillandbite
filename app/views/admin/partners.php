@@ -1,4 +1,4 @@
-<div class="adm-head"><h1>Partner applications</h1></div>
+<div class="adm-head"><div><h1>Partner applications</h1><p class="adm-sub">Approve a company and its logo goes live under Partners.</p></div><?= export_buttons('partners', []) ?></div>
 <nav class="pills"><a href="<?= url('admin/partners') ?>"<?= !$status ? ' aria-current="true"' : '' ?>>All</a>
   <?php foreach (['pending', 'approved', 'rejected'] as $s): ?><a href="<?= url('admin/partners?status=' . $s) ?>"<?= $status === $s ? ' aria-current="true"' : '' ?>><?= ucfirst($s) ?></a><?php endforeach; ?></nav>
 <?php foreach ($list as $p): $act = url('admin/partners/' . $p['id']); ?>

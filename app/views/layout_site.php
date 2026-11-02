@@ -26,7 +26,8 @@ $pageDesc = $desc ?? setting('tagline');
 <meta property="og:description" content="<?= h(excerpt($pageDesc, 160)) ?>">
 <meta property="og:type" content="website">
 <meta property="og:image" content="<?= h(!empty($og_image) ? abs_url('uploads/' . $og_image) : abs_url('assets/img/photos/photo-44.jpg')) ?>">
-<style>:root{--hero-photo:url('<?= h(photo($heroPhoto)) ?>')}</style>
+<?php $heroOverride = cti($seg . '.hero.photo'); // optional photo chosen in Admin > Pages ?>
+<style>:root{--hero-photo:url('<?= h($heroOverride !== '' ? $heroOverride : photo($heroPhoto)) ?>')}</style>
 <?php if (!empty($noindex)): ?><meta name="robots" content="noindex,nofollow"><?php endif; ?>
 <meta name="theme-color" content="#171717">
 <link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#171717"/><text x="32" y="43" font-size="30" font-family="Arial" font-weight="700" text-anchor="middle" fill="#E6B65C">C&amp;B</text></svg>') ?>">

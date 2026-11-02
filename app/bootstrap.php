@@ -169,20 +169,41 @@ const ROLES = [
     'event_manager' => 'Event Manager',
     'editor' => 'Content Editor',
     'marketing' => 'Marketing & Advertising Manager',
+    'finance' => 'Finance Officer',
+    'door' => 'Door / Gate Staff',
 ];
-/** module => roles allowed (admin is always allowed). Enforced server-side. */
+const ROLE_DESCRIPTIONS = [
+    'admin' => 'Full access to everything, including users, settings and the audit log.',
+    'event_manager' => 'Runs events, reservations, approvals, payments, check-in and reports.',
+    'editor' => 'Edits website pages, news, comedy videos and the gallery.',
+    'marketing' => 'Manages sponsors, partner applications, advertising enquiries and the Advertise/Partner pages.',
+    'finance' => 'Views reservations, records payments and refunds, and exports financial reports.',
+    'door' => 'Checks guests in at the gate. Sees names and ticket status only.',
+];
+/** module => roles allowed (admin is always allowed). Enforced server-side on every request. */
 const PERMS = [
-    'dashboard'    => ['event_manager', 'editor', 'marketing'],
-    'events'       => ['event_manager'],
-    'reservations' => ['event_manager'],
-    'news'         => ['editor'],
-    'comedy'       => ['editor'],
-    'gallery'      => ['editor'],
-    'advertising'  => ['marketing'],
-    'inquiries'    => ['event_manager', 'editor', 'marketing'],
-    'users'        => [],
-    'settings'     => [],
-    'audit'        => [],
+    'dashboard'      => ['event_manager', 'editor', 'marketing', 'finance', 'door'],
+    'pages'          => ['editor', 'marketing', 'event_manager'],   // plus a per-page role list in app/content.php
+    'events'         => ['event_manager'],
+    'reservations'   => ['event_manager', 'finance'],               // view bookings and guest lists
+    'reservations_manage' => ['event_manager'],                     // approve, reject, cancel, send tickets
+    'payments'       => ['event_manager', 'finance'],               // record payments and refunds
+    'checkin'        => ['event_manager', 'door'],
+    'reports'        => ['event_manager', 'finance'],
+    'news'           => ['editor'],
+    'comedy'         => ['editor'],
+    'gallery'        => ['editor'],
+    'advertising'    => ['marketing'],
+    'inquiries'      => ['event_manager', 'editor', 'marketing'],
+    'users'          => [],
+    'settings'       => [],
+    'audit'          => [],
+];
+const MODULE_LABELS = [
+    'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
+    'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in',
+    'reports' => 'Reports & exports', 'news' => 'News', 'comedy' => 'Comedy videos', 'gallery' => 'Gallery',
+    'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];
 function current_user(): ?array
 {
@@ -209,6 +230,20 @@ function require_can(string $module): void
         redirect('admin/login');
     }
     if (!can($module)) { http_response_code(403); render('admin/forbidden', [], 'admin'); exit; }
+}
+/** Allow the request when the user has at least one of the modules. */
+function can_any(array $modules): bool
+{
+    foreach ($modules as $m) if (can($m)) return true;
+    return false;
+}
+function require_can_any(array $modules): void
+{
+    if (!current_user()) {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') $_SESSION['next'] = $_SERVER['REQUEST_URI'] ?? '';
+        redirect('admin/login');
+    }
+    if (!can_any($modules)) { http_response_code(403); render('admin/forbidden', [], 'admin'); exit; }
 }
 function audit(string $action, string $detail = ''): void
 {
@@ -264,6 +299,8 @@ function send_mail(string $to, string $subject, string $body): bool
 
 /* ---------- Rendering ---------- */
 require_once ROOT . '/app/views/partials.php';
+require_once ROOT . '/app/content.php';
+require_once ROOT . '/app/export.php';
 function render(string $__view, array $__data = [], string $__layout = 'site'): void
 {
     // Underscore-prefixed names so view variables like $view or $data are never shadowed.

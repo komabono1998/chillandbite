@@ -19,3 +19,13 @@ Prepared statements everywhere, escaped output, CSRF on every POST, bcrypt passw
 
 ## Roadmap
 Phase 3: Pesapal payments (keys go in `.env`), WhatsApp notifications, ad campaign management, reports. Phase 4: backups, analytics, deployment.
+
+## Admin dashboard
+Sign in at `/admin`. The sidebar is grouped (Overview, Website, Operations, Insights, Administration) and only shows what your role may use.
+
+- **Pages & content** (`/admin/pages`): every public page, split into sections and fields (text, buttons, lists, photos). Defaults live in `app/content.php`; saved edits are stored in `site_content`. Empty or "reset" fields fall back to the default text. Per-page role access is set in the registry (`roles`).
+- **Reports & exports** (`/admin/reports`, `/admin/export/{dataset}?format=pdf|docx|xlsx|csv`): reservations, payments ledger, guest list, event summary, inquiries and partner applications. Files are generated in pure PHP (`app/export.php`, no extra libraries).
+- **Check-in desk** (`/admin/checkin`): search guests or scan QR tickets at the gate.
+- **Roles** (`app/bootstrap.php`, `ROLES` / `PERMS`): System Administrator, Event Manager, Content Editor, Marketing & Advertising Manager, Finance Officer, Door / Gate Staff. Every request is checked on the server; the matrix is shown under Admin > Users & roles.
+
+After pulling these changes, run `php database/install.php` once to add the new tables and roles.

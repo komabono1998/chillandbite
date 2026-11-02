@@ -1,4 +1,4 @@
-<div class="adm-head"><h1>Events</h1><a class="btn btn-primary" href="<?= url('admin/events/new') ?>">+ New event</a></div>
+<div class="adm-head"><div><h1>Events</h1><p class="adm-sub">Create, publish, reschedule and cancel events.</p></div><div class="btn-row"><?= export_buttons('events', []) ?><a class="btn btn-primary" href="<?= url('admin/events/new') ?>">+ New event</a></div></div>
 <div class="panel"><div class="tbl-wrap"><table class="tbl"><tr><th>Event</th><th>When</th><th>Status</th><th>Booked</th><th>Actions</th></tr>
 <?php foreach ($events as $e): ?><tr>
   <td><a href="<?= url('admin/events/' . $e['id']) ?>"><strong><?= h($e['title']) ?></strong></a><br><span class="muted small"><?= h($e['category']) ?></span></td>

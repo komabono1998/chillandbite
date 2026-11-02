@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(120) NOT NULL,
   email VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('admin','event_manager','editor','marketing') NOT NULL DEFAULT 'editor',
+  role ENUM('admin','event_manager','editor','marketing','finance','door') NOT NULL DEFAULT 'editor',
   active TINYINT(1) NOT NULL DEFAULT 1,
   last_login DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -205,6 +205,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
   detail VARCHAR(500) NOT NULL DEFAULT '',
   ip VARCHAR(45) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Editable page content (Admin > Pages). A missing/empty row falls back to the built-in default text.
+CREATE TABLE IF NOT EXISTS site_content (
+  `key` VARCHAR(120) PRIMARY KEY,
+  `value` MEDIUMTEXT NOT NULL,
+  updated_by INT UNSIGNED NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Partnership applications from the public; approval creates a sponsors row (shown under Partners)

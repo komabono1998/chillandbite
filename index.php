@@ -7,6 +7,7 @@ require __DIR__ . '/app/controllers/booking.php';
 require __DIR__ . '/app/controllers/admin.php';
 require __DIR__ . '/app/controllers/admin_content.php';
 require __DIR__ . '/app/controllers/partners.php';
+require __DIR__ . '/app/controllers/admin_hub.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -40,6 +41,12 @@ $routes = [
     ['GET',  'admin/login',          'admin_login_form'],
     ['POST', 'admin/login',          'admin_login'],
     ['POST', 'admin/logout',         'admin_logout'],
+    ['GET',  'admin/pages',          'admin_pages'],
+    ['GET',  'admin/pages/{page}',   'admin_page_edit'],
+    ['POST', 'admin/pages/{page}',   'admin_page_save'],
+    ['GET',  'admin/reports',        'admin_reports'],
+    ['GET',  'admin/export/{dataset}', 'admin_export'],
+    ['GET',  'admin/checkin',        'admin_checkin_desk'],
     ['GET',  'admin/events',         'admin_events'],
     ['GET',  'admin/events/new',     'admin_event_form'],
     ['GET',  'admin/events/{id}',    'admin_event_form'],
@@ -47,7 +54,6 @@ $routes = [
     ['POST', 'admin/events/{id}/status', 'admin_event_status'],
     ['POST', 'admin/events/recurring', 'admin_event_recurring'],
     ['GET',  'admin/reservations',   'admin_reservations'],
-    ['GET',  'admin/reservations/export', 'admin_reservations_export'],
     ['GET',  'admin/reservations/{id}', 'admin_reservation'],
     ['POST', 'admin/reservations/{id}/action', 'admin_reservation_action'],
     ['GET',  'admin/news',           'admin_news'],

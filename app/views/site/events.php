@@ -2,7 +2,7 @@
 $prev = date('Y-m', strtotime("$month-01 -1 month")); $nextM = date('Y-m', strtotime("$month-01 +1 month"));
 $qs = fn(array $o) => '?' . http_build_query(array_filter(array_merge(['view' => $view, 'cat' => $cat, 'month' => $month], $o)));
 ?>
-<section class="page-hero"><div class="wrap"><span class="eyebrow gold">Events calendar</span><h1>What's on</h1><p class="lead">Chill &amp; Bite MEATINGS every first Sunday, plus comedy nights, networking and special events.</p></div></section>
+<section class="page-hero"><div class="wrap"><span class="eyebrow gold"><?= cth('events.hero.eyebrow') ?></span><h1><?= cth('events.hero.heading') ?></h1><p class="lead"><?= cth('events.hero.lead') ?></p></div></section>
 <section class="section section-cream"><div class="wrap">
   <form class="filters" method="get" action="<?= url('events') ?>">
     <label>Month <input type="month" name="month" value="<?= h($month) ?>"></label>
