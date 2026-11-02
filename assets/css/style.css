@@ -267,3 +267,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
 .lb button:hover{background:var(--orange)}
 .lb .x{top:16px;right:16px}.lb .p{left:14px;top:50%}.lb .n{right:14px;top:50%}
 .hero h1,.page-hero h1{text-shadow:0 2px 24px rgba(0,0,0,.5)}
+
+/* Live countdown */
+.countdown{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 1.2rem}
+.countdown div{background:linear-gradient(180deg,#2e2e2e,#1c1c1c);border:1px solid #444;border-bottom:3px solid var(--orange);border-radius:10px;padding:10px 4px;text-align:center}
+.countdown b{display:block;font-size:clamp(1.4rem,3.5vw,2rem);font-weight:800;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1}
+.countdown span{font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--gold)}
+.countdown-date{font-size:1.15rem}
+.live-note{font-weight:800;color:var(--gold);font-size:1.1rem}

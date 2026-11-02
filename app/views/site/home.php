@@ -13,7 +13,11 @@
     </div>
     <aside class="info-panel" aria-label="Event information">
       <p class="eyebrow gold">Next experience</p>
-      <p class="countdown-date" id="countdown" data-target="<?= h($next_date->format('c')) ?>"><?= $next_date->format('l, j F Y') ?></p>
+      <p class="countdown-date"><?= $next_date->format('l, j F Y') ?> · <?= $next_date->format('g:i A') ?></p>
+      <div class="countdown" id="countdown" data-target="<?= h($next_date->format('c')) ?>" role="timer" aria-label="Time until the next event">
+        <div><b data-u="d">00</b><span>Days</span></div><div><b data-u="h">00</b><span>Hours</span></div><div><b data-u="m">00</b><span>Mins</span></div><div><b data-u="s">00</b><span>Secs</span></div>
+      </div>
+      <p class="live-note" id="live-note" hidden>Happening now! Come and join us.</p>
       <dl>
         <dt>Event</dt><dd>Chill &amp; Bite MEATINGS</dd>
         <dt>Venue</dt><dd>Revelation Cottages, Gulu City</dd>

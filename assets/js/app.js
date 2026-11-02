@@ -35,14 +35,24 @@
   var cd = document.getElementById('countdown');
   if (cd && cd.dataset.target) {
     var target = new Date(cd.dataset.target).getTime();
-    var base = cd.textContent;
+    var cells = {};
+    cd.querySelectorAll('[data-u]').forEach(function (el) { cells[el.dataset.u] = el; });
+    var note = document.getElementById('live-note');
+    var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
     var tick = function () {
       var diff = target - Date.now();
-      if (diff <= 0) { cd.textContent = base; return; }
-      var d = Math.floor(diff / 864e5), h = Math.floor(diff % 864e5 / 36e5), m = Math.floor(diff % 36e5 / 6e4);
-      cd.textContent = base + ' · ' + d + 'd ' + h + 'h ' + m + 'm';
+      if (diff <= 0) {
+        cd.hidden = true;
+        if (note) note.hidden = false;
+        return false;
+      }
+      cells.d.textContent = pad(Math.floor(diff / 864e5));
+      cells.h.textContent = pad(Math.floor(diff % 864e5 / 36e5));
+      cells.m.textContent = pad(Math.floor(diff % 36e5 / 6e4));
+      cells.s.textContent = pad(Math.floor(diff % 6e4 / 1e3));
+      return true;
     };
-    tick(); setInterval(tick, 60000);
+    if (tick()) { var timer = setInterval(function () { if (!tick()) clearInterval(timer); }, 1000); }
   }
 
   // Reservation form: guest limits, corporate field, live total
