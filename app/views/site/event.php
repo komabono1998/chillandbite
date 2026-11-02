@@ -7,7 +7,7 @@
 </div></section>
 <section class="section section-cream"><div class="wrap event-layout">
   <div>
-    <div class="event-hero-img"><?php media($e['poster'], $e['title'], 'poster-wide', date('j M', strtotime($e['start_at']))); ?></div>
+    <div class="event-hero-img"><?php media($e['poster'], $e['title'], 'poster-wide', date('j M', strtotime($e['start_at'])), photo_from('crowd', (int)$e['id'])); ?></div>
     <div class="prose">
       <h2>About this event</h2>
       <?= paragraphs($e['description']) ?>

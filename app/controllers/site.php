@@ -60,7 +60,7 @@ function page_home(): void
         'articles' => published_articles(3),
         'video' => row('SELECT * FROM videos ORDER BY featured DESC, id DESC LIMIT 1'),
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
-        'gallery' => rows('SELECT * FROM gallery_images ORDER BY featured DESC, id DESC LIMIT 6'),
+        'gallery' => rows('SELECT * FROM gallery_images ORDER BY featured DESC, id DESC LIMIT 8'),
         'comedy_events' => upcoming_events(2, 'laugh-with-owakabi-comedy-shows'),
     ]);
 }

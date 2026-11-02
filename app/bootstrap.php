@@ -76,7 +76,12 @@ function abs_url(string $path = ''): string
     return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . url($path);
 }
 function asset(string $path): string { return url('assets/' . ltrim($path, '/')); }
-function upload_url(?string $file): string { return $file ? url('uploads/' . $file) : ''; }
+function upload_url(?string $file): string
+{
+    if (!$file) return '';
+    // Bundled site photos live under assets/ and are referenced as "img/..."
+    return str_starts_with($file, 'img/') ? asset($file) : url('uploads/' . $file);
+}
 function redirect(string $path): never
 {
     header('Location: ' . (str_starts_with($path, 'http') ? $path : url($path)));

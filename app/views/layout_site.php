@@ -8,6 +8,11 @@ $nav = [
 ];
 $cur = trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE)), '/');
 $active = fn($k) => ($k === '' ? $cur === '' : ($k === 'reserve' ? str_contains($cur, '/reserve') : str_starts_with($cur, $k) && !str_contains($cur, '/reserve'))) ? ' aria-current="page"' : '';
+$seg = explode('/', $cur)[0];
+$heroPhotos = ['about' => 10, 'events' => 44, 'booking' => 41, 'laugh' => 12, 'news' => 22, 'advertise' => 42, 'contact' => 33, 'gallery' => 3];
+$stripSets = ['about' => ['people', 'social', 'crowd'], 'events' => ['stage', 'crowd'], 'booking' => ['crowd', 'stage'], 'laugh' => ['people', 'stage'],
+    'news' => ['social', 'people'], 'advertise' => ['stage', 'crowd'], 'contact' => ['food', 'social', 'people']];
+$heroPhoto = $heroPhotos[$seg] ?? 6;
 $pageTitle = $title ?? setting('site_name', 'Chill & Bite MEATINGS');
 $pageDesc = $desc ?? setting('tagline');
 ?><!doctype html>
@@ -20,7 +25,8 @@ $pageDesc = $desc ?? setting('tagline');
 <meta property="og:title" content="<?= h($pageTitle) ?>">
 <meta property="og:description" content="<?= h(excerpt($pageDesc, 160)) ?>">
 <meta property="og:type" content="website">
-<?php if (!empty($og_image)): ?><meta property="og:image" content="<?= h(abs_url('uploads/' . $og_image)) ?>"><?php endif; ?>
+<meta property="og:image" content="<?= h(!empty($og_image) ? abs_url('uploads/' . $og_image) : abs_url('assets/img/photos/photo-44.jpg')) ?>">
+<style>:root{--hero-photo:url('<?= h(photo($heroPhoto)) ?>')}</style>
 <meta name="theme-color" content="#171717">
 <link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#171717"/><text x="32" y="43" font-size="30" font-family="Arial" font-weight="700" text-anchor="middle" fill="#E6B65C">C&amp;B</text></svg>') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,6 +57,9 @@ $pageDesc = $desc ?? setting('tagline');
 <main id="main">
 <?php foreach (flash() as [$t, $m]): ?><div class="wrap"><div class="alert alert-<?= $t === 'err' ? 'err' : 'ok' ?>" role="<?= $t === 'err' ? 'alert' : 'status' ?>"><?= h($m) ?></div></div><?php endforeach; ?>
 <?= $content ?>
+<?php if ($cur !== '' && $seg !== 'gallery' && http_response_code() === 200): ?>
+<?php photo_strip(strip_nums($stripSets[$seg] ?? ['crowd', 'people'], crc32($seg), 14), 'Moments from Chill & Bite', 'strip-dark'); ?>
+<?php endif; ?>
 </main>
 
 <footer class="site-footer">

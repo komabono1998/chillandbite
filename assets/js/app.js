@@ -74,3 +74,32 @@
     document.querySelectorAll('.card, .featured-event, .host, .info-panel').forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
   }
 })();
+
+// Photo lightbox for any link marked data-lightbox (strips, mosaic, galleries)
+(function () {
+  'use strict';
+  var items = [], idx = 0, box;
+  function show() {
+    box.querySelector('img').src = items[idx].href;
+  }
+  function close() { if (box) { box.remove(); box = null; document.removeEventListener('keydown', key); } }
+  function step(d) { idx = (idx + d + items.length) % items.length; show(); }
+  function key(e) { if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1); }
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest('a[data-lightbox]');
+    if (!a) return;
+    ev.preventDefault();
+    var scope = a.closest('.strip, .mosaic, .gallery-grid') || document;
+    items = Array.prototype.slice.call(scope.querySelectorAll('a[data-lightbox]'));
+    idx = items.indexOf(a);
+    box = document.createElement('div');
+    box.className = 'lb'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Photo viewer');
+    box.innerHTML = '<img alt=""><button class="x" aria-label="Close">&times;</button><button class="p" aria-label="Previous">&#8249;</button><button class="n" aria-label="Next">&#8250;</button>';
+    box.addEventListener('click', function (e) {
+      if (e.target.classList.contains('p')) step(-1); else if (e.target.classList.contains('n')) step(1);
+      else if (e.target.tagName !== 'IMG') close();
+    });
+    document.body.appendChild(box); show();
+    document.addEventListener('keydown', key);
+  });
+})();

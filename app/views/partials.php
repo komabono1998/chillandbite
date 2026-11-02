@@ -1,10 +1,10 @@
 <?php
 /** Reusable view fragments. Every function echoes escaped HTML. */
 
-function media(?string $file, string $alt, string $class = '', string $fallbackLabel = ''): void
+function media(?string $file, string $alt, string $class = '', string $fallbackLabel = '', ?string $fallbackSrc = null): void
 {
-    if ($file) {
-        echo '<img class="' . h($class) . '" src="' . h(upload_url($file)) . '" alt="' . h($alt) . '" loading="lazy">';
+    if ($file || $fallbackSrc) {
+        echo '<img class="' . h($class) . '" src="' . h($file ? upload_url($file) : $fallbackSrc) . '" alt="' . h($alt) . '" loading="lazy" decoding="async">';
         return;
     }
     echo '<div class="ph ' . h($class) . '" role="img" aria-label="' . h($alt) . '"><span>' . h($fallbackLabel ?: 'C&amp;B') . '</span></div>';
@@ -24,7 +24,7 @@ function event_card(array $e, bool $dark = false): void
     ?>
     <article class="card event-card<?= $dark ? ' card-dark' : '' ?>">
       <a class="event-poster" href="<?= url('events/' . h($e['slug'])) ?>" tabindex="-1" aria-hidden="true">
-        <?php media($e['poster'], $e['title'], 'poster-img', date('M', $d)); ?>
+        <?php media($e['poster'], $e['title'], 'poster-img', date('M', $d), photo_from(str_contains(strtolower($e['category'] ?? ''), 'comedy') ? 'people' : 'crowd', (int)$e['id'])); ?>
         <span class="date-chip"><b><?= date('j', $d) ?></b><?= date('M', $d) ?></span>
       </a>
       <div class="card-body">
@@ -45,7 +45,7 @@ function article_card(array $a): void
 {
     ?>
     <article class="card article-card">
-      <a class="article-img" href="<?= url('news/' . h($a['slug'])) ?>" tabindex="-1" aria-hidden="true"><?php media($a['image'], $a['title'], 'article-img-el', 'Buzz'); ?></a>
+      <a class="article-img" href="<?= url('news/' . h($a['slug'])) ?>" tabindex="-1" aria-hidden="true"><?php media($a['image'], $a['title'], 'article-img-el', 'Buzz', photo_from('social', (int)$a['id'])); ?></a>
       <div class="card-body">
         <p class="meta">
           <?php if (!empty($a['category'])): ?><span class="eyebrow"><?= h($a['category']) ?></span><?php endif; ?>
@@ -109,4 +109,37 @@ function field(string $name, string $label, array $o = []): void
 function honeypot(): void
 {
     echo '<div class="hp" aria-hidden="true"><label>Leave this empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
+}
+
+/* ---------- Event photography ---------- */
+const PHOTO_SETS = [
+    'crowd'  => [1, 3, 4, 5, 6, 14, 17, 18, 37, 39, 40, 45, 48, 51, 52],
+    'stage'  => [41, 44, 53, 27, 32, 47, 42, 43, 20],
+    'people' => [7, 8, 9, 10, 12, 13, 15, 16, 19, 21, 49, 36],
+    'social' => [11, 22, 31, 33, 35, 38, 46, 50, 34],
+    'food'   => [2, 23, 25, 26, 30],
+];
+function photo(int $n): string { return asset(sprintf('img/photos/photo-%02d.jpg', $n)); }
+function photo_from(string $set, int $seed): string
+{
+    $p = PHOTO_SETS[$set] ?? PHOTO_SETS['crowd'];
+    return photo($p[abs($seed) % count($p)]);
+}
+/** Left-to-right auto-scrolling photo strip: pauses on hover, photos lift and zoom. */
+function photo_strip(array $nums, string $label = 'Moments from Chill & Bite', string $class = ''): void
+{
+    $items = '';
+    foreach ($nums as $n) {
+        $items .= '<a class="strip-item" href="' . h(photo($n)) . '" data-lightbox><img src="' . h(photo($n)) . '" alt="Chill &amp; Bite MEATINGS event moment" loading="lazy" decoding="async"></a>';
+    }
+    echo '<section class="strip ' . h($class) . '" aria-label="' . h($label) . '"><div class="strip-track">' . $items . '<span class="strip-dup" aria-hidden="true">' . str_replace(' data-lightbox', ' tabindex="-1"', $items) . '</span></div></section>';
+}
+/** Shuffle a photo set with a stable seed so strips differ per page but do not change on reload. */
+function strip_nums(array $sets, int $seed, int $max = 14): array
+{
+    $n = [];
+    foreach ($sets as $s) $n = array_merge($n, PHOTO_SETS[$s]);
+    $n = array_values(array_unique($n));
+    mt_srand($seed); shuffle($n); mt_srand();
+    return array_slice($n, 0, $max);
 }

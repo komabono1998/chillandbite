@@ -1,5 +1,6 @@
 <?php $reserve = $next ? url('events/' . $next['slug'] . '/reserve') : url('events'); ?>
 <section class="hero">
+  <div class="hero-slides" aria-hidden="true"><?php foreach ([44, 3, 6, 41, 18] as $i => $n): ?><div style="background-image:url('<?= h(photo($n)) ?>');animation-delay:<?= $i * 6 - 2 ?>s"></div><?php endforeach; ?></div>
   <div class="wrap hero-in">
     <div class="hero-copy">
       <span class="eyebrow gold">Gulu City · Every first Sunday</span>
@@ -24,12 +25,14 @@
   </div>
 </section>
 
+<?php photo_strip(strip_nums(['crowd', 'people', 'stage'], 11, 16), 'Moments from our events', 'strip-hero'); ?>
+
 <section class="section">
   <div class="wrap">
     <div class="section-head"><span class="eyebrow">Upcoming</span><h2>Chill &amp; Bite MEATINGS: The Monthly Experience</h2></div>
     <?php if ($next): ?>
       <div class="featured-event">
-        <div class="fe-poster"><?php media($next['poster'], $next['title'], 'poster-img', fmt_date($next['start_at'], 'M j')); ?></div>
+        <div class="fe-poster"><?php media($next['poster'], $next['title'], 'poster-img', fmt_date($next['start_at'], 'M j'), photo(10)); ?></div>
         <div class="fe-body">
           <span class="eyebrow gold"><?= h($next['category'] ?? 'Next event') ?></span>
           <h3><?= h($next['title']) ?></h3>
@@ -46,6 +49,17 @@
     <?php else: ?>
       <p class="muted">No event is scheduled yet. The next Chill &amp; Bite is expected on <strong><?= $next_date->format('l, j F Y') ?></strong>. Check back soon!</p>
     <?php endif; ?>
+  </div>
+</section>
+
+<section class="section section-dark taste">
+  <div class="wrap">
+    <div class="section-head center"><span class="eyebrow gold">Good food</span><h2>Fire. Smoke. Flavour.</h2><p class="lead narrow">Sizzling skewers, slow-roasted chicken, sticky ribs and wings, served all afternoon.</p></div>
+    <div class="mosaic">
+      <?php foreach ([[2, 'wide'], [23, 'tall'], [25, ''], [30, ''], [26, 'wide']] as [$n, $c]): ?>
+        <a class="mosaic-item <?= $c ?>" href="<?= h(photo($n)) ?>" data-lightbox><img src="<?= h(photo($n)) ?>" alt="Grilled food at Chill &amp; Bite MEATINGS" loading="lazy" decoding="async"></a>
+      <?php endforeach; ?>
+    </div>
   </div>
 </section>
 
@@ -104,12 +118,15 @@
 <section class="section">
   <div class="wrap">
     <div class="section-head"><span class="eyebrow">Gallery</span><h2>The Atmosphere</h2></div>
-    <div class="gallery-grid"><?php foreach ($gallery as $g): ?><a href="<?= url('gallery') ?>"><img src="<?= h(upload_url($g['file'])) ?>" alt="<?= h($g['caption'] ?: 'Chill & Bite event photo') ?>" loading="lazy"></a><?php endforeach; ?></div>
+    <div class="gallery-grid"><?php foreach ($gallery as $g): ?><a href="<?= h(upload_url($g['file'])) ?>" data-lightbox><img src="<?= h(upload_url($g['file'])) ?>" alt="<?= h($g['caption'] ?: 'Chill & Bite event photo') ?>" loading="lazy" decoding="async"></a><?php endforeach; ?></div>
+    <p class="center mt"><a class="btn btn-outline-dark" href="<?= url('gallery') ?>">See the full gallery</a></p>
   </div>
 </section>
 <?php endif; ?>
 
-<section class="cta-final">
+<?php photo_strip(strip_nums(['people', 'social', 'crowd'], 29, 16), 'More moments', 'strip-light'); ?>
+
+<section class="cta-final" style="--cta-photo:url('<?= h(photo(40)) ?>')">
   <div class="wrap center">
     <h2>Your Next Great Connection Starts Here!</h2>
     <p class="lead">One Sunday. One Location. Endless Connections.</p>

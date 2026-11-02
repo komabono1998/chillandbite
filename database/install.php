@@ -40,6 +40,26 @@ $defaults = [
 ];
 foreach ($defaults as $k => $v) q('INSERT IGNORE INTO settings (`key`, `value`) VALUES (?,?)', [$k, $v]);
 
+// Bundled event photos (assets/img/photos) sorted into the gallery albums; skipped once imported
+if (!(int)val("SELECT COUNT(*) FROM gallery_images WHERE file LIKE 'img/photos/%'")) {
+    $albums = [
+        'chill-bite-highlights' => [1, 3, 4, 5, 6, 10, 14, 15, 17, 18, 37, 39, 40, 45, 48, 51, 52],
+        'food-and-drinks' => [2, 23, 25, 26, 30],
+        'music-and-entertainment' => [27, 32, 41, 44, 53],
+        'networking-moments' => [22, 31, 33, 35, 38],
+        'outdoor-games' => [11, 34],
+        'guests-and-personalities' => [7, 8, 9, 12, 13, 16, 19, 21, 36, 46, 49, 50],
+        'behind-the-scenes' => [20, 42, 43, 47],
+    ];
+    $featured = [3, 9, 10, 12, 2, 44, 46, 23];
+    foreach ($albums as $slug => $nums) {
+        $aid = (int)val('SELECT id FROM gallery_albums WHERE slug = ?', [$slug]);
+        foreach ($nums as $n)
+            q('INSERT INTO gallery_images (album_id, file, featured) VALUES (?,?,?)', [$aid ?: null, sprintf('img/photos/photo-%02d.jpg', $n), in_array($n, $featured, true) ? 1 : 0]);
+    }
+    echo "Event photos added to the gallery.\n";
+}
+
 // First admin
 if (!(int)val("SELECT COUNT(*) FROM users")) {
     $email = 'admin@chillandbite.local';
