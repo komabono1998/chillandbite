@@ -9,7 +9,7 @@ $cur = trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE
 <meta name="robots" content="noindex,nofollow">
 <title><?= h($title ?? 'Admin') ?> · Chill &amp; Bite Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="<?= asset('css/style.css') ?>?v=1"></head>
+<link rel="stylesheet" href="<?= asset_v('css/style.css') ?>"></head>
 <body class="admin">
 <div class="adm-bar">
   <strong>Chill &amp; Bite · Admin</strong>

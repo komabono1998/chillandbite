@@ -345,3 +345,10 @@ function wa_link(string $number, string $text = ''): string
     if (str_starts_with($d, '0')) $d = '256' . substr($d, 1);
     return 'https://wa.me/' . $d . ($text !== '' ? '?text=' . rawurlencode($text) : '');
 }
+
+/** Asset URL with a modification-time version so browsers refetch CSS/JS whenever it changes. */
+function asset_v(string $path): string
+{
+    $file = ROOT . '/assets/' . ltrim($path, '/');
+    return asset($path) . '?v=' . (is_file($file) ? filemtime($file) : 1);
+}

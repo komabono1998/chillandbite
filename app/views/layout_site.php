@@ -31,7 +31,7 @@ $pageDesc = $desc ?? setting('tagline');
 <link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#171717"/><text x="32" y="43" font-size="30" font-family="Arial" font-weight="700" text-anchor="middle" fill="#E6B65C">C&amp;B</text></svg>') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="<?= asset('css/style.css') ?>?v=1">
+<link rel="stylesheet" href="<?= asset_v('css/style.css') ?>">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -92,6 +92,6 @@ $pageDesc = $desc ?? setting('tagline');
   <p>We use only essential cookies to keep forms secure. <a href="<?= url('privacy') ?>">Learn more</a></p>
   <button class="btn btn-primary btn-sm" type="button" id="cookie-ok">OK</button>
 </div>
-<script src="<?= asset('js/app.js') ?>?v=1" defer></script>
+<script src="<?= asset_v('js/app.js') ?>" defer></script>
 </body>
 </html>
