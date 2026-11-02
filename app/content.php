@@ -194,32 +194,74 @@ function site_pages(): array
         ],
         'laugh' => [
             'label' => 'Laugh with Owakabi', 'icon' => '😂', 'url' => 'laugh', 'roles' => ['editor'],
-            'desc' => 'The comedy page: videos, shows and the performance booking form.',
+            'desc' => 'The comedy page: host profile, services, videos, shows, FAQs and the performance booking form.',
             'related' => [['Comedy videos', 'admin/comedy', 'comedy'], ['Comedy events', 'admin/events', 'events'], ['Performance requests', 'admin/inquiries?type=performance', 'inquiries']],
             'sections' => [
                 'hero' => ['label' => 'Page header', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Laugh with Owakabi'),
                     $f('heading', 'Heading', 'text', 'Life is better with a little humour!'),
-                    $f('lead', 'Subtitle', 'text', 'Comedy shows, video highlights and performance bookings with MC Kash Owakabi.'),
-                    $f('btn_shows', 'Button 1', 'text', 'Upcoming shows'),
+                    $f('lead', 'Subtitle', 'text', 'Stand-up comedy and professional hosting by MC Kash Owakabi, for corporate events, weddings, launches, concerts and private celebrations across Uganda.'),
+                    $f('btn_shows', 'Button 1', 'text', 'See upcoming shows'),
                     $f('btn_book', 'Button 2', 'text', 'Book a performance'),
+                    $f('badge', 'Photo badge', 'text', 'MC & stand-up comedian'),
+                    $f('trust', 'Highlights strip (one per line)', 'lines', "Live stand-up comedy\nProfessional MC and hosting\nCorporate-ready shows\nWeddings, launches and parties\nBased in Gulu, available across Uganda"),
                     $photo(),
+                ]],
+                'host' => ['label' => 'Meet the host', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Meet the host'),
+                    $f('heading', 'Heading', 'text', 'MC Kash Owakabi'),
+                    $f('bio', 'Paragraph 1', 'textarea', 'MC Kash Owakabi is the voice and face of Chill & Bite MEATINGS in Gulu City. He is a charismatic master of ceremonies and stand-up comedian who keeps a room laughing, relaxed and fully involved.'),
+                    $f('bio2', 'Paragraph 2', 'textarea', 'He is the founder of Owakabi & The Geng, the creative team behind Chill & Bite MEATINGS, Laugh with Owakabi and The Gulu Chronicles. Whether it is a packed outdoor crowd or a boardroom dinner, he adapts the humour to the audience.'),
+                    $f('points', 'Highlights (one per line)', 'lines', "Charismatic host and master of ceremonies\nStand-up comedy and live audience engagement\nClean, audience-friendly humour that suits corporate and family events\nFounder of Owakabi & The Geng"),
+                    $f('photo', 'Host photo', 'image', 'img/host-mc-kash-owakabi.jpg'),
+                ]],
+                'services' => ['label' => 'What we offer', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Book MC Kash'),
+                    $f('heading', 'Heading', 'text', 'Comedy and hosting for every occasion'),
+                    $f('intro', 'Introduction', 'text', 'Choose the kind of event you are planning and we will take it from there.'),
+                    $f('cards', 'Cards (one per line: emoji | Title | text | form value: Corporate, Wedding, Concert, Launch, Private or Other)', 'lines',
+                        "🏢 | Corporate events | Staff parties, year-end functions, team building and company dinners. | Corporate\n" .
+                        "💍 | Weddings & celebrations | A warm, funny MC who keeps the programme flowing and the guests happy. | Wedding\n" .
+                        "🎤 | Concerts & festivals | Crowd energy, smooth transitions and hosting between acts. | Concert\n" .
+                        "🚀 | Product & brand launches | Introduce your brand with a host who gets the crowd talking. | Launch\n" .
+                        "🎉 | Private parties | Birthdays, anniversaries and reunions with a good laugh built in. | Private\n" .
+                        "🎙️ | Hosting & MC only | Just need a professional MC for your programme? We can do that too. | Other"),
                 ]],
                 'videos' => ['label' => 'Video library', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Video library'),
                     $f('heading', 'Heading', 'text', 'Watch & laugh'),
-                    $f('empty', 'Message when there are no videos', 'text', 'Videos are coming soon.'),
+                    $f('intro', 'Introduction', 'text', 'Clips, highlights and behind-the-scenes moments. Tap a video to play it here.'),
+                    $f('empty', 'Message when there are no videos', 'text', 'Videos are coming soon. Follow us on social media for the latest clips.'),
                 ]],
                 'shows' => ['label' => 'Upcoming performances', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Comedy events'),
                     $f('heading', 'Heading', 'text', 'Upcoming performances'),
-                    $f('empty', 'Message when there are no shows', 'text', 'No shows are scheduled right now. Check back soon or book a private performance below.'),
+                    $f('empty', 'Message when there are no shows', 'text', 'No public shows are scheduled right now. Check back soon, or book a private performance for your own event.'),
+                ]],
+                'process' => ['label' => 'How booking works', 'fields' => [
+                    $f('heading', 'Heading', 'text', 'How booking works'),
+                    $f('steps', 'Steps (one per line: Title | text)', 'lines',
+                        "Send your request | Tell us the date, place, type of event and audience size.\n" .
+                        "We get back to you | Our team contacts you to discuss your programme and the details.\n" .
+                        "Confirm the details | Agree the programme, timing and arrangements for your event.\n" .
+                        "Enjoy the laughs | MC Kash arrives ready to make your event one to remember."),
+                ]],
+                'faq' => ['label' => 'Frequently asked questions', 'fields' => [
+                    $f('heading', 'Heading', 'text', 'Questions we are often asked'),
+                    $f('items', 'Questions (one per line: Question | Answer)', 'lines',
+                        "What kind of events can I book MC Kash for? | Corporate events, weddings, concerts and festivals, product launches, private parties and any programme that needs a professional host.\n" .
+                        "Is the comedy suitable for all audiences? | Yes. The humour is audience-friendly, and MC Kash adapts it to your crowd, whether that is a corporate team, a family gathering or a lively outdoor event.\n" .
+                        "Can you perform outside Gulu? | Yes. Tell us your location in the form and we will confirm availability and arrangements.\n" .
+                        "How far ahead should I book? | As early as you can, because popular dates fill up. Send your request with your event date and we will confirm availability.\n" .
+                        "How do I get a quote? | Fill in the request form below or call or WhatsApp us. We will discuss your event and come back to you with the details."),
                 ]],
                 'booking' => ['label' => 'Performance booking form', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Performance booking'),
                     $f('heading', 'Heading', 'text', 'Book MC Kash Owakabi'),
-                    $f('intro', 'Introduction', 'text', 'Organizations, brands, event organizers and individuals: tell us about your event.'),
+                    $f('intro', 'Introduction', 'text', 'Organizations, brands, event organizers and individuals: tell us about your event and we will get back to you.'),
                     $f('button', 'Submit button', 'text', 'Send request'),
+                    $f('side_title', 'Side panel title', 'text', 'Prefer to talk?'),
+                    $f('side_text', 'Side panel text', 'text', 'Call or WhatsApp our team and we will take your details directly.'),
                 ]],
             ],
         ],
