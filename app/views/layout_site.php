@@ -39,9 +39,14 @@ $pageDesc = $desc ?? setting('tagline');
 <a class="skip" href="#main">Skip to content</a>
 <?php if (setting('announcement_on', '1') === '1' && setting('announcement') !== ''): ?>
 <?php $barEv = upcoming_events(1, 'chill-bite-meatings')[0] ?? null; $barDate = $barEv ? new DateTimeImmutable($barEv['start_at']) : next_first_sunday(); ?>
-<div class="announce" role="note"><span class="announce-text"><?= h(setting('announcement')) ?></span>
-  <span class="announce-when"><span class="announce-sep" aria-hidden="true">|</span> <b><?= h($barDate->format('D, j M Y')) ?> · <?= h($barDate->format('g:i A')) ?></b>
-    <span class="announce-timer" id="barTimer" data-target="<?= h($barDate->format('c')) ?>" role="timer" aria-label="Time until the next event"><span data-u="d">--</span><i>d</i> <span data-u="h">--</span><i>h</i> <span data-u="m">--</span><i>m</i> <span data-u="s">--</span><i>s</i></span></span></div>
+<div class="announce" role="note"><div class="announce-in">
+  <p class="announce-text"><span class="announce-dot" aria-hidden="true"></span><?= h(setting('announcement')) ?></p>
+  <p class="announce-date"><small>Next meeting</small><b><?= h($barDate->format('l, j F Y')) ?></b><span><?= h($barDate->format('g:i A')) ?> · Gulu City</span></p>
+  <div class="announce-timer" id="barTimer" data-target="<?= h($barDate->format('c')) ?>" role="timer" aria-label="Time until the next event">
+    <span><b data-u="d">--</b><i>Days</i></span><span><b data-u="h">--</b><i>Hours</i></span><span><b data-u="m">--</b><i>Mins</i></span><span><b data-u="s">--</b><i>Secs</i></span>
+  </div>
+  <a class="announce-cta" href="<?= url('events') ?>">Reserve →</a>
+</div></div>
 <?php endif; ?>
 <header class="site-header">
   <div class="wrap header-in">
