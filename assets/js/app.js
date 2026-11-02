@@ -31,6 +31,21 @@
     btn.replaceWith(f);
   });
 
+  // Announcement bar timer (every page)
+  var bt = document.getElementById('barTimer');
+  if (bt && bt.dataset.target) {
+    var bTarget = new Date(bt.dataset.target).getTime(), bc = {}, bp = function (n) { return n < 10 ? '0' + n : '' + n; };
+    bt.querySelectorAll('[data-u]').forEach(function (el) { bc[el.dataset.u] = el; });
+    var bTick = function () {
+      var diff = bTarget - Date.now();
+      if (diff <= 0) { bt.classList.add('is-live'); bt.textContent = 'Happening now'; return false; }
+      bc.d.textContent = bp(Math.floor(diff / 864e5)); bc.h.textContent = bp(Math.floor(diff % 864e5 / 36e5));
+      bc.m.textContent = bp(Math.floor(diff % 36e5 / 6e4)); bc.s.textContent = bp(Math.floor(diff % 6e4 / 1e3));
+      return true;
+    };
+    if (bTick()) { var bTimer = setInterval(function () { if (!bTick()) clearInterval(bTimer); }, 1000); }
+  }
+
   // Countdown to the next event
   var cd = document.getElementById('countdown');
   if (cd && cd.dataset.target) {
