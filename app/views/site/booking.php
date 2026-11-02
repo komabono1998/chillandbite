@@ -1,17 +1,127 @@
-<section class="page-hero compact"><div class="wrap"><span class="eyebrow gold">Your booking</span><h1>Reference <?= h($r['reference']) ?></h1></div></section>
-<section class="section section-cream"><div class="wrap narrow-wrap"><div class="form-card">
-  <p><?= status_badge($r['status']) ?></p>
-  <?php if ($r['status'] === 'confirmed'): ?><p class="alert alert-ok">Your place is confirmed. Your ticket is ready: show its QR code at the entrance.</p>
-    <p><a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>">Open my ticket</a></p>
-  <?php elseif ($r['status'] === 'pending'): ?><p class="alert alert-warn">Your booking is awaiting confirmation<?= $r['amount_due'] > 0 ? ' and payment' : '' ?>. We will contact you on the details you gave.</p>
-  <?php else: ?><p class="alert alert-err">This booking is <?= h($r['status']) ?>. Please contact us if you have questions.</p><?php endif; ?>
-  <dl class="summary">
-    <dt>Event</dt><dd><a href="<?= url('events/' . h($r['slug'])) ?>"><?= h($r['title']) ?></a></dd>
-    <dt>When</dt><dd><?= fmt_date($r['start_at'], 'l, j F Y') ?> · <?= fmt_time($r['start_at']) ?></dd>
-    <dt>Where</dt><dd><?= h($r['venue']) ?>, <?= h($r['location']) ?></dd>
-    <dt>Name</dt><dd><?= h($r['full_name']) ?></dd>
-    <dt>Reservation</dt><dd><?= h(RES_TYPES[$r['type']]) ?><?= $r['package'] ? ' · ' . h($r['package']) . ' package' : '' ?> · <?= (int)$r['guests'] ?> guest(s)</dd>
-    <?php if ($r['amount_due'] > 0): ?><dt>Amount due</dt><dd><?= money($r['amount_due']) ?></dd><dt>Paid</dt><dd><?= money($paid) ?></dd><?php endif; ?>
-  </dl>
-  <button class="btn btn-ghost-dark" onclick="window.print()">Print</button>
-</div></div></section>
+<?php
+$first = trim(explode(' ', trim($r['full_name']))[0]) ?: 'friend';
+$st = $r['status'];
+$due = (float)$r['amount_due'];
+$balance = max(0, $due - (float)$paid);
+$pct = $due > 0 ? min(100, (int)round(((float)$paid / $due) * 100)) : 100;
+$dress = preg_match('/Dress code:\s*([^\n.]+)/i', (string)$r['description'], $m) ? trim($m[1]) : null;
+$phone = setting('contact_phone');
+$payWa = setting('whatsapp') ? wa_link(setting('whatsapp'), "Hello Chill & Bite, I would like to pay for booking {$r['reference']} ({$r['full_name']}).") : null;
+$goingWa = 'https://wa.me/?text=' . rawurlencode("I'm going to {$r['title']} on " . fmt_date($r['start_at'], 'j F') . "! Get your place: " . abs_url('events/' . $r['slug']));
+$here = $r['checked_in_at'] !== null;
+
+// Friendly headline + message for every state
+if ($here) {
+    $emoji = '🎶'; $head = "Welcome, $first!"; $msg = 'You are checked in. Eat, dance, network and make memories. We are so glad you are here.'; $tone = 'ok';
+} elseif ($st === 'confirmed') {
+    $emoji = '🥂'; $head = "You're in, $first!";
+    $msg = 'Your place is confirmed and your ticket is ready. ' . ($dress ? "Get your $dress look ready, and " : 'Just ') . 'show the QR code at the gate. We cannot wait to celebrate with you.'; $tone = 'ok';
+} elseif ($st === 'pending') {
+    $emoji = '🎉'; $head = "Thank you, $first!";
+    if ($due > 0 && $balance > 0 && $paid > 0) $msg = 'We received your payment so far, thank you! Settle the balance of ' . money($balance) . ' and we will confirm your table and send your ticket.';
+    elseif ($due > 0 && $balance > 0) $msg = 'Your spot is saved! Complete your payment and our team will confirm your booking. Your QR ticket will appear on this page and be sent to you straight after.';
+    else $msg = 'We have your request and our team is reviewing it. You will hear from us very soon, and your ticket will appear right here once it is approved.';
+    $tone = 'warn';
+} elseif ($st === 'rejected') {
+    $emoji = '💛'; $head = "Sorry, $first"; $msg = 'We could not take this booking this time. Please reach out to us and we will gladly help you find another way to join the fun.'; $tone = 'err';
+} else {
+    $emoji = '💛'; $head = "Booking cancelled"; $msg = "This booking has been cancelled. If that was a mistake, or you would like to rebook, we would love to have you, $first."; $tone = 'err';
+}
+
+// Progress tracker
+$s2 = $st === 'confirmed' ? 'done' : (in_array($st, ['rejected', 'cancelled'], true) ? 'fail' : 'active');
+$s3 = $st === 'confirmed' ? 'done' : 'todo';
+$steps = [
+    ['done', 'Booking received', fmt_date($r['created_at'], 'j M, g:i A')],
+    [$s2, $due > 0 ? 'Approval & payment' : 'Approval', $s2 === 'fail' ? ucfirst($st) : ($s2 === 'done' ? 'Confirmed' : 'In progress')],
+    [$s3, 'Ticket ready', $s3 === 'done' ? 'Open your QR ticket' : 'Sent once confirmed'],
+];
+?>
+<section class="page-hero compact bk-hero"><div class="wrap">
+  <span class="eyebrow gold">Your booking</span>
+  <h1><span aria-hidden="true"><?= $emoji ?></span> <?= h($head) ?></h1>
+  <p class="lead bk-msg"><?= h($msg) ?></p>
+  <p class="ref-chip">Reference <strong id="ref"><?= h($r['reference']) ?></strong> <button type="button" class="chip-copy" data-copy="<?= h($r['reference']) ?>">Copy</button></p>
+</div></section>
+
+<section class="section section-cream bk-section"><div class="wrap">
+  <ol class="tracker" aria-label="Booking progress">
+    <?php foreach ($steps as $i => [$state, $label, $sub]): ?>
+      <li class="tr-<?= $state ?>"><span class="tr-dot"><?= $state === 'done' ? '✓' : ($state === 'fail' ? '!' : $i + 1) ?></span><b><?= h($label) ?></b><small><?= h($sub) ?></small></li>
+    <?php endforeach; ?>
+  </ol>
+
+  <?php if ($st === 'confirmed'): ?>
+    <div class="ticket-cta">
+      <div><strong>Your ticket is ready</strong><span>Show the QR code at the entrance. One ticket admits <?= (int)$r['guests'] ?> guest<?= (int)$r['guests'] === 1 ? '' : 's' ?>.</span></div>
+      <a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>">Open my ticket</a>
+    </div>
+  <?php endif; ?>
+
+  <div class="bk-grid">
+    <article class="bk-card">
+      <h2>Booking details</h2>
+      <div class="bk-event">
+        <div class="bk-thumb"><?php media($r['poster'], $r['title'], '', date('j M', strtotime($r['start_at'])), photo_from('crowd', (int)$r['event_id'])); ?></div>
+        <div><a href="<?= url('events/' . h($r['slug'])) ?>"><strong><?= h($r['title']) ?></strong></a>
+          <p class="small muted"><?= h($r['venue']) ?>, <?= h($r['location']) ?></p></div>
+      </div>
+      <dl class="bk-list">
+        <div><dt>Date</dt><dd><?= fmt_date($r['start_at'], 'l, j F Y') ?></dd></div>
+        <div><dt>Gates open</dt><dd><?= fmt_time($r['start_at']) ?></dd></div>
+        <div><dt>Name</dt><dd><?= h($r['full_name']) ?></dd></div>
+        <div><dt>Reservation</dt><dd><?= h(RES_TYPES[$r['type']]) ?></dd></div>
+        <?php if ($r['package']): ?><div><dt>Table package</dt><dd><?= h($r['package']) ?></dd></div><?php endif; ?>
+        <div><dt>Guests</dt><dd><?= (int)$r['guests'] ?></dd></div>
+        <?php if ($dress): ?><div><dt>Dress code</dt><dd><?= h($dress) ?></dd></div><?php endif; ?>
+      </dl>
+    </article>
+
+    <div class="bk-side">
+      <?php if ($due > 0): ?>
+      <article class="bk-card">
+        <h2>Payment</h2>
+        <div class="pay-amount"><span><?= $balance > 0 ? 'Balance to pay' : 'Paid in full' ?></span><b><?= $balance > 0 ? h(money($balance)) : '✓ ' . h(money($due)) ?></b></div>
+        <div class="progress" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Payment progress"><i style="width:<?= $pct ?>%"></i></div>
+        <p class="small muted"><?= h(money($paid)) ?> paid of <?= h(money($due)) ?> (<?= $pct ?>%)</p>
+        <?php if ($balance > 0 && !in_array($st, ['rejected', 'cancelled'], true)): ?>
+          <p class="small">To pay, contact the team and quote your reference <strong><?= h($r['reference']) ?></strong>. We will confirm as soon as your payment is recorded.</p>
+          <div class="btn-row">
+            <?php if ($payWa): ?><a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="<?= h($payWa) ?>">Pay via WhatsApp</a><?php endif; ?>
+            <?php if ($phone): ?><a class="btn btn-ghost-dark btn-sm" href="tel:<?= h(preg_replace('/\s+/', '', $phone)) ?>">Call <?= h($phone) ?></a><?php endif; ?>
+          </div>
+        <?php endif; ?>
+      </article>
+      <?php endif; ?>
+
+      <article class="bk-card">
+        <h2>What happens next</h2>
+        <?php if ($st === 'confirmed'): ?>
+          <ul class="ticks"><li>Open your ticket and save or print it</li><li>Arrive from <?= h(fmt_time($r['start_at'])) ?> and show the QR code</li><li>Network, enjoy the food and have a great time</li></ul>
+        <?php elseif ($st === 'pending'): ?>
+          <ul class="ticks"><li>Our team reviews your booking<?= $due > 0 ? ' and records your payment' : '' ?></li><li>You get a confirmation and your QR ticket</li><li>Bookmark this page to check your status any time</li></ul>
+        <?php else: ?>
+          <p class="small">Questions? <a href="<?= url('contact') ?>">Contact us</a> and quote <strong><?= h($r['reference']) ?></strong>. <a href="<?= url('events') ?>">Browse upcoming events</a>.</p>
+        <?php endif; ?>
+      </article>
+    </div>
+  </div>
+
+  <div class="btn-row bk-actions">
+    <?php if ($st === 'confirmed'): ?>
+      <a class="btn btn-outline-dark" target="_blank" rel="noopener" href="<?= h(gcal_link($r)) ?>">Add to calendar</a>
+      <a class="btn btn-outline-dark" target="_blank" rel="noopener" href="<?= h($goingWa) ?>">Tell a friend on WhatsApp</a>
+    <?php endif; ?>
+    <button class="btn btn-ghost-dark" type="button" onclick="window.print()">Print</button>
+    <a class="btn btn-ghost-dark" href="<?= url('events/' . h($r['slug'])) ?>">Event details</a>
+  </div>
+  <p class="bk-thanks">Thank you for choosing <strong>Chill &amp; Bite MEATINGS</strong>. Where connections are made and good vibes never end. 🧡</p>
+</div></section>
+<script>
+document.querySelectorAll('.chip-copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = b.dataset.copy, done = function () { b.textContent = 'Copied!'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done();
+  });
+});
+</script>

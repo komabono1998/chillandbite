@@ -126,7 +126,7 @@ function post_reserve(array $a): void
 
 function page_booking(array $a): void
 {
-    $r = row('SELECT r.*, e.title, e.slug, e.start_at, e.end_at, e.venue, e.location FROM reservations r JOIN events e ON e.id = r.event_id WHERE r.reference = ?', [strtoupper($a['ref'])]) ?? not_found();
+    $r = row('SELECT r.*, e.title, e.slug, e.short_desc, e.description, e.poster, e.start_at, e.end_at, e.venue, e.location FROM reservations r JOIN events e ON e.id = r.event_id WHERE r.reference = ?', [strtoupper($a['ref'])]) ?? not_found();
     $ticket = $r['status'] === 'confirmed' ? ticket_url((int)$r['id']) : null;
     render('site/booking', ['title' => 'Booking ' . $r['reference'], 'r' => $r, 'paid' => res_paid((int)$r['id']), 'ticket' => $ticket, 'noindex' => true]);
 }

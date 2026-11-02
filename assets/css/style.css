@@ -412,3 +412,48 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
   .m-a,.m-e{--tx:0px;--ty:50px}.m-b,.m-c,.m-d{--tx:0px;--ty:50px}
 }
 @media(prefers-reduced-motion:reduce){.taste::before,.mosaic-item img,.mosaic.in .mosaic-item{animation:none}.mosaic.will:not(.in) .mosaic-item{opacity:1}}
+
+/* ===== Booking status page ===== */
+.bk-hero{padding-bottom:34px}
+.bk-hero h1{text-transform:none;font-size:clamp(1.9rem,5vw,3rem)}
+.bk-msg{max-width:720px;font-size:1.12rem}
+.ref-chip{display:inline-flex;align-items:center;gap:10px;margin:.4rem 0 0;padding:8px 8px 8px 16px;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid rgba(230,182,92,.45);font-size:.9rem}
+.ref-chip strong{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.16em;color:var(--gold);font-size:1.05rem}
+.chip-copy{border:0;border-radius:99px;padding:6px 14px;background:var(--orange);color:#fff;font:600 .78rem 'Poppins',sans-serif;cursor:pointer}
+.chip-copy:hover{background:var(--orange-d)}
+.bk-section{padding-top:36px}
+
+.tracker{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:0;padding:0;margin:0 0 1.6rem;counter-reset:s}
+.tracker li{position:relative;text-align:center;padding:0 8px}
+.tracker li::before{content:"";position:absolute;top:19px;left:-50%;width:100%;height:4px;background:#e4d9c7;z-index:0}
+.tracker li:first-child::before{display:none}
+.tracker li.tr-done::before,.tracker li.tr-active::before{background:var(--orange)}
+.tracker li.tr-fail::before{background:var(--err)}
+.tr-dot{position:relative;z-index:1;display:grid;place-items:center;width:42px;height:42px;margin:0 auto 8px;border-radius:50%;background:#fff;border:3px solid #e4d9c7;font-weight:800;color:#999}
+.tracker b{display:block;font-size:.92rem}.tracker small{color:#777;font-size:.76rem}
+.tr-done .tr-dot{background:var(--ok);border-color:var(--ok);color:#fff}
+.tr-active .tr-dot{background:#fff;border-color:var(--orange);color:var(--orange-d);animation:trPulse 1.8s ease-in-out infinite}
+.tr-fail .tr-dot{background:var(--err);border-color:var(--err);color:#fff}
+@keyframes trPulse{0%,100%{box-shadow:0 0 0 0 rgba(217,107,39,.5)}50%{box-shadow:0 0 0 10px rgba(217,107,39,0)}}
+
+.ticket-cta{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:1.6rem;padding:20px 24px;border-radius:16px;color:var(--cream);background:linear-gradient(120deg,#171717,#3a2210);border-left:6px solid var(--gold);box-shadow:0 12px 30px rgba(0,0,0,.2)}
+.ticket-cta strong{display:block;font-size:1.15rem;color:var(--gold)}.ticket-cta span{font-size:.9rem;color:#e8dfd1}
+
+.bk-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;align-items:start}
+@media(max-width:860px){.bk-grid{grid-template-columns:1fr}}
+.bk-side{display:grid;gap:20px}
+.bk-card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 4px 18px rgba(0,0,0,.07)}
+.bk-card h2{font-size:1.1rem;margin-bottom:.9rem;padding-bottom:.6rem;border-bottom:2px solid #f1e8d8}
+.bk-event{display:flex;gap:14px;align-items:center;margin-bottom:1rem}
+.bk-thumb{flex:none;width:92px;height:76px;border-radius:12px;overflow:hidden}.bk-thumb img,.bk-thumb .ph{width:100%;height:100%;object-fit:cover;min-height:0}
+.bk-event p{margin:2px 0 0}
+.bk-list{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;margin:0}
+.bk-list dt{font-size:.66rem;text-transform:uppercase;letter-spacing:.12em;color:#888;margin:0}.bk-list dd{margin:2px 0 0;font-weight:600}
+@media(max-width:520px){.bk-list{grid-template-columns:1fr}}
+.pay-amount{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pay-amount span{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:#777}.pay-amount b{font-size:1.5rem;color:var(--orange-d)}
+.progress{height:12px;border-radius:99px;background:#efe6d6;overflow:hidden;margin:10px 0 6px}
+.progress i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--orange),var(--gold));transition:width 1s}
+.bk-actions{margin-top:1.6rem;justify-content:center}
+.bk-thanks{text-align:center;margin-top:1.4rem;color:#6b6258;font-size:.95rem}
+@media print{.bk-hero{background:#fff!important;color:#000}.tracker,.ticket-cta .btn,.bk-actions,.chip-copy{display:none!important}}
