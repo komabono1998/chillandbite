@@ -17,6 +17,11 @@ echo "Database `$dbName` ready.\n";
 $sql = file_get_contents("$root/database/schema.sql");
 $sql = preg_replace('/^--.*$/m', '', $sql);
 foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) db()->exec($stmt);
+// Upgrade older databases: reservations.ticket_token column (unguessable ticket link / QR)
+if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reservations' AND COLUMN_NAME = 'ticket_token'")) {
+    db()->exec('ALTER TABLE reservations ADD COLUMN ticket_token VARCHAR(40) NULL AFTER package');
+    db()->exec('ALTER TABLE reservations ADD UNIQUE KEY uq_ticket_token (ticket_token)');
+}
 // Upgrade older databases: reservations.package column
 if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reservations' AND COLUMN_NAME = 'package'"))
     db()->exec('ALTER TABLE reservations ADD COLUMN package VARCHAR(80) NULL AFTER seating');

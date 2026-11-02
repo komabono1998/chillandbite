@@ -101,6 +101,7 @@ function post_reserve(array $a): void
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             [$ref, $e['id'], $d['type'], $d['full_name'], $d['phone'], $d['email'] ?: null, $d['company'] ?: null,
              $d['guests'], $d['seating'] ?: null, $d['package'] ?: null, $d['requests'] ?: null, $d['amount'], $status]);
+        $rid = (int)$pdo->lastInsertId();
         $pdo->commit();
     } catch (RuntimeException $ex) {
         $pdo->rollBack();
@@ -111,11 +112,13 @@ function post_reserve(array $a): void
         throw $ex;
     }
 
-    if ($d['email']) {
-        $line = $status === 'confirmed' ? 'Your place is CONFIRMED.' : 'Your booking has been received and is awaiting confirmation from the event team.';
-        send_mail($d['email'], "Chill & Bite booking $ref", "Hello {$d['full_name']},\n\n$line\n\nReference: $ref\nEvent: {$e['title']}\nWhen: " .
+    if ($status === 'confirmed') {
+        send_ticket((int)$rid);   // free + instant bookings get their ticket straight away
+    } elseif ($d['email']) {
+        send_mail($d['email'], "Chill & Bite booking $ref received", "Hello {$d['full_name']},\n\nYour booking has been received and is awaiting approval from the event team. " .
+            "You will get your ticket as soon as it is approved.\n\nReference: $ref\nEvent: {$e['title']}\nWhen: " .
             fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\nGuests: {$d['guests']}\n" . ($d['package'] ? "Table package: {$d['package']}\n" : '') .
-            ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') . "\nView: " . abs_url('booking/' . $ref));
+            ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') . "\nTrack your booking: " . abs_url('booking/' . $ref));
     }
     flash($status === 'confirmed' ? 'Your reservation is confirmed!' : 'Booking received. We will confirm it shortly.');
     redirect('booking/' . $ref);
@@ -124,5 +127,47 @@ function post_reserve(array $a): void
 function page_booking(array $a): void
 {
     $r = row('SELECT r.*, e.title, e.slug, e.start_at, e.end_at, e.venue, e.location FROM reservations r JOIN events e ON e.id = r.event_id WHERE r.reference = ?', [strtoupper($a['ref'])]) ?? not_found();
-    render('site/booking', ['title' => 'Booking ' . $r['reference'], 'r' => $r, 'paid' => res_paid((int)$r['id'])]);
+    $ticket = $r['status'] === 'confirmed' ? ticket_url((int)$r['id']) : null;
+    render('site/booking', ['title' => 'Booking ' . $r['reference'], 'r' => $r, 'paid' => res_paid((int)$r['id']), 'ticket' => $ticket, 'noindex' => true]);
+}
+
+/* ================= Tickets ================= */
+/** Unguessable per-booking token, created the first time a ticket is needed. */
+function ticket_token(int $reservationId): string
+{
+    $t = val('SELECT ticket_token FROM reservations WHERE id = ?', [$reservationId]);
+    if (!$t) {
+        q('UPDATE reservations SET ticket_token = ? WHERE id = ? AND ticket_token IS NULL', [bin2hex(random_bytes(12)), $reservationId]);
+        $t = val('SELECT ticket_token FROM reservations WHERE id = ?', [$reservationId]);
+    }
+    return (string)$t;
+}
+function ticket_url(int $reservationId): string { return abs_url('ticket/' . ticket_token($reservationId)); }
+
+/** Message a guest receives when their booking is confirmed (email body / WhatsApp text). */
+function ticket_message(array $r): string
+{
+    $line = "Hello {$r['full_name']},\n\nYour booking is CONFIRMED. Here is your ticket for {$r['title']}.\n\n";
+    return $line . 'Date: ' . fmt_date($r['start_at'], 'l, j F Y') . ' at ' . fmt_time($r['start_at']) . "\nVenue: {$r['venue']}, {$r['location']}\n" .
+        'Reference: ' . $r['reference'] . "\n" . ($r['package'] ? "Table package: {$r['package']}\n" : '') . "Admits: {$r['guests']} guest(s)\n\n" .
+        'Open your ticket (show the QR code at the entrance): ' . ticket_url((int)$r['id']) . "\n";
+}
+function reservation_with_event(int $id): ?array
+{
+    return row('SELECT r.*, e.title, e.start_at, e.end_at, e.venue, e.location FROM reservations r JOIN events e ON e.id = r.event_id WHERE r.id = ?', [$id]);
+}
+/** Email the ticket link to the guest. Returns false when the guest left no email or the booking is not confirmed. */
+function send_ticket(int $reservationId): bool
+{
+    $r = reservation_with_event($reservationId);
+    if (!$r || $r['status'] !== 'confirmed' || empty($r['email'])) return false;
+    return send_mail($r['email'], 'Your Chill & Bite ticket: ' . $r['reference'], ticket_message($r));
+}
+
+function page_ticket(array $a): void
+{
+    if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) not_found();
+    $r = row('SELECT r.*, e.title, e.slug, e.start_at, e.end_at, e.venue, e.location, e.poster FROM reservations r JOIN events e ON e.id = r.event_id WHERE r.ticket_token = ?', [$a['token']]) ?? not_found();
+    render('site/ticket', ['title' => 'Ticket ' . $r['reference'], 'r' => $r, 'noindex' => true,
+        'valid' => $r['status'] === 'confirmed', 'checkin_url' => abs_url('admin/checkin/' . $a['token'])]);
 }

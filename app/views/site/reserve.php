@@ -39,22 +39,25 @@
     <fieldset class="types"><legend>Choose a reservation type</legend>
       <?php foreach ($options as $o): ?>
         <label class="type-opt"><input type="radio" name="type" value="<?= h($o['type']) ?>" data-min="<?= $o['min_guests'] ?>" data-max="<?= $o['max_guests'] ?>" data-price="<?= (int)$o['price_per_guest'] ?>" <?= ($data['type'] ?? '') === $o['type'] ? 'checked' : '' ?> required>
-          <span><strong><?= h(RES_TYPES[$o['type']]) ?></strong><small><?= h(RES_TYPE_HINTS[$o['type']]) ?> · <?= $o['price_per_guest'] > 0 ? money($o['price_per_guest']) . ' per guest' : 'Free' ?></small></span></label>
+          <span><strong><?= h(RES_TYPES[$o['type']]) ?></strong><small><?= h(RES_TYPE_HINTS[$o['type']]) ?> · <?= ($o['type'] === 'table' && !empty($packages)) ? 'packages from ' . money(min(array_column($packages, 'price'))) . ' per table' : ($o['price_per_guest'] > 0 ? money($o['price_per_guest']) . ' per guest' : 'Free') ?></small></span></label>
       <?php endforeach; ?>
     </fieldset>
     <?php if (!empty($packages)): ?>
-    <fieldset class="types" id="pkg-box" hidden><legend>Choose a table package</legend>
+    <fieldset class="types pkg-pick" id="pkg-box"><legend>Table packages and rates</legend>
+      <p class="small muted">Prices are per table. Choosing a package selects the Table Reservation type for you.</p>
+      <div class="pkg-options">
       <?php foreach ($packages as $p): ?>
-        <label class="type-opt"><input type="radio" name="package" value="<?= h($p['name']) ?>" data-price="<?= (int)$p['price'] ?>" <?= ($data['package'] ?? '') === $p['name'] ? 'checked' : '' ?>>
-          <span><strong><?= h($p['name']) ?></strong><small><?= money($p['price']) ?> per table</small></span></label>
+        <label class="pkg-opt"><input type="radio" name="package" value="<?= h($p['name']) ?>" data-price="<?= (int)$p['price'] ?>" <?= ($data['package'] ?? '') === $p['name'] ? 'checked' : '' ?>>
+          <span class="pkg-opt-name"><?= h($p['name']) ?></span><b><?= money($p['price']) ?></b><small>per table</small></label>
       <?php endforeach; ?>
+      </div>
     </fieldset>
     <?php endif; ?>
     <div class="form-grid">
       <?php $dv = fn($k) => $data[$k] ?? ''; ?>
       <?php field('full_name', 'Full name', ['required' => true, 'value' => $dv('full_name')]); ?>
       <?php field('phone', 'Telephone number', ['required' => true, 'type' => 'tel', 'value' => $dv('phone'), 'attrs' => 'placeholder="+256 7XX XXX XXX"']); ?>
-      <?php field('email', 'Email (optional)', ['type' => 'email', 'value' => $dv('email'), 'help' => 'Used to send your confirmation.']); ?>
+      <?php field('email', 'Email (optional)', ['type' => 'email', 'value' => $dv('email'), 'help' => 'We email your confirmation and ticket here once your booking is approved.']); ?>
       <?php field('guests', 'Number of guests', ['type' => 'number', 'required' => true, 'value' => $dv('guests') ?: 1, 'attrs' => 'min="1" max="200"']); ?>
       <?php field('company', 'Company name (corporate bookings)', ['value' => $dv('company'), 'class' => 'corp']); ?>
       <?php field('seating', 'Preferred seating / table arrangement', ['value' => $dv('seating')]); ?>

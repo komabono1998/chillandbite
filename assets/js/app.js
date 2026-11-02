@@ -74,7 +74,7 @@
       var pkgBox = document.getElementById('pkg-box');
       if (pkgBox) {
         var isTable = sel.value === 'table';
-        pkgBox.hidden = !isTable;
+        pkgBox.classList.toggle('dim', !isTable);
         if (isTable) {
           var pkg = pkgBox.querySelector('[name=package]:checked');
           total.textContent = pkg ? 'Table package total: UGX ' + (+pkg.dataset.price).toLocaleString() : 'Select a table package';
@@ -83,6 +83,16 @@
       }
       total.textContent = price > 0 ? 'Total: UGX ' + (price * guests.value).toLocaleString() : 'Free reservation';
     };
+    // Picking a package selects the Table Reservation type; picking another type clears the package
+    form.addEventListener('change', function (ev) {
+      var t = ev.target;
+      if (t.name === 'package') {
+        var tbl = form.querySelector('[name=type][value=table]');
+        if (tbl) tbl.checked = true;
+      } else if (t.name === 'type' && t.value !== 'table') {
+        form.querySelectorAll('[name=package]').forEach(function (r) { r.checked = false; });
+      }
+    });
     form.addEventListener('change', update); form.addEventListener('input', update); update();
   }
 

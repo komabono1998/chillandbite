@@ -1,7 +1,8 @@
 <section class="page-hero compact"><div class="wrap"><span class="eyebrow gold">Your booking</span><h1>Reference <?= h($r['reference']) ?></h1></div></section>
 <section class="section section-cream"><div class="wrap narrow-wrap"><div class="form-card">
   <p><?= status_badge($r['status']) ?></p>
-  <?php if ($r['status'] === 'confirmed'): ?><p class="alert alert-ok">Your place is confirmed. Show this reference at the entrance.</p>
+  <?php if ($r['status'] === 'confirmed'): ?><p class="alert alert-ok">Your place is confirmed. Your ticket is ready: show its QR code at the entrance.</p>
+    <p><a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>">Open my ticket</a></p>
   <?php elseif ($r['status'] === 'pending'): ?><p class="alert alert-warn">Your booking is awaiting confirmation<?= $r['amount_due'] > 0 ? ' and payment' : '' ?>. We will contact you on the details you gave.</p>
   <?php else: ?><p class="alert alert-err">This booking is <?= h($r['status']) ?>. Please contact us if you have questions.</p><?php endif; ?>
   <dl class="summary">

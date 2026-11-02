@@ -13,6 +13,16 @@
       $r['checked_in_at'] ? ['undo_checkin', 'Undo check-in', 'btn-ghost'] : null]) as [$a, $lab, $cls]): ?>
     <form class="inline" method="post" action="<?= $act ?>"><?= csrf_field() ?><input type="hidden" name="action" value="<?= $a ?>"><button class="btn <?= $cls ?>"<?= $a === 'cancel' ? ' onclick="return confirm(\'Cancel this booking?\')"' : '' ?>><?= $lab ?></button></form>
   <?php endforeach; ?></div></div>
+<?php if ($ticket): ?>
+<div class="panel"><h2>Ticket</h2>
+  <p class="small muted">The ticket is issued automatically when a booking is confirmed. Send it to the guest by email or WhatsApp.</p>
+  <p class="small">Ticket link: <a href="<?= h($ticket) ?>" target="_blank" rel="noopener"><?= h($ticket) ?></a></p>
+  <div class="actions">
+    <a class="btn btn-primary" href="<?= h($wa) ?>" target="_blank" rel="noopener">Send ticket on WhatsApp</a>
+    <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act ?>"><?= csrf_field() ?><input type="hidden" name="action" value="send_ticket"><button class="btn btn-ghost">Email ticket</button></form><?php else: ?><span class="small muted">No email on file</span><?php endif; ?>
+    <a class="btn btn-ghost" href="<?= h($ticket) ?>" target="_blank" rel="noopener">Open ticket</a>
+  </div></div>
+<?php endif; ?>
 <div class="panel"><h2>Payments</h2>
   <p>Due <strong><?= money($r['amount_due']) ?></strong> · Paid <strong><?= money($r['paid']) ?></strong> · Outstanding <strong><?= money(max(0, $bal)) ?></strong></p>
   <?php if ($payments): ?><div class="tbl-wrap"><table class="tbl"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th>By</th></tr>

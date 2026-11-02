@@ -38,7 +38,7 @@ function gcal_link(array $e): string
     return 'https://calendar.google.com/calendar/render?' . http_build_query([
         'action' => 'TEMPLATE', 'text' => $e['title'], 'dates' => $fmt($e['start_at']) . '/' . $fmt($end),
         'ctz' => 'Africa/Kampala', 'location' => $e['venue'] . ', ' . $e['location'],
-        'details' => ($e['short_desc'] ?: '') . ' ' . abs_url('events/' . $e['slug']),
+        'details' => ($e['short_desc'] ?? '') . ' ' . abs_url('events/' . $e['slug']),
     ]);
 }
 
@@ -186,7 +186,7 @@ function post_contact(): void
     if (mb_strlen($d['message'] ?? '') < 5) $err[] = 'Please write a message.';
     if ($err) form_fail($err, $d, 'contact');
     q('INSERT INTO inquiries (type, name, phone, email, subject, message) VALUES ("contact",?,?,?,?,?)',
-        [$d['name'], $d['phone'] ?? null, $d['email'] ?: null, mb_substr($d['subject'] ?? '', 0, 190), mb_substr($d['message'], 0, 5000)]);
+        [$d['name'], $d['phone'] ?? null, ($d['email'] ?? '') ?: null, mb_substr($d['subject'] ?? '', 0, 190), mb_substr($d['message'], 0, 5000)]);
     clear_old();
     flash('Thank you! Your message has been received and the team will get back to you.');
     redirect('contact');
@@ -203,7 +203,7 @@ function post_performance(): void
     if ($err) form_fail($err, $d, 'laugh#book');
     $details = json_encode(array_intersect_key($d, array_flip(['event_date', 'location', 'event_type', 'audience'])), JSON_UNESCAPED_UNICODE);
     q('INSERT INTO inquiries (type, name, organization, phone, email, subject, message, details) VALUES ("performance",?,?,?,?,?,?,?)',
-        [$d['name'], $d['organization'] ?? null, $d['phone'], $d['email'] ?: null, 'Comedy performance booking', mb_substr($d['message'] ?? '', 0, 5000), $details]);
+        [$d['name'], $d['organization'] ?? null, $d['phone'], ($d['email'] ?? '') ?: null, 'Comedy performance booking', mb_substr($d['message'] ?? '', 0, 5000), $details]);
     clear_old();
     flash('Thank you! Your performance request was sent. We will contact you shortly.');
     redirect('laugh');

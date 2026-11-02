@@ -34,6 +34,10 @@ function admin_login(): void
         q('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash((string)$_POST['password'], PASSWORD_DEFAULT), $u['id']]);
     q('UPDATE users SET last_login = NOW() WHERE id = ?', [$u['id']]);
     q('INSERT INTO audit_log (user_id, action, detail, ip) VALUES (?,?,?,?)', [$u['id'], 'login', $u['email'], client_ip()]);
+    $next = (string)($_SESSION['next'] ?? '');
+    unset($_SESSION['next']);
+    // Only follow same-site admin paths (no open redirect)
+    if (preg_match('#^' . preg_quote(BASE, '#') . '/admin(/[A-Za-z0-9/_-]*)?(\?[A-Za-z0-9=&_%.-]*)?$#', $next)) redirect(substr($next, strlen(BASE)));
     redirect('admin');
 }
 function admin_logout(): void
@@ -236,7 +240,21 @@ function admin_reservation(array $a): void
 {
     require_can('reservations');
     $r = row(RES_SELECT . ' WHERE r.id = ?', [(int)$a['id']]) ?? not_found();
-    admin_view('reservation', ['title' => 'Reservation ' . $r['reference'], 'r' => $r, 'payments' => rows('SELECT p.*, u.name AS by_name FROM payments p LEFT JOIN users u ON u.id=p.recorded_by WHERE reservation_id = ? ORDER BY id', [$r['id']])]);
+    $ticket = $wa = null;
+    if ($r['status'] === 'confirmed') {
+        $ticket = ticket_url((int)$r['id']);
+        $wa = wa_link($r['phone'], ticket_message(reservation_with_event((int)$r['id'])));
+    }
+    admin_view('reservation', ['title' => 'Reservation ' . $r['reference'], 'r' => $r, 'ticket' => $ticket, 'wa' => $wa,
+        'payments' => rows('SELECT p.*, u.name AS by_name FROM payments p LEFT JOIN users u ON u.id=p.recorded_by WHERE reservation_id = ? ORDER BY id', [$r['id']])]);
+}
+/** Door check-in: the ticket's QR code opens this page for logged-in staff. */
+function admin_checkin(array $a): void
+{
+    require_can('reservations');
+    if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) not_found();
+    $r = row(RES_SELECT . ' WHERE r.ticket_token = ?', [$a['token']]);
+    admin_view('checkin', ['title' => 'Check-in', 'r' => $r, 'token' => $a['token']]);
 }
 function admin_reservation_action(array $a): void
 {
@@ -245,13 +263,17 @@ function admin_reservation_action(array $a): void
     $r = row('SELECT * FROM reservations WHERE id = ?', [$id]) ?? not_found();
     $act = $_POST['action'] ?? '';
     $back = $_POST['back'] ?? '';
-    $dest = str_starts_with($back, 'admin/reservations') ? $back : "admin/reservations/$id";
+    $dest = (str_starts_with($back, 'admin/reservations') || preg_match('#^admin/checkin/[a-f0-9]{24}$#', $back)) ? $back : "admin/reservations/$id";
     switch ($act) {
         case 'approve':
             if ($r['status'] !== 'pending') { flash('Only pending bookings can be approved.', 'err'); break; }
             q("UPDATE reservations SET status='confirmed' WHERE id = ?", [$id]);
-            if ($r['email']) send_mail($r['email'], "Booking {$r['reference']} confirmed", "Hello {$r['full_name']},\n\nYour Chill & Bite booking {$r['reference']} is now CONFIRMED.\n" . abs_url('booking/' . $r['reference']));
-            flash('Booking approved.'); break;
+            flash(send_ticket($id) ? 'Booking approved and the ticket was emailed to the guest.'
+                : 'Booking approved. This guest left no email, so send the ticket on WhatsApp from the booking page.'); break;
+        case 'send_ticket':
+            if ($r['status'] !== 'confirmed') { flash('Tickets are only issued for confirmed bookings.', 'err'); break; }
+            $ok = send_ticket($id);
+            flash($ok ? 'Ticket emailed to the guest.' : 'No email on file for this guest. Use the WhatsApp button instead.', $ok ? 'ok' : 'err'); break;
         case 'reject':
             q("UPDATE reservations SET status='rejected' WHERE id = ? AND status='pending'", [$id]); flash('Booking rejected.'); break;
         case 'cancel':
@@ -270,8 +292,9 @@ function admin_reservation_action(array $a): void
             if ($act === 'refund') { $method = 'refund'; $amt = -$amt; }
             q('INSERT INTO payments (reservation_id, amount, method, note, recorded_by) VALUES (?,?,?,?,?)', [$id, $amt, $method, post_str('note') ?: null, current_user()['id']]);
             $paid = res_paid($id);
-            if ($act === 'payment' && $r['status'] === 'pending' && $paid >= (float)$r['amount_due']) q("UPDATE reservations SET status='confirmed' WHERE id = ?", [$id]);
-            flash($act === 'refund' ? 'Refund recorded.' : 'Payment recorded.'); break;
+            $confirmedNow = $act === 'payment' && $r['status'] === 'pending' && $paid >= (float)$r['amount_due'];
+            if ($confirmedNow) { q("UPDATE reservations SET status='confirmed' WHERE id = ?", [$id]); send_ticket($id); }
+            flash($act === 'refund' ? 'Refund recorded.' : ($confirmedNow ? 'Payment recorded in full. Booking confirmed and ticket issued.' : 'Payment recorded.')); break;
         case 'note':
             q('UPDATE reservations SET admin_note = ? WHERE id = ?', [post_str('admin_note') ?: null, $id]); flash('Note saved.'); break;
         default: not_found();

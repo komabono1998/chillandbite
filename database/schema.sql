@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   guests SMALLINT UNSIGNED NOT NULL,
   seating VARCHAR(190) NULL,
   package VARCHAR(80) NULL,
+  ticket_token VARCHAR(40) NULL UNIQUE,
   requests TEXT NULL,
   amount_due DECIMAL(12,0) NOT NULL DEFAULT 0,
   status ENUM('pending','confirmed','rejected','cancelled') NOT NULL DEFAULT 'pending',

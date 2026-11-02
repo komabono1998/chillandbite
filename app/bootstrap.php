@@ -204,7 +204,10 @@ function can(string $module): bool
 }
 function require_can(string $module): void
 {
-    if (!current_user()) redirect('admin/login');
+    if (!current_user()) {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') $_SESSION['next'] = $_SERVER['REQUEST_URI'] ?? ''; // return here after login (e.g. scanned ticket)
+        redirect('admin/login');
+    }
     if (!can($module)) { http_response_code(403); render('admin/forbidden', [], 'admin'); exit; }
 }
 function audit(string $action, string $detail = ''): void

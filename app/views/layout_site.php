@@ -27,6 +27,7 @@ $pageDesc = $desc ?? setting('tagline');
 <meta property="og:type" content="website">
 <meta property="og:image" content="<?= h(!empty($og_image) ? abs_url('uploads/' . $og_image) : abs_url('assets/img/photos/photo-44.jpg')) ?>">
 <style>:root{--hero-photo:url('<?= h(photo($heroPhoto)) ?>')}</style>
+<?php if (!empty($noindex)): ?><meta name="robots" content="noindex,nofollow"><?php endif; ?>
 <meta name="theme-color" content="#171717">
 <link rel="icon" href="data:image/svg+xml,<?= rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#171717"/><text x="32" y="43" font-size="30" font-family="Arial" font-weight="700" text-anchor="middle" fill="#E6B65C">C&amp;B</text></svg>') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +58,7 @@ $pageDesc = $desc ?? setting('tagline');
 <main id="main">
 <?php foreach (flash() as [$t, $m]): ?><div class="wrap"><div class="alert alert-<?= $t === 'err' ? 'err' : 'ok' ?>" role="<?= $t === 'err' ? 'alert' : 'status' ?>"><?= h($m) ?></div></div><?php endforeach; ?>
 <?= $content ?>
-<?php if ($cur !== '' && $seg !== 'gallery' && http_response_code() === 200): ?>
+<?php if ($cur !== '' && !in_array($seg, ['gallery', 'ticket'], true) && http_response_code() === 200): ?>
 <?php photo_strip(strip_nums($stripSets[$seg] ?? ['crowd', 'people'], crc32($seg), 14), 'Moments from Chill & Bite', 'strip-dark'); ?>
 <?php endif; ?>
 </main>
