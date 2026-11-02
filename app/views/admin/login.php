@@ -1,5 +1,5 @@
 <div class="login-box panel">
-  <img class="login-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="261">
+  <img class="login-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
   <h1>Staff login</h1>
   <form method="post" action="<?= url('admin/login') ?>"><?= csrf_field() ?>
     <?php field('email', 'Email', ['type' => 'email', 'required' => true, 'value' => '', 'attrs' => 'autocomplete="username"']); field('password', 'Password', ['type' => 'password', 'required' => true, 'value' => '', 'attrs' => 'autocomplete="current-password"']); ?>

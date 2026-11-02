@@ -39,7 +39,7 @@ $isActive = fn(string $p) => $p === 'admin' ? $cur === 'admin' : ($cur === $p ||
 <?php if ($u): ?>
 <div class="ad-shell">
   <aside class="ad-side" id="adSide" aria-label="Admin navigation">
-    <a class="ad-brand" href="<?= url('admin') ?>"><img class="ad-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="261"><small class="ad-tag">Admin</small></a>
+    <a class="ad-brand" href="<?= url('admin') ?>"><img class="ad-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"><small class="ad-tag">Admin</small></a>
     <nav>
       <?php foreach ($groups as $gname => $items):
           $vis = array_filter($items, fn($i) => can($i[2]));

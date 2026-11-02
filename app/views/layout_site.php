@@ -42,7 +42,7 @@ $pageDesc = $desc ?? setting('tagline');
 <?php endif; ?>
 <header class="site-header">
   <div class="wrap header-in">
-    <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="261"></a>
+    <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"></a>
     <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav id="nav" class="nav" aria-label="Main">
       <ul>
@@ -67,7 +67,7 @@ $pageDesc = $desc ?? setting('tagline');
 <footer class="site-footer">
   <div class="wrap footer-grid">
     <div>
-      <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo brand-logo-lg" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="261"></a>
+      <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo brand-logo-lg" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"></a>
       <p class="muted"><?= h(setting('tagline')) ?></p>
       <p class="muted small">Hosted by MC Kash Owakabi.<br>Organized by Owakabi &amp; The Geng.</p>
     </div>
