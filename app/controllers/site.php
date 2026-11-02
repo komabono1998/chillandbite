@@ -75,7 +75,13 @@ function page_home(): void
 }
 function page_about(): void
 {
-    render('site/about', ['title' => 'About Us | Chill & Bite MEATINGS']);
+    $next = upcoming_events(1, 'chill-bite-meatings')[0] ?? (upcoming_events(1)[0] ?? null);
+    render('site/about', [
+        'title' => 'About Us | Chill & Bite MEATINGS',
+        'desc' => 'The story, mission, team and partners behind Chill & Bite MEATINGS, the monthly lifestyle and corporate networking experience in Gulu City.',
+        'sponsors' => approved_partners(),
+        'next' => $next,
+    ]);
 }
 function page_events(): void
 {

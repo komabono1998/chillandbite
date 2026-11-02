@@ -146,3 +146,48 @@
     io.observe(group);
   });
 })();
+
+// Company profile effects: count-up numbers, scroll-spy sub menu, generic reveal-on-scroll for [data-reveal]
+(function () {
+  'use strict';
+  if (!('IntersectionObserver' in window)) return;
+
+  document.querySelectorAll('[data-count]').forEach(function (el) {
+    var end = parseInt(el.dataset.count, 10), final = el.textContent;
+    if (isNaN(end)) return;
+    el.textContent = '0';
+    var io = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting) return;
+      io.disconnect();
+      var t0 = null, dur = 1400;
+      (function tick(t) {
+        if (t0 === null) t0 = t;
+        var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = p < 1 ? Math.round(end * e) : final;
+        if (p < 1) requestAnimationFrame(tick);
+      })(performance.now());
+    }, { threshold: 0.6 });
+    io.observe(el);
+  });
+
+  var links = [].slice.call(document.querySelectorAll('.ab-subnav a[href^="#"]'));
+  if (links.length) {
+    var byId = {};
+    links.forEach(function (a) { var s = document.querySelector(a.getAttribute('href')); if (s) byId[s.id] = a; });
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.classList.remove('on'); });
+        byId[e.target.id].classList.add('on');
+        var bar = byId[e.target.id].closest('.ab-subnav');                  // keep the active chip visible on narrow screens
+        if (bar && bar.scrollWidth > bar.clientWidth) bar.scrollTo({ left: byId[e.target.id].offsetLeft - 20, behavior: 'smooth' });
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    Object.keys(byId).forEach(function (id) { spy.observe(document.getElementById(id)); });
+  }
+
+  var rv = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); rv.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('reveal'); rv.observe(el); });
+})();

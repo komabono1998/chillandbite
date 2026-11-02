@@ -96,28 +96,86 @@ function site_pages(): array
             ],
         ],
         'about' => [
-            'label' => 'About us', 'icon' => 'ℹ️', 'url' => 'about', 'roles' => ['editor'], 'related' => [],
-            'desc' => 'The story of Chill & Bite MEATINGS and Owakabi & The Geng.',
+            'label' => 'About us', 'icon' => 'ℹ️', 'url' => 'about', 'roles' => ['editor'],
+            'desc' => 'Company profile: key facts, story, what we do, mission and values, the team, partners and FAQs.',
+            'related' => [['Partner applications', 'admin/partners', 'advertising'], ['Contact details & socials', 'admin/settings', 'settings']],
             'sections' => [
                 'hero' => ['label' => 'Page header', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'About us'),
-                    $f('heading', 'Heading', 'text', 'Where connections are made'),
+                    $f('heading', 'Heading', 'text', 'About Chill & Bite MEATINGS'),
                     $f('lead', 'Subtitle', 'text', setting('tagline')),
+                    $f('btn_primary', 'Button 1', 'text', 'Reserve your place'),
+                    $f('btn_secondary', 'Button 2', 'text', 'Contact us'),
                     $photo(),
                 ]],
+                'stats' => ['label' => 'Key facts bar', 'fields' => [
+                    $f('items', 'Facts (one per line: value | label)', 'lines', "Every 1st Sunday | Monthly experience\n12 PM | Gates open\nGulu City | Revelation Cottages\n2026 | 1st Anniversary edition", 'Numbers such as 2026 count up when they appear.'),
+                ]],
                 'story' => ['label' => 'Our story', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Our story'),
                     $f('heading', 'Heading', 'text', 'The story of Chill & Bite MEATINGS'),
                     $f('p1', 'Paragraph 1', 'textarea', 'Chill & Bite MEATINGS is a premium lifestyle and entertainment experience held every first Sunday of the month at Revelation Cottages, Gulu City. It brings together professionals, entrepreneurs, creatives, businesses and entertainment lovers for food, music, comedy, outdoor games and real conversations.'),
                     $f('p2', 'Paragraph 2', 'textarea', 'It is hosted by MC Kash Owakabi and organized by Owakabi & The Geng, a team passionate about building opportunities for Northern Uganda through shared experiences.'),
+                    $f('quote', 'Highlighted line', 'text', 'Good food. Great people. Unforgettable connections.'),
+                    $f('photo', 'Main photo', 'image', 'img/photos/photo-10.jpg'),
+                    $f('photo2', 'Second photo', 'image', 'img/photos/photo-44.jpg'),
+                    $f('photo3', 'Third photo', 'image', 'img/photos/photo-02.jpg'),
+                ]],
+                'pillars' => ['label' => 'What we do', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'What we do'),
+                    $f('heading', 'Heading', 'text', 'One team, four ways to connect'),
+                    $f('intro', 'Introduction', 'text', 'Beyond the monthly event, Owakabi & The Geng runs a small ecosystem of brands for Northern Uganda.'),
+                    $f('cards', 'Cards (one per line: emoji | Title | text | page link | photo path)', 'lines',
+                        "🔥 | Chill & Bite MEATINGS | The monthly lifestyle and corporate networking experience at Revelation Cottages. | events | img/photos/photo-03.jpg\n" .
+                        "😂 | Laugh with Owakabi | Comedy shows, video highlights and performance bookings with MC Kash Owakabi. | laugh | img/photos/photo-12.jpg\n" .
+                        "📰 | Northern Buzz | News, entertainment and community stories from Northern Uganda. | news | img/photos/photo-22.jpg\n" .
+                        "🤝 | Brand partnerships | Sponsorships, activations and advertising in front of an engaged audience. | advertise | img/photos/photo-42.jpg",
+                        'Page link is a page name such as events, laugh, news or advertise. Photo path starts with img/photos/.'),
+                ]],
+                'mission' => ['label' => 'Mission, vision & values', 'fields' => [
+                    $f('mission_title', 'Mission title', 'text', 'Our mission'),
+                    $f('mission', 'Mission', 'textarea', 'To connect people through food, music, comedy and shared experiences, creating real relationships and real opportunities across Northern Uganda.'),
+                    $f('vision_title', 'Vision title', 'text', 'Our vision'),
+                    $f('vision', 'Vision', 'textarea', "To be Northern Uganda's most loved lifestyle and networking brand: a place where professionals, creatives and businesses meet and grow together."),
+                    $f('values_heading', 'Values heading', 'text', 'What we stand for'),
+                    $f('values', 'Values (one per line: Title | text)', 'lines', "Connection | Every event is built around meeting people and starting conversations.\nCommunity | We grow together with Gulu City and the wider Northern Uganda region.\nQuality | Great food, sound and hospitality, done properly every time.\nOpportunity | Space for individuals and brands to network, market and grow."),
                 ]],
                 'expect' => ['label' => 'What to expect', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'The experience'),
                     $f('heading', 'Heading', 'text', 'What to expect'),
                     $f('list', 'List (one per line)', 'lines', "Great food and drinks in a relaxed outdoor setting\nNetworking with people across industries\nLive music, comedy and entertainment\nOutdoor games and social experiences\nOpportunities for brands to connect with a lively audience"),
                 ]],
-                'team' => ['label' => 'The team', 'fields' => [
+                'team' => ['label' => 'Team & host', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'The people'),
                     $f('heading', 'Heading', 'text', 'Owakabi & The Geng'),
-                    $f('text', 'Text', 'textarea', 'The creative team behind Chill & Bite MEATINGS, Laugh with Owakabi, and the Northern Buzz news and gossip magazine.'),
-                    $f('button', 'Button', 'text', 'See upcoming events'),
+                    $f('text', 'Organizer text', 'textarea', 'The creative team behind Chill & Bite MEATINGS, Laugh with Owakabi, and the Northern Buzz news and gossip magazine.'),
+                    $f('button', 'Organizer button', 'text', 'See upcoming events'),
+                    $f('host_role', 'Host title', 'text', 'Host & master of ceremonies'),
+                    $f('host_bio', 'Host biography', 'textarea', setting('host_bio', 'From electrifying crowds to creating memorable experiences, MC Kash Owakabi brings charisma, humor, and exceptional audience engagement to every event.')),
+                ]],
+                'partners' => ['label' => 'Partners', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Partners'),
+                    $f('heading', 'Heading', 'text', 'Brands that grow with us'),
+                    $f('intro', 'Introduction', 'text', 'Companies and individuals come to Chill & Bite to network, market their events and promote their products and services.'),
+                    $f('button', 'Button', 'text', 'Become a partner'),
+                    $f('empty', 'Message when there are no partners yet', 'text', 'Be one of the first brands featured here.'),
+                ]],
+                'faq' => ['label' => 'Frequently asked questions', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'FAQ'),
+                    $f('heading', 'Heading', 'text', 'Frequently asked questions'),
+                    $f('items', 'Questions (one per line: Question | Answer)', 'lines',
+                        "When and where does Chill & Bite MEATINGS take place? | Usually on the first Sunday of every month at Revelation Cottages, Gulu City. Gates open at 12:00 PM. Special editions may fall on other Sundays, so check the Events page for exact dates.\n" .
+                        "How do I book a place or a table? | Open the event page and choose Reserve now. Pick a reservation type or a table package, enter your details and confirm. Your booking is approved by our team and your QR ticket is issued.\n" .
+                        "How do I get my ticket? | Once your booking is confirmed we send your ticket by email or WhatsApp. You can also enter your booking reference on the Track your booking page to view or download it at any time.\n" .
+                        "Can my company sponsor or exhibit? | Yes. Brands come to network and market their events, products and services. Apply on the Become a partner page or request an advertising proposal.\n" .
+                        "Is there an age limit? | Some events are 18 and over, especially those with alcohol sponsors. The rules are shown on each event page.\n" .
+                        "How can I contact the team? | Use the Contact page, or call or WhatsApp the number shown in the footer of this website."),
+                ]],
+                'cta' => ['label' => 'Closing call to action', 'fields' => [
+                    $f('heading', 'Heading', 'text', 'Ready to be part of the next one?'),
+                    $f('text', 'Text', 'text', 'Reserve your place, bring your team, or showcase your brand to Gulu City.'),
+                    $f('btn1', 'Button 1', 'text', 'Reserve your place'),
+                    $f('btn2', 'Button 2', 'text', 'Partner with us'),
                 ]],
             ],
         ],
