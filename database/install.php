@@ -17,6 +17,9 @@ echo "Database `$dbName` ready.\n";
 $sql = file_get_contents("$root/database/schema.sql");
 $sql = preg_replace('/^--.*$/m', '', $sql);
 foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) db()->exec($stmt);
+// Upgrade older databases: reservations.package column
+if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reservations' AND COLUMN_NAME = 'package'"))
+    db()->exec('ALTER TABLE reservations ADD COLUMN package VARCHAR(80) NULL AFTER seating');
 echo "Schema applied.\n";
 
 // Categories

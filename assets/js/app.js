@@ -71,6 +71,16 @@
       if (+guests.value > max) guests.value = max;
       if (min === max) guests.value = min;
       guests.readOnly = (min === max);
+      var pkgBox = document.getElementById('pkg-box');
+      if (pkgBox) {
+        var isTable = sel.value === 'table';
+        pkgBox.hidden = !isTable;
+        if (isTable) {
+          var pkg = pkgBox.querySelector('[name=package]:checked');
+          total.textContent = pkg ? 'Table package total: UGX ' + (+pkg.dataset.price).toLocaleString() : 'Select a table package';
+          return;
+        }
+      }
       total.textContent = price > 0 ? 'Total: UGX ' + (price * guests.value).toLocaleString() : 'Free reservation';
     };
     form.addEventListener('change', update); form.addEventListener('input', update); update();
@@ -99,7 +109,7 @@
     var a = ev.target.closest('a[data-lightbox]');
     if (!a) return;
     ev.preventDefault();
-    var scope = a.closest('.strip, .mosaic, .gallery-grid') || document;
+    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer') || document;
     items = Array.prototype.slice.call(scope.querySelectorAll('a[data-lightbox]'));
     idx = items.indexOf(a);
     box = document.createElement('div');

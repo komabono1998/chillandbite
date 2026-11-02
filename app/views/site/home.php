@@ -69,7 +69,7 @@
 
 <section class="section section-cream">
   <div class="wrap host">
-    <div class="host-photo"><div class="ph portrait" role="img" aria-label="Portrait of MC Kash Owakabi (photo coming soon)"><span>MC<br>KASH</span></div></div>
+    <div class="host-photo"><img class="host-img" src="<?= h(asset('img/host-mc-kash-owakabi.jpg')) ?>" alt="MC Kash Owakabi, host of Chill &amp; Bite MEATINGS" width="592" height="800" loading="lazy" decoding="async"><span class="host-tag">Your host · MC Kash Owakabi</span></div>
     <div>
       <span class="eyebrow">Meet the host</span>
       <h2>The Man Behind the Vibes: MC Kash Owakabi</h2>

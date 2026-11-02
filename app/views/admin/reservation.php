@@ -3,7 +3,7 @@
 <div class="panel"><dl class="summary">
   <dt>Event</dt><dd><?= h($r['event_title']) ?></dd><dt>Guest</dt><dd><?= h($r['full_name']) ?><?= $r['company'] ? ' · ' . h($r['company']) : '' ?></dd>
   <dt>Phone</dt><dd><a href="tel:<?= h($r['phone']) ?>"><?= h($r['phone']) ?></a></dd><dt>Email</dt><dd><?= h($r['email'] ?: '—') ?></dd>
-  <dt>Type</dt><dd><?= h(RES_TYPES[$r['type']]) ?> · <?= (int)$r['guests'] ?> guest(s)</dd><dt>Seating</dt><dd><?= h($r['seating'] ?: '—') ?></dd>
+  <dt>Type</dt><dd><?= h(RES_TYPES[$r['type']]) ?><?= $r['package'] ? ' · <strong>' . h($r['package']) . ' package</strong>' : '' ?> · <?= (int)$r['guests'] ?> guest(s)</dd><dt>Seating</dt><dd><?= h($r['seating'] ?: '—') ?></dd>
   <dt>Requests</dt><dd><?= h($r['requests'] ?: '—') ?></dd><dt>Booked</dt><dd><?= fmt_date($r['created_at'], 'j M Y H:i') ?></dd>
   <dt>Checked in</dt><dd><?= $r['checked_in_at'] ? fmt_date($r['checked_in_at'], 'j M Y H:i') : 'No' ?></dd></dl>
   <div class="actions"><?php foreach (array_filter([

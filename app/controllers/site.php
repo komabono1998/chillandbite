@@ -91,7 +91,7 @@ function page_event(array $a): void
     $e = find_event($a['slug']) ?? not_found();
     render('site/event', [
         'title' => $e['title'] . ' | Chill & Bite MEATINGS', 'desc' => $e['short_desc'], 'e' => $e,
-        'options' => event_options((int)$e['id']), 'open' => event_open_for_booking($e), 'remaining' => event_remaining($e),
+        'options' => event_options((int)$e['id']), 'packages' => event_packages((int)$e['id']), 'open' => event_open_for_booking($e), 'remaining' => event_remaining($e),
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner") LIMIT 8'),
     ]);
 }

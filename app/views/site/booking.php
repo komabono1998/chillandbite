@@ -9,7 +9,7 @@
     <dt>When</dt><dd><?= fmt_date($r['start_at'], 'l, j F Y') ?> · <?= fmt_time($r['start_at']) ?></dd>
     <dt>Where</dt><dd><?= h($r['venue']) ?>, <?= h($r['location']) ?></dd>
     <dt>Name</dt><dd><?= h($r['full_name']) ?></dd>
-    <dt>Reservation</dt><dd><?= h(RES_TYPES[$r['type']]) ?> · <?= (int)$r['guests'] ?> guest(s)</dd>
+    <dt>Reservation</dt><dd><?= h(RES_TYPES[$r['type']]) ?><?= $r['package'] ? ' · ' . h($r['package']) . ' package' : '' ?> · <?= (int)$r['guests'] ?> guest(s)</dd>
     <?php if ($r['amount_due'] > 0): ?><dt>Amount due</dt><dd><?= money($r['amount_due']) ?></dd><dt>Paid</dt><dd><?= money($paid) ?></dd><?php endif; ?>
   </dl>
   <button class="btn btn-ghost-dark" onclick="window.print()">Print</button>

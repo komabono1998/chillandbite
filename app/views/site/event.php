@@ -7,7 +7,11 @@
 </div></section>
 <section class="section section-cream"><div class="wrap event-layout">
   <div>
-    <div class="event-hero-img"><?php media($e['poster'], $e['title'], 'poster-wide', date('j M', strtotime($e['start_at'])), photo_from('crowd', (int)$e['id'])); ?></div>
+    <?php if ($e['poster']): ?>
+      <a class="flyer" href="<?= h(upload_url($e['poster'])) ?>" data-lightbox><img src="<?= h(upload_url($e['poster'])) ?>" alt="Official flyer for <?= h($e['title']) ?>" decoding="async"><span class="flyer-hint">Tap to enlarge flyer</span></a>
+    <?php else: ?>
+      <div class="event-hero-img"><?php media($e['poster'], $e['title'], 'poster-wide', date('j M', strtotime($e['start_at'])), photo_from('crowd', (int)$e['id'])); ?></div>
+    <?php endif; ?>
 <?php
     $isComedy = str_contains(strtolower($e['category'] ?? ''), 'comedy');
     $reserveHref = url('events/' . $e['slug'] . '/reserve');
@@ -45,6 +49,17 @@
         <?php foreach ($expect as [$ic, $t, $d]): ?><div class="expect-card"><span class="ic" aria-hidden="true"><?= $ic ?></span><h4><?= h($t) ?></h4><p><?= h($d) ?></p></div><?php endforeach; ?>
       </div>
 
+      <?php if (!empty($packages)): ?>
+      <h3 class="about-h" id="tables">Table packages</h3>
+      <p class="muted">Reserve a table for your group. Prices are per table.</p>
+      <div class="pkg-grid">
+        <?php foreach ($packages as $p): ?>
+          <div class="pkg-card"><span class="pkg-name"><?= h($p['name']) ?></span><b><?= money($p['price']) ?></b><span class="pkg-unit">per table</span>
+            <?php if ($open): ?><a class="btn btn-primary btn-sm" href="<?= h($reserveHref) ?>?type=table&amp;package=<?= rawurlencode($p['name']) ?>">Reserve</a><?php endif; ?></div>
+        <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
+
       <?php if (!$isComedy): ?>
       <div class="nmm">
         <span class="eyebrow gold">Network. Market. Grow.</span>
@@ -75,7 +90,7 @@
       <dt>When</dt><dd><?= fmt_date($e['start_at'], 'l, j F Y') ?><br><?= fmt_time($e['start_at']) ?></dd>
       <dt>Where</dt><dd><?= h($e['venue']) ?><br><?= h($e['location']) ?></dd>
       <?php if ($remaining !== null): ?><dt>Availability</dt><dd><?= $remaining > 0 ? $remaining . ' places left' : 'Fully booked' ?></dd><?php endif; ?>
-      <?php if ($options): ?><dt>Reservation types</dt><dd><?php foreach ($options as $o): ?><?= h(RES_TYPES[$o['type']]) ?> — <?= $o['price_per_guest'] > 0 ? money($o['price_per_guest']) . '/guest' : 'Free' ?><br><?php endforeach; ?></dd><?php endif; ?>
+      <?php if ($options): ?><dt>Reservation types</dt><dd><?php foreach ($options as $o): ?><?= h(RES_TYPES[$o['type']]) ?> — <?= ($o['type'] === 'table' && !empty($packages)) ? 'from ' . money(min(array_column($packages, 'price'))) . ' / table' : ($o['price_per_guest'] > 0 ? money($o['price_per_guest']) . '/guest' : 'Free') ?><br><?php endforeach; ?></dd><?php endif; ?>
     </dl>
     <?php if ($open): ?><a class="btn btn-primary btn-block" href="<?= url('events/' . h($e['slug']) . '/reserve') ?>">Reserve now</a>
     <?php elseif (!$cancelled): ?><p class="alert alert-err">Reservations are currently closed for this event.</p><?php endif; ?>

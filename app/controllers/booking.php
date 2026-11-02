@@ -10,6 +10,10 @@ function booking_reference(): string
     } while (val('SELECT id FROM reservations WHERE reference = ?', [$ref]));
     return $ref;
 }
+function event_packages(int $eventId): array
+{
+    return rows('SELECT * FROM event_packages WHERE event_id = ? ORDER BY sort, price', [$eventId]);
+}
 function res_paid(int $id): float
 {
     return (float)val('SELECT COALESCE(SUM(amount),0) FROM payments WHERE reservation_id = ?', [$id]);
@@ -20,7 +24,10 @@ function page_reserve(array $a): void
     $e = find_event($a['slug']) ?? not_found();
     render('site/reserve', [
         'title' => 'Reserve | ' . $e['title'], 'e' => $e, 'options' => event_options((int)$e['id']),
-        'open' => event_open_for_booking($e), 'remaining' => event_remaining($e), 'step' => 'form', 'data' => [],
+        'open' => event_open_for_booking($e), 'remaining' => event_remaining($e), 'step' => 'form',
+        // ?type=table&package=Silver from the event page pre-selects the choice
+        'data' => array_filter(['type' => is_string($_GET['type'] ?? null) ? $_GET['type'] : null, 'package' => is_string($_GET['package'] ?? null) ? $_GET['package'] : null]),
+        'packages' => event_packages((int)$e['id']),
     ]);
 }
 
@@ -44,7 +51,18 @@ function validate_booking(array $e, array $options, array $in): array
     }
     $d['requests'] = mb_substr($d['requests'], 0, 1000);
     $d['seating'] = mb_substr($d['seating'], 0, 190);
-    $d['amount'] = $opt ? (float)$opt['price_per_guest'] * max(0, $d['guests']) : 0;
+
+    // Table bookings can be sold as flat-price packages (e.g. Silver, Gold Pro); otherwise price is per guest.
+    $d['package'] = trim((string)($in['package'] ?? ''));
+    $flat = null;
+    if ($d['type'] === 'table' && ($packages = event_packages((int)$e['id']))) {
+        $found = null;
+        foreach ($packages as $p) if ($p['name'] === $d['package']) $found = $p;
+        if ($found) $flat = (float)$found['price']; else $err[] = 'Please choose a table package.';
+    } else {
+        $d['package'] = '';
+    }
+    $d['amount'] = $flat ?? ($opt ? (float)$opt['price_per_guest'] * max(0, $d['guests']) : 0);
     return [$d, $err, $opt];
 }
 
@@ -61,7 +79,7 @@ function post_reserve(array $a): void
     $rem = event_remaining($e);
     if (!$err && $rem !== null && $d['guests'] > $rem) $err[] = "Only $rem place(s) remain for this event.";
 
-    $ctx = ['e' => $e, 'options' => $options, 'open' => true, 'remaining' => $rem, 'data' => $d];
+    $ctx = ['e' => $e, 'options' => $options, 'open' => true, 'remaining' => $rem, 'data' => $d, 'packages' => event_packages((int)$e['id'])];
     if ($err) { render('site/reserve', $ctx + ['title' => 'Reserve | ' . $e['title'], 'step' => 'form', 'errors' => $err]); return; }
 
     if (($_POST['step'] ?? '') !== 'confirm') {
@@ -79,10 +97,10 @@ function post_reserve(array $a): void
         if ($left !== null && $d['guests'] > $left) throw new RuntimeException($left > 0 ? "Sorry, only $left place(s) are left." : 'Sorry, this event is now fully booked.');
         $status = ($fresh['booking_mode'] === 'instant' && $d['amount'] <= 0) ? 'confirmed' : 'pending';
         $ref = booking_reference();
-        q('INSERT INTO reservations (reference, event_id, type, full_name, phone, email, company, guests, seating, requests, amount_due, status)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+        q('INSERT INTO reservations (reference, event_id, type, full_name, phone, email, company, guests, seating, package, requests, amount_due, status)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             [$ref, $e['id'], $d['type'], $d['full_name'], $d['phone'], $d['email'] ?: null, $d['company'] ?: null,
-             $d['guests'], $d['seating'] ?: null, $d['requests'] ?: null, $d['amount'], $status]);
+             $d['guests'], $d['seating'] ?: null, $d['package'] ?: null, $d['requests'] ?: null, $d['amount'], $status]);
         $pdo->commit();
     } catch (RuntimeException $ex) {
         $pdo->rollBack();
@@ -96,7 +114,7 @@ function post_reserve(array $a): void
     if ($d['email']) {
         $line = $status === 'confirmed' ? 'Your place is CONFIRMED.' : 'Your booking has been received and is awaiting confirmation from the event team.';
         send_mail($d['email'], "Chill & Bite booking $ref", "Hello {$d['full_name']},\n\n$line\n\nReference: $ref\nEvent: {$e['title']}\nWhen: " .
-            fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\nGuests: {$d['guests']}\n" .
+            fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\nGuests: {$d['guests']}\n" . ($d['package'] ? "Table package: {$d['package']}\n" : '') .
             ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') . "\nView: " . abs_url('booking/' . $ref));
     }
     flash($status === 'confirmed' ? 'Your reservation is confirmed!' : 'Booking received. We will confirm it shortly.');

@@ -13,7 +13,7 @@
 <?php foreach ($list as $r): $bal = max(0, $r['amount_due'] - $r['paid']); ?><tr>
   <td><a href="<?= url('admin/reservations/' . $r['id']) ?>"><?= h($r['reference']) ?></a></td>
   <td><strong><?= h($r['full_name']) ?></strong><br><span class="small muted"><?= h($r['phone']) ?></span></td>
-  <td><?= h($r['event_title']) ?></td><td><?= h(RES_TYPES[$r['type']]) ?></td><td><?= (int)$r['guests'] ?></td>
+  <td><?= h($r['event_title']) ?></td><td><?= h(RES_TYPES[$r['type']]) ?><?= $r['package'] ? '<br><span class="small muted">' . h($r['package']) . '</span>' : '' ?></td><td><?= (int)$r['guests'] ?></td>
   <td><?= $r['amount_due'] > 0 ? money($bal) : '—' ?></td>
   <td><?= status_badge($r['status']) ?><?= $r['checked_in_at'] ? '<br><span class="badge badge-ok">In</span>' : '' ?></td>
   <td><div class="actions"><?php foreach (array_filter([

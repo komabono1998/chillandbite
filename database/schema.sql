@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   company VARCHAR(190) NULL,
   guests SMALLINT UNSIGNED NOT NULL,
   seating VARCHAR(190) NULL,
+  package VARCHAR(80) NULL,
   requests TEXT NULL,
   amount_due DECIMAL(12,0) NOT NULL DEFAULT 0,
   status ENUM('pending','confirmed','rejected','cancelled') NOT NULL DEFAULT 'pending',
@@ -81,6 +82,17 @@ CREATE TABLE IF NOT EXISTS reservations (
   KEY idx_res_event (event_id, status),
   KEY idx_res_phone (phone),
   CONSTRAINT fk_res_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Flat-price table packages (e.g. Silver, Gold Pro, Platinum) sold with the "table" reservation type
+CREATE TABLE IF NOT EXISTS event_packages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  event_id INT UNSIGNED NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  price DECIMAL(12,0) NOT NULL DEFAULT 0,
+  sort SMALLINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_event_pkg (event_id, name),
+  CONSTRAINT fk_pkg_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Administrator-recorded payments (no card data is ever stored)

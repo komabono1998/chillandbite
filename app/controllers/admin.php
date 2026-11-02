@@ -84,7 +84,8 @@ function admin_event_form(array $a = []): void
         foreach (event_options((int)$e['id']) as $o) $opts[$o['type']] = $o;
     }
     admin_view('event_form', ['title' => $e ? 'Edit event' : 'New event', 'e' => $e, 'opts' => $opts, 'cats' => rows('SELECT * FROM event_categories ORDER BY id'),
-        'old' => $_SESSION['old'] ?? []]);
+        'old' => $_SESSION['old'] ?? [],
+        'pkgText' => $e ? implode("\n", array_map(fn($p) => $p['name'] . ' | ' . (int)$p['price'], event_packages((int)$e['id']))) : '']);
     clear_old();
 }
 function admin_event_save(): void
@@ -134,6 +135,16 @@ function admin_event_save(): void
         $min = max(1, (int)($o['min'] ?? 1)); $max = max($min, (int)($o['max'] ?? 20));
         q('INSERT INTO event_reservation_options (event_id, type, price_per_guest, min_guests, max_guests) VALUES (?,?,?,?,?)',
             [$id, $t, max(0, (int)($o['price'] ?? 0)), $min, $max]);
+    }
+    // Table packages: one per line as "Name | price"
+    q('DELETE FROM event_packages WHERE event_id = ?', [$id]);
+    $sort = 0;
+    foreach (preg_split('/\R/', (string)($_POST['packages'] ?? '')) as $line) {
+        if (!str_contains($line, '|')) continue;
+        [$pn, $pp] = array_map('trim', explode('|', $line, 2));
+        $pn = mb_substr($pn, 0, 80); $pp = (int)preg_replace('/\D+/', '', $pp);
+        if ($pn === '' || $pp < 0) continue;
+        q('INSERT IGNORE INTO event_packages (event_id, name, price, sort) VALUES (?,?,?,?)', [$id, $pn, $pp, $sort++]);
     }
     flash('Event saved.');
     redirect("admin/events/$id");
@@ -216,9 +227,9 @@ function admin_reservations_export(): void
     $out = fopen('php://output', 'w');
     fwrite($out, "\xEF\xBB\xBF");
     $safe = fn($v) => is_string($v) && $v !== '' && strpbrk($v[0], "=+-@\t\r") ? "'" . $v : $v; // spreadsheet formula injection guard
-    fputcsv($out, ['Reference', 'Event', 'Name', 'Phone', 'Email', 'Company', 'Type', 'Guests', 'Status', 'Amount due', 'Paid', 'Checked in', 'Requests', 'Booked at']);
+    fputcsv($out, ['Reference', 'Event', 'Name', 'Phone', 'Email', 'Company', 'Type', 'Package', 'Guests', 'Status', 'Amount due', 'Paid', 'Checked in', 'Requests', 'Booked at']);
     foreach (rows(RES_SELECT . " WHERE $w ORDER BY e.start_at, r.full_name", $p) as $r)
-        fputcsv($out, array_map($safe, [$r['reference'], $r['event_title'], $r['full_name'], $r['phone'], $r['email'], $r['company'], RES_TYPES[$r['type']], $r['guests'], $r['status'], $r['amount_due'], $r['paid'], $r['checked_in_at'], $r['requests'], $r['created_at']]));
+        fputcsv($out, array_map($safe, [$r['reference'], $r['event_title'], $r['full_name'], $r['phone'], $r['email'], $r['company'], RES_TYPES[$r['type']], $r['package'], $r['guests'], $r['status'], $r['amount_due'], $r['paid'], $r['checked_in_at'], $r['requests'], $r['created_at']]));
     exit;
 }
 function admin_reservation(array $a): void
