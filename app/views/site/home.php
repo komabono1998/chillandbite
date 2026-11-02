@@ -128,16 +128,16 @@
 </section>
 
 <?php if ($gallery): ?>
-<section class="section">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow"><?= cth('home.gallery.eyebrow') ?></span><h2><?= cth('home.gallery.heading') ?></h2></div>
-    <div class="gallery-grid"><?php foreach ($gallery as $g): ?><a href="<?= h(upload_url($g['file'])) ?>" data-lightbox><img src="<?= h(upload_url($g['file'])) ?>" alt="<?= h($g['caption'] ?: 'Chill & Bite event photo') ?>" loading="lazy" decoding="async"></a><?php endforeach; ?></div>
-    <p class="center mt"><a class="btn btn-outline-dark" href="<?= url('gallery') ?>"><?= cth('home.gallery.button') ?></a></p>
+<section class="section wall-section">
+  <div class="wrap wall-head">
+    <div><span class="eyebrow"><?= cth('home.gallery.eyebrow') ?></span><h2><?= cth('home.gallery.heading') ?></h2><p class="lead"><?= cth('home.gallery.intro') ?></p></div>
+    <a class="btn btn-outline" href="<?= url('gallery') ?>"><?= cth('home.gallery.button') ?></a>
   </div>
+  <?php photo_wall($gallery, 3); ?>
+  <p class="center small muted wall-note">Hover to pause · tap any photo to enlarge · <?= (int)$gallery_total ?> photos in our gallery</p>
 </section>
 <?php endif; ?>
 
-<?php photo_strip(strip_nums(['people', 'social', 'crowd'], 29, 16), 'More moments', 'strip-light'); ?>
 
 <section class="cta-final" style="--cta-photo:url('<?= h(photo(40)) ?>')">
   <div class="wrap center">

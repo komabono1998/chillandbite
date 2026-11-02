@@ -154,3 +154,32 @@ function sponsor_item(array $s): void
         $inner = '<a href="' . h($s['website']) . '" target="_blank" rel="noopener sponsored nofollow" title="' . h($s['name']) . '">' . $inner . '</a>';
     echo '<li>' . $inner . '</li>';
 }
+
+/**
+ * Photo wall: rows of photos drifting in alternating directions (left to right, then right to left).
+ * Photos are dealt round-robin into rows so neighbours differ; each row repeats its photos for a seamless loop.
+ */
+function photo_wall(array $images, int $rows = 3): void
+{
+    if (!$images) return;
+    $buckets = array_fill(0, $rows, []);
+    foreach (array_values($images) as $i => $img) $buckets[$i % $rows][] = $img;
+    $widths = [300, 220, 270, 200, 285, 240];            // tile widths give the rows a rhythm
+    $durations = [110, 140, 95];                           // seconds per loop: each row moves at its own pace
+    echo '<div class="wall" data-stagger aria-label="Photo wall of event moments">';
+    foreach ($buckets as $r => $items) {
+        if (!$items) continue;
+        while (count($items) < 8) $items = array_merge($items, $items);
+        $tiles = ''; $dup = '';
+        foreach ($items as $k => $img) {
+            $w = $widths[($k + $r * 2) % count($widths)];
+            $src = h(upload_url($img['file']));
+            $alt = h($img['caption'] ?: 'Chill & Bite MEATINGS event photo');
+            $tiles .= '<a class="wall-item" style="--w:' . $w . 'px" href="' . $src . '" data-lightbox><img src="' . $src . '" alt="' . $alt . '" loading="lazy" decoding="async"></a>';
+            $dup .= '<a class="wall-item" style="--w:' . $w . 'px" href="' . $src . '" tabindex="-1" aria-hidden="true"><img src="' . $src . '" alt="" loading="lazy" decoding="async"></a>';
+        }
+        echo '<div class="wall-row wall-' . ($r % 2 === 0 ? 'ltr' : 'rtl') . '" style="--r:' . $r . ';--dur:' . $durations[$r % count($durations)] . 's"><div class="wall-track">'
+            . $tiles . '<span class="wall-dup" aria-hidden="true">' . $dup . '</span></div></div>';
+    }
+    echo '</div>';
+}

@@ -481,3 +481,30 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
 .track-steps span{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--orange);color:#fff;font-weight:800}
 .track-steps small{color:#6b6258}
 @media(max-width:640px){.track-steps{grid-template-columns:1fr}}
+
+/* ===== Photo wall (homepage gallery) ===== */
+.wall-section{padding-bottom:clamp(40px,6vw,72px);overflow:hidden}
+.wall-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:2rem}
+.wall-head h2{margin-bottom:.2em}.wall-head .lead{margin:0;max-width:560px}
+.wall{display:grid;gap:14px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+.wall-row{overflow:hidden;padding:8px 0}
+.wall-track{display:flex;width:max-content;animation-duration:var(--dur,110s);animation-timing-function:linear;animation-iteration-count:infinite}
+.wall-ltr .wall-track{animation-name:wallRight}
+.wall-rtl .wall-track{animation-name:wallLeft}
+@keyframes wallRight{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+@keyframes wallLeft{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.wall-dup{display:contents}
+.wall-row:hover .wall-track,.wall-row:focus-within .wall-track{animation-play-state:paused}
+.wall-item{flex:none;display:block;width:var(--w,260px);height:210px;margin-right:14px;border-radius:14px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.4);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,filter .35s}
+.wall-item img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+.wall-row:hover .wall-item{filter:brightness(.55) saturate(.85)}
+.wall-row .wall-item:hover,.wall-row .wall-item:focus-visible{transform:translateY(-8px) scale(1.07);filter:none;position:relative;z-index:2;box-shadow:0 18px 40px rgba(217,107,39,.45),0 0 0 3px var(--gold)}
+.wall-item:hover img{transform:scale(1.1)}
+.wall-note{margin-top:1.4rem}
+/* rows fade up one after another when the wall scrolls into view (JS adds .will then .in) */
+.wall.will:not(.in) .wall-row{opacity:0;transform:translateY(30px)}
+.wall.in .wall-row{animation:wallIn .9s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--r,0) * .2s)}
+@keyframes wallIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+@media(max-width:640px){.wall-item{height:150px;width:calc(var(--w,260px) * .62);margin-right:10px}.wall{gap:10px}}
+@media(prefers-reduced-motion:reduce){.wall-row{overflow-x:auto}.wall-track{animation:none!important}.wall-dup{display:none}.wall.will:not(.in) .wall-row{opacity:1;transform:none}.wall.in .wall-row{animation:none}.wall{-webkit-mask-image:none;mask-image:none}}

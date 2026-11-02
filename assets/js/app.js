@@ -119,7 +119,7 @@
     var a = ev.target.closest('a[data-lightbox]');
     if (!a) return;
     ev.preventDefault();
-    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer') || document;
+    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer, .wall') || document;
     items = Array.prototype.slice.call(scope.querySelectorAll('a[data-lightbox]'));
     idx = items.indexOf(a);
     box = document.createElement('div');

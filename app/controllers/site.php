@@ -42,6 +42,14 @@ function gcal_link(array $e): string
     ]);
 }
 
+/** Photos for the homepage wall: featured first, then the newest, mixed so neighbours differ. Mix changes daily. */
+function wall_photos(int $limit): array
+{
+    $rows = rows('SELECT * FROM gallery_images ORDER BY featured DESC, id DESC LIMIT ' . (int)$limit);
+    mt_srand(crc32(date('Y-m-d'))); shuffle($rows); mt_srand();
+    return $rows;
+}
+
 /* ================= Pages ================= */
 function page_home(): void
 {
@@ -60,7 +68,8 @@ function page_home(): void
         'articles' => published_articles(3),
         'video' => row('SELECT * FROM videos ORDER BY featured DESC, id DESC LIMIT 1'),
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
-        'gallery' => rows('SELECT * FROM gallery_images ORDER BY featured DESC, id DESC LIMIT 8'),
+        'gallery' => wall_photos(36),
+        'gallery_total' => (int)val('SELECT COUNT(*) FROM gallery_images'),
         'comedy_events' => upcoming_events(2, 'laugh-with-owakabi-comedy-shows'),
     ]);
 }

@@ -83,6 +83,7 @@ function site_pages(): array
                 'gallery' => ['label' => 'Gallery preview', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Gallery'),
                     $f('heading', 'Heading', 'text', 'The Atmosphere'),
+                    $f('intro', 'Intro line', 'text', 'Faces, food, music and good vibes from every Chill & Bite.'),
                     $f('button', 'Button', 'text', 'See the full gallery'),
                 ]],
                 'cta' => ['label' => 'Final call to action', 'fields' => [
