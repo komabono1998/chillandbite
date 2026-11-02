@@ -21,13 +21,14 @@ function event_options(int $eventId): array
 {
     return rows('SELECT * FROM event_reservation_options WHERE event_id = ? ORDER BY FIELD(type,"individual","couple","group","corporate","vip","table")', [$eventId]);
 }
-function published_articles(int $limit = 6, ?string $catSlug = null, int $offset = 0): array
+function published_articles(int $limit = 6, ?string $catSlug = null, int $offset = 0, ?string $q = null): array
 {
-    $sql = "SELECT a.*, c.name AS category, c.slug AS category_slug, u.name AS author FROM articles a
+    $sql = "SELECT a.*, c.name AS category, c.slug AS category_slug, u.name AS author, u.organization AS author_org, u.role AS author_role FROM articles a
             LEFT JOIN article_categories c ON c.id = a.category_id LEFT JOIN users u ON u.id = a.author_id
             WHERE a.status IN ('published','scheduled') AND a.published_at <= NOW()";
     $p = [];
     if ($catSlug) { $sql .= ' AND c.slug = ?'; $p[] = $catSlug; }
+    if ($q !== null && $q !== '') { $like = '%' . addcslashes($q, '%_\\') . '%'; $sql .= ' AND (a.title LIKE ? OR a.excerpt LIKE ? OR a.body LIKE ?)'; array_push($p, $like, $like, $like); }
     $sql .= ' ORDER BY a.published_at DESC LIMIT ' . (int)$limit . ' OFFSET ' . (int)$offset;
     return rows($sql, $p);
 }
@@ -123,21 +124,24 @@ function page_news(): void
 {
     $cat = preg_match('/^[a-z0-9-]+$/', $_GET['cat'] ?? '') ? $_GET['cat'] : null;
     $pg = max(1, (int)($_GET['p'] ?? 1));
+    $q = mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80);
     render('site/news', [
-        'title' => 'Northern Buzz | Northern Uganda News & Gossips', 'cat' => $cat, 'pg' => $pg,
-        'articles' => published_articles(9, $cat, ($pg - 1) * 9),
+        'title' => 'The Gulu Chronicles | News, Gossip & Blogs from Gulu, Uganda and the World', 'cat' => $cat, 'pg' => $pg, 'q' => $q, 'per_page' => 11,
+        'desc' => 'News, gossip and blogs from Gulu, Uganda and the world, from our editors and accredited bloggers and media houses.',
+        'articles' => published_articles(11, $cat, ($pg - 1) * 11, $q),
+        'ticker' => published_articles(6),
         'categories' => rows('SELECT * FROM article_categories ORDER BY id'),
     ]);
 }
 function page_article(array $a): void
 {
-    $art = row("SELECT a.*, c.name AS category, c.slug AS category_slug, u.name AS author FROM articles a
+    $art = row("SELECT a.*, c.name AS category, c.slug AS category_slug, u.name AS author, u.organization AS author_org, u.role AS author_role FROM articles a
         LEFT JOIN article_categories c ON c.id = a.category_id LEFT JOIN users u ON u.id = a.author_id
         WHERE a.slug = ? AND a.status IN ('published','scheduled') AND a.published_at <= NOW()", [$a['slug']]) ?? not_found();
     $related = rows("SELECT a.*, c.name AS category FROM articles a LEFT JOIN article_categories c ON c.id = a.category_id
         WHERE a.id <> ? AND a.status IN ('published','scheduled') AND a.published_at <= NOW() AND a.category_id <=> ?
         ORDER BY a.published_at DESC LIMIT 3", [$art['id'], $art['category_id']]);
-    render('site/article', ['title' => $art['title'] . ' | Northern Buzz', 'desc' => $art['meta_description'] ?: $art['excerpt'], 'art' => $art, 'related' => $related, 'og_image' => $art['image']]);
+    render('site/article', ['title' => $art['title'] . ' | The Gulu Chronicles', 'desc' => $art['meta_description'] ?: $art['excerpt'], 'art' => $art, 'related' => $related, 'og_image' => $art['image']]);
 }
 function page_advertise(): void
 {

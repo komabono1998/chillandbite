@@ -2,44 +2,84 @@
 declare(strict_types=1);
 
 /* ================= News ================= */
+function news_is_contrib(): bool { return (current_user()['role'] ?? '') === 'contributor'; }
+function news_guard(): void { require_can_any(['news', 'my_articles']); }
+function news_owned(int $id): array
+{
+    $art = row('SELECT * FROM articles WHERE id = ?', [$id]) ?? not_found();
+    if (news_is_contrib() && (int)$art['author_id'] !== (int)current_user()['id']) not_found();
+    return $art;
+}
 function admin_news(): void
 {
-    require_can('news');
-    admin_view('news', ['title' => 'News & articles', 'list' => rows('SELECT a.*, c.name AS category, u.name AS author FROM articles a LEFT JOIN article_categories c ON c.id=a.category_id LEFT JOIN users u ON u.id=a.author_id ORDER BY a.id DESC LIMIT 200')]);
+    news_guard();
+    $mine = news_is_contrib();
+    admin_view('news', ['title' => $mine ? 'My stories' : 'News & articles', 'mine' => $mine,
+        'list' => rows('SELECT a.*, c.name AS category, u.name AS author, u.organization AS author_org FROM articles a LEFT JOIN article_categories c ON c.id=a.category_id LEFT JOIN users u ON u.id=a.author_id'
+            . ($mine ? ' WHERE a.author_id = ?' : '') . " ORDER BY (a.status='pending') DESC, a.id DESC LIMIT 200", $mine ? [current_user()['id']] : [])]);
 }
 function admin_article_form(array $a = []): void
 {
-    require_can('news');
-    $art = isset($a['id']) ? (row('SELECT * FROM articles WHERE id = ?', [(int)$a['id']]) ?? not_found()) : null;
-    admin_view('article_form', ['title' => $art ? 'Edit article' : 'New article', 'art' => $art, 'cats' => rows('SELECT * FROM article_categories ORDER BY id'), 'old' => $_SESSION['old'] ?? []]);
+    news_guard();
+    $art = isset($a['id']) ? news_owned((int)$a['id']) : null;
+    $mine = news_is_contrib();
+    if ($mine && $art && !in_array($art['status'], ['draft', 'pending'], true)) { flash('Published stories can only be changed by an editor. Contact the newsroom for corrections.', 'err'); redirect('admin/news'); }
+    admin_view('article_form', ['title' => $art ? 'Edit article' : 'New article', 'art' => $art, 'mine' => $mine, 'cats' => rows('SELECT * FROM article_categories ORDER BY id'), 'old' => $_SESSION['old'] ?? []]);
     clear_old();
 }
 function admin_article_save(): void
 {
-    require_can('news');
+    news_guard();
+    $mine = news_is_contrib();
     $id = (int)($_POST['id'] ?? 0);
+    $existing = $id ? news_owned($id) : null;
     $back = $id ? "admin/news/$id" : 'admin/news/new';
+    if ($mine && $existing && !in_array($existing['status'], ['draft', 'pending'], true)) { flash('Published stories can only be changed by an editor.', 'err'); redirect('admin/news'); }
     $title = post_str('title', 220); $body = trim((string)($_POST['body'] ?? ''));
-    $label = array_key_exists($_POST['label'] ?? '', NEWS_LABELS) ? $_POST['label'] : 'news';
-    $status = in_array($_POST['status'] ?? '', ['draft', 'scheduled', 'published'], true) ? $_POST['status'] : 'draft';
-    $pub = dt_in($_POST['published_at'] ?? '');
+    $labels = $mine ? ['news', 'opinion'] : array_keys(NEWS_LABELS);
+    $label = in_array($_POST['label'] ?? '', $labels, true) ? $_POST['label'] : 'news';
+    if ($mine) $status = !empty($_POST['submit_review']) ? 'pending' : 'draft';
+    else $status = in_array($_POST['status'] ?? '', ['draft', 'pending', 'scheduled', 'published'], true) ? $_POST['status'] : 'draft';
+    $pub = $mine ? null : dt_in($_POST['published_at'] ?? '');
     $err = [];
     if (mb_strlen($title) < 3) $err[] = 'Headline is required.';
     if (mb_strlen($body) < 10) $err[] = 'Story body is required.';
+    if ($mine && $status === 'pending' && mb_strlen($body) < 200) $err[] = 'Please write a little more before sending to the editor (at least a few sentences).';
     if ($status === 'scheduled' && (!$pub || strtotime($pub) <= time())) $err[] = 'Scheduled stories need a future publish date.';
-    if ($label === 'sponsored' && post_str('sponsor_name') === '') $err[] = 'Sponsored articles must name the sponsor.';
+    if (!$mine && $label === 'sponsored' && post_str('sponsor_name') === '') $err[] = 'Sponsored articles must name the sponsor.';
+    $srcUrl = $mine ? '' : post_str('source_url', 500);
+    if ($srcUrl !== '' && !preg_match('#^https?://[^\s]+$#i', $srcUrl)) $err[] = 'Source link must start with http:// or https://';
     if ($err) { keep_old($_POST); foreach ($err as $x) flash($x, 'err'); redirect($back); }
     try { $img = save_upload('image', 'articles'); } catch (RuntimeException $ex) { keep_old($_POST); flash($ex->getMessage(), 'err'); redirect($back); }
     if ($status === 'published') $pub = $pub && strtotime($pub) <= time() ? $pub : date('Y-m-d H:i:s');
-    if ($status === 'draft') $pub = $pub ?: null;
-    $v = [(int)($_POST['category_id'] ?? 0) ?: null, $title, post_str('excerpt', 300), $body, $label, post_str('sponsor_name', 140) ?: null,
-          $status, $pub, empty($_POST['featured']) ? 0 : 1, post_str('meta_description', 300) ?: null, trim((string)($_POST['correction'] ?? '')) ?: null];
+    if (in_array($status, ['draft', 'pending'], true)) $pub = $pub ?: null;
+    $cat = (int)($_POST['category_id'] ?? 0) ?: null;
+    if ($mine) {
+        $v = [$cat, $title, post_str('excerpt', 300), $body, $label, $status];
+        if ($id) { q('UPDATE articles SET category_id=?, title=?, excerpt=?, body=?, label=?, status=? WHERE id=?', [...$v, $id]); }
+        else {
+            q('INSERT INTO articles (category_id, title, excerpt, body, label, status, slug, author_id) VALUES (?,?,?,?,?,?,?,?)', [...$v, unique_slug('articles', $title), current_user()['id']]);
+            $id = (int)db()->lastInsertId();
+        }
+        if ($img) q('UPDATE articles SET image = ? WHERE id = ?', [$img, $id]);
+        audit($status === 'pending' ? 'article.submit' : 'article.draft', "#$id $title");
+        flash($status === 'pending' ? 'Sent to the editor for review. You will be emailed when it is published.' : 'Draft saved.');
+        redirect($status === 'pending' ? 'admin/news' : "admin/news/$id");
+    }
+    $v = [$cat, $title, post_str('excerpt', 300), $body, $label, post_str('sponsor_name', 140) ?: null,
+          $status, $pub, empty($_POST['featured']) ? 0 : 1, post_str('meta_description', 300) ?: null, trim((string)($_POST['correction'] ?? '')) ?: null,
+          post_str('source_name', 140) ?: null, $srcUrl ?: null];
     if ($id) {
-        q('UPDATE articles SET category_id=?, title=?, excerpt=?, body=?, label=?, sponsor_name=?, status=?, published_at=?, featured=?, meta_description=?, correction=? WHERE id=?', [...$v, $id]);
+        q('UPDATE articles SET category_id=?, title=?, excerpt=?, body=?, label=?, sponsor_name=?, status=?, published_at=?, featured=?, meta_description=?, correction=?, source_name=?, source_url=? WHERE id=?', [...$v, $id]);
         if ($img) q('UPDATE articles SET image = ? WHERE id = ?', [$img, $id]);
         audit('article.update', "#$id $title");
+        if ($existing['status'] === 'pending' && $status === 'published' && $existing['author_id']) {
+            $au = row('SELECT name, email, role FROM users WHERE id = ?', [$existing['author_id']]);
+            if ($au && $au['role'] === 'contributor')
+                send_mail($au['email'], 'Your story is live on The Gulu Chronicles', "Hello {$au['name']},\n\nYour story \"$title\" has been approved and published:\n" . abs_url('news/' . $existing['slug']) . "\n\nThe Gulu Chronicles\n");
+        }
     } else {
-        q('INSERT INTO articles (category_id, title, excerpt, body, label, sponsor_name, status, published_at, featured, meta_description, correction, slug, author_id, image) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        q('INSERT INTO articles (category_id, title, excerpt, body, label, sponsor_name, status, published_at, featured, meta_description, correction, source_name, source_url, slug, author_id, image) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
             [...$v, unique_slug('articles', $title), current_user()['id'], $img]);
         $id = (int)db()->lastInsertId();
         audit('article.create', "#$id $title");
@@ -49,12 +89,15 @@ function admin_article_save(): void
 }
 function admin_article_delete(array $a): void
 {
-    require_can('news');
+    news_guard();
+    $art = news_owned((int)$a['id']);
+    if (news_is_contrib() && $art['status'] === 'published') { flash('Published stories can only be removed by an editor.', 'err'); redirect('admin/news'); }
     q('DELETE FROM articles WHERE id = ?', [(int)$a['id']]);
     audit('article.delete', "#{$a['id']}");
     flash('Article deleted.');
     redirect('admin/news');
 }
+
 
 /* ================= Comedy videos ================= */
 function admin_comedy(): void

@@ -54,6 +54,9 @@ function admin_dashboard(): void
         $d['stat_inquiries'] = (int)val("SELECT COUNT(*) FROM inquiries WHERE status='new' AND type IN ($in)", $scope ?: ['']);
         $d['inq_list'] = rows("SELECT * FROM inquiries WHERE status='new' AND type IN ($in) ORDER BY id DESC LIMIT 5", $scope ?: ['']);
     }
+    if (can('accreditation')) $d['stat_accred'] = (int)val("SELECT COUNT(*) FROM accreditation_applications WHERE status='pending'");
+    if (can('news') && $u['role'] !== 'contributor') $d['stat_review'] = (int)val("SELECT COUNT(*) FROM articles WHERE status='pending'");
+    if ($u['role'] === 'contributor') $d['stat_mine'] = (int)val("SELECT COUNT(*) FROM articles WHERE author_id = ? AND status='published'", [$u['id']]);
     if (can('advertising')) {
         $d['stat_partners'] = (int)val("SELECT COUNT(*) FROM partner_applications WHERE status='pending'");
         $d['partner_list'] = rows("SELECT id, company, partnership_type, created_at FROM partner_applications WHERE status='pending' ORDER BY id DESC LIMIT 5");

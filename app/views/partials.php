@@ -45,7 +45,7 @@ function article_card(array $a): void
 {
     ?>
     <article class="card article-card">
-      <a class="article-img" href="<?= url('news/' . h($a['slug'])) ?>" tabindex="-1" aria-hidden="true"><?php media($a['image'], $a['title'], 'article-img-el', 'Buzz', photo_from('social', (int)$a['id'])); ?></a>
+      <a class="article-img" href="<?= url('news/' . h($a['slug'])) ?>" tabindex="-1" aria-hidden="true"><?php article_visual($a); ?></a>
       <div class="card-body">
         <p class="meta">
           <?php if (!empty($a['category'])): ?><span class="eyebrow"><?= h($a['category']) ?></span><?php endif; ?>
@@ -53,7 +53,7 @@ function article_card(array $a): void
         </p>
         <h3><a href="<?= url('news/' . h($a['slug'])) ?>"><?= h($a['title']) ?></a></h3>
         <p><?= h(excerpt($a['excerpt'] ?: $a['body'], 120)) ?></p>
-        <p class="meta small"><?= fmt_date($a['published_at'], 'j M Y') ?><?= !empty($a['author']) ? ' · ' . h($a['author']) : '' ?></p>
+        <p class="meta small"><?= fmt_date($a['published_at'], 'j M Y') ?><?= !empty($a['source_name']) ? ' · via ' . h($a['source_name']) : (!empty($a['author']) ? ' · ' . h($a['author']) : '') ?></p>
       </div>
     </article>
     <?php
@@ -182,4 +182,14 @@ function photo_wall(array $images, int $rows = 3): void
             . $tiles . '<span class="wall-dup" aria-hidden="true">' . $dup . '</span></div></div>';
     }
     echo '</div>';
+}
+
+/** Article image, or a clean category tile when the story has no photo (keeps news from being illustrated with unrelated party photos). */
+const NEWS_ICONS = ['uganda-news' => '📰', 'world' => '🌍', 'business' => '💼', 'sport' => '⚽', 'entertainment' => '🎭', 'gossip' => '💬', 'music' => '🎵',
+    'lifestyle' => '✨', 'events' => '🎉', 'community' => '🤝', 'trending' => '🔥'];
+function article_visual(array $a, string $class = 'article-img-el'): void
+{
+    if (!empty($a['image'])) { echo '<img class="' . h($class) . '" src="' . h(upload_url($a['image'])) . '" alt="' . h($a['title']) . '" loading="lazy" decoding="async">'; return; }
+    $slug = $a['category_slug'] ?? slugify((string)($a['category'] ?? 'news'));
+    echo '<span class="news-tile news-' . h($slug) . ' ' . h($class) . '" role="img" aria-label="' . h($a['category'] ?? 'News') . '"><b aria-hidden="true">' . (NEWS_ICONS[$slug] ?? '📰') . '</b><span>' . h($a['category'] ?? 'The Gulu Chronicles') . '</span></span>';
 }

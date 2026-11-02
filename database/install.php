@@ -18,7 +18,13 @@ $sql = file_get_contents("$root/database/schema.sql");
 $sql = preg_replace('/^--.*$/m', '', $sql);
 foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) db()->exec($stmt);
 // Upgrade older databases: finance and door staff roles
-db()->exec("ALTER TABLE users MODIFY role ENUM('admin','event_manager','editor','marketing','finance','door') NOT NULL DEFAULT 'editor'");
+db()->exec("ALTER TABLE users MODIFY role ENUM('admin','event_manager','editor','marketing','finance','door','contributor') NOT NULL DEFAULT 'editor'");
+// Upgrade older databases: contributor organisation, article review status and source credit
+$hasCol = fn(string $t, string $c) => (int)val('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$t, $c]);
+if (!$hasCol('users', 'organization')) db()->exec('ALTER TABLE users ADD COLUMN organization VARCHAR(160) NULL AFTER role');
+db()->exec("ALTER TABLE articles MODIFY status ENUM('draft','pending','scheduled','published') NOT NULL DEFAULT 'draft'");
+if (!$hasCol('articles', 'source_name')) db()->exec('ALTER TABLE articles ADD COLUMN source_name VARCHAR(140) NULL AFTER sponsor_name');
+if (!$hasCol('articles', 'source_url')) db()->exec('ALTER TABLE articles ADD COLUMN source_url VARCHAR(500) NULL AFTER source_name');
 // Upgrade older databases: reservations.ticket_token column (unguessable ticket link / QR)
 if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reservations' AND COLUMN_NAME = 'ticket_token'")) {
     db()->exec('ALTER TABLE reservations ADD COLUMN ticket_token VARCHAR(40) NULL AFTER package');
@@ -32,7 +38,7 @@ echo "Schema applied.\n";
 // Categories
 foreach (['Chill & Bite MEATINGS', 'Laugh with Owakabi Comedy Shows', 'Corporate Networking', 'Special Events', 'Brand Activations', 'Community Events'] as $n)
     q('INSERT IGNORE INTO event_categories (name, slug) VALUES (?,?)', [$n, slugify($n)]);
-foreach (['Entertainment', 'Trending', 'Music', 'Lifestyle', 'Business', 'Events', 'Community', 'Gossip'] as $n)
+foreach (['Uganda News', 'World', 'Entertainment', 'Trending', 'Music', 'Lifestyle', 'Business', 'Sport', 'Events', 'Community', 'Gossip'] as $n)
     q('INSERT IGNORE INTO article_categories (name, slug) VALUES (?,?)', [$n, slugify($n)]);
 foreach (['Chill & Bite Highlights', 'Food and Drinks', 'Music and Entertainment', 'Networking Moments', 'Outdoor Games', 'Guests and Personalities', 'Behind the Scenes'] as $n)
     q('INSERT IGNORE INTO gallery_albums (name, slug) VALUES (?,?)', [$n, slugify($n)]);
@@ -115,7 +121,7 @@ Companies and individuals come to network, market their events and promote their
     $ent = (int)val("SELECT id FROM article_categories WHERE slug = 'entertainment'");
     $gos = (int)val("SELECT id FROM article_categories WHERE slug = 'gossip'");
     $arts = [
-        ['Welcome to Northern Buzz', $ent, 'news', 'What is happening up north: our new home for entertainment, lifestyle and community stories.', "Northern Buzz is the new news and entertainment corner of Chill & Bite MEATINGS.\n\nThis is a sample article. Replace it with your own reporting from Gulu and the wider Northern Uganda region."],
+        ['Welcome to The Gulu Chronicles', $ent, 'news', 'Gulu news, gossip and blogs from Uganda and the world.', "The Gulu Chronicles is the news, gossip and blogs home of Chill & Bite MEATINGS.\n\nThis is a sample article. Replace it with your own reporting from Gulu and the wider Northern Uganda region."],
         ['Sample gossip column: what people are talking about', $gos, 'gossip', 'Clearly labelled entertainment chatter. Not verified news.', "This is a sample entertainment gossip piece. Gossip is clearly labelled and must not present allegations about identifiable people as established fact."],
     ];
     foreach ($arts as [$title, $c, $label, $ex, $body])

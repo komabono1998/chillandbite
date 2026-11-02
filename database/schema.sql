@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(120) NOT NULL,
   email VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('admin','event_manager','editor','marketing','finance','door') NOT NULL DEFAULT 'editor',
+  role ENUM('admin','event_manager','editor','marketing','finance','door','contributor') NOT NULL DEFAULT 'editor',
+  organization VARCHAR(160) NULL,
   active TINYINT(1) NOT NULL DEFAULT 1,
   last_login DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -125,7 +126,9 @@ CREATE TABLE IF NOT EXISTS articles (
   image VARCHAR(255) NULL,
   label ENUM('news','opinion','gossip','unconfirmed','sponsored') NOT NULL DEFAULT 'news',
   sponsor_name VARCHAR(140) NULL,
-  status ENUM('draft','scheduled','published') NOT NULL DEFAULT 'draft',
+  status ENUM('draft','pending','scheduled','published') NOT NULL DEFAULT 'draft',
+  source_name VARCHAR(140) NULL,
+  source_url VARCHAR(500) NULL,
   published_at DATETIME NULL,
   featured TINYINT(1) NOT NULL DEFAULT 0,
   meta_description VARCHAR(300) NULL,
@@ -213,6 +216,31 @@ CREATE TABLE IF NOT EXISTS site_content (
   `value` MEDIUMTEXT NOT NULL,
   updated_by INT UNSIGNED NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Bloggers and media houses applying to be accredited to publish on The Gulu Chronicles.
+-- Approval creates a 'contributor' user who can submit articles for editorial review.
+CREATE TABLE IF NOT EXISTS accreditation_applications (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  applicant_type ENUM('blogger','media_house','journalist','vlogger') NOT NULL,
+  full_name VARCHAR(140) NOT NULL,
+  organization VARCHAR(160) NULL,
+  email VARCHAR(190) NOT NULL,
+  phone VARCHAR(30) NOT NULL,
+  location VARCHAR(140) NULL,
+  website VARCHAR(255) NULL,
+  socials VARCHAR(500) NULL,
+  coverage VARCHAR(255) NULL,
+  samples TEXT NOT NULL,
+  about TEXT NOT NULL,
+  document VARCHAR(255) NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  admin_note VARCHAR(255) NULL,
+  user_id INT UNSIGNED NULL,
+  reviewed_by INT UNSIGNED NULL,
+  reviewed_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_acc_status (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Partnership applications from the public; approval creates a sponsors row (shown under Partners)

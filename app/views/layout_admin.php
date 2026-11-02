@@ -6,6 +6,8 @@ $groups = [
     'Website' => [
         ['Pages & content', 'admin/pages', 'pages', '📄'],
         ['News & articles', 'admin/news', 'news', '📰'],
+        ['Press accreditation', 'admin/accreditation', 'accreditation', '🪪'],
+        ['My stories', 'admin/news', 'my_articles', '✍️'],
         ['Comedy videos', 'admin/comedy', 'comedy', '😂'],
         ['Gallery', 'admin/gallery', 'gallery', '🖼️'],
         ['Sponsors & ads', 'admin/advertising', 'advertising', '📣'],
@@ -58,8 +60,9 @@ $isActive = fn(string $p) => $p === 'admin' ? $cur === 'admin' : ($cur === $p ||
       <button class="ad-burger" type="button" aria-label="Open menu" aria-controls="adSide" aria-expanded="false">☰</button>
       <p class="ad-crumb"><a href="<?= url('admin') ?>">Admin</a> <span aria-hidden="true">›</span> <?= h($title ?? '') ?></p>
       <div class="ad-user">
+        <a class="ad-me" href="<?= url('admin/account') ?>" title="My account" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none">
         <span class="ad-avatar" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($u['name'], 0, 1))) ?></span>
-        <span class="ad-who"><b><?= h($u['name']) ?></b><small><?= h(ROLES[$u['role']] ?? $u['role']) ?></small></span>
+        <span class="ad-who"><b><?= h($u['name']) ?></b><small><?= h(ROLES[$u['role']] ?? $u['role']) ?></small></span></a>
         <form class="inline" method="post" action="<?= url('admin/logout') ?>"><?= csrf_field() ?><button class="btn btn-ghost btn-sm">Log out</button></form>
       </div>
     </header>

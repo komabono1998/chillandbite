@@ -171,6 +171,7 @@ const ROLES = [
     'marketing' => 'Marketing & Advertising Manager',
     'finance' => 'Finance Officer',
     'door' => 'Door / Gate Staff',
+    'contributor' => 'Accredited Contributor',
 ];
 const ROLE_DESCRIPTIONS = [
     'admin' => 'Full access to everything, including users, settings and the audit log.',
@@ -179,10 +180,11 @@ const ROLE_DESCRIPTIONS = [
     'marketing' => 'Manages sponsors, partner applications, advertising enquiries and the Advertise/Partner pages.',
     'finance' => 'Views reservations, records payments and refunds, and exports financial reports.',
     'door' => 'Checks guests in at the gate. Sees names and ticket status only.',
+    'contributor' => 'Accredited blogger or media house. Writes stories for The Gulu Chronicles; an editor reviews each one before it goes live.',
 ];
 /** module => roles allowed (admin is always allowed). Enforced server-side on every request. */
 const PERMS = [
-    'dashboard'      => ['event_manager', 'editor', 'marketing', 'finance', 'door'],
+    'dashboard'      => ['event_manager', 'editor', 'marketing', 'finance', 'door', 'contributor'],
     'pages'          => ['editor', 'marketing', 'event_manager'],   // plus a per-page role list in app/content.php
     'events'         => ['event_manager'],
     'reservations'   => ['event_manager', 'finance'],               // view bookings and guest lists
@@ -190,6 +192,8 @@ const PERMS = [
     'payments'       => ['event_manager', 'finance'],               // record payments and refunds
     'checkin'        => ['event_manager', 'door'],
     'tickets'        => ['event_manager'],                          // issue, re-issue, print tickets
+    'accreditation'  => ['editor'],                                 // review blogger / media house applications
+    'my_articles'    => ['contributor'],                            // write and submit own stories for review
     'reports'        => ['event_manager', 'finance'],
     'news'           => ['editor'],
     'comedy'         => ['editor'],
@@ -202,7 +206,7 @@ const PERMS = [
 ];
 const MODULE_LABELS = [
     'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
-    'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)',
+    'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)', 'accreditation' => 'Accreditation (bloggers & media)', 'my_articles' => 'Write own stories (contributor)',
     'reports' => 'Reports & exports', 'news' => 'News', 'comedy' => 'Comedy videos', 'gallery' => 'Gallery',
     'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];

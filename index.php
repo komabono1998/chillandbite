@@ -9,6 +9,7 @@ require __DIR__ . '/app/controllers/admin_content.php';
 require __DIR__ . '/app/controllers/partners.php';
 require __DIR__ . '/app/controllers/admin_hub.php';
 require __DIR__ . '/app/controllers/tickets.php';
+require __DIR__ . '/app/controllers/accreditation.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -22,6 +23,8 @@ $routes = [
     ['POST', 'events/{slug}/reserve', 'post_reserve'],
     ['GET',  'booking/{ref}',        'page_booking'],
     ['GET',  'ticket/{token}',       'page_ticket'],
+    ['GET',  'accreditation',        'page_accreditation'],
+    ['POST', 'accreditation',        'post_accreditation'],
     ['GET',  'track',                'page_track'],
     ['POST', 'track',                'post_track'],
     ['GET',  'admin/checkin/{token}', 'admin_checkin'],
@@ -50,6 +53,10 @@ $routes = [
     ['GET',  'admin/reports',        'admin_reports'],
     ['GET',  'admin/export/{dataset}', 'admin_export'],
     ['GET',  'admin/checkin',        'admin_checkin_desk'],
+    ['GET',  'admin/accreditation',  'admin_accreditation'],
+    ['POST', 'admin/accreditation/{id}', 'admin_accreditation_action'],
+    ['GET',  'admin/account',        'admin_account'],
+    ['POST', 'admin/account',        'admin_account_save'],
     ['GET',  'admin/tickets',        'admin_tickets'],
     ['GET',  'admin/tickets/print',  'admin_tickets_print'],
     ['POST', 'admin/tickets/issue',  'admin_ticket_issue'],
