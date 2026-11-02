@@ -457,3 +457,17 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
 .bk-actions{margin-top:1.6rem;justify-content:center}
 .bk-thanks{text-align:center;margin-top:1.4rem;color:#6b6258;font-size:.95rem}
 @media print{.bk-hero{background:#fff!important;color:#000}.tracker,.ticket-cta .btn,.bk-actions,.chip-copy{display:none!important}}
+
+/* Real logo (replaces the C&B badge) */
+.brand-logo{display:block;height:58px;width:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45));transition:transform .25s}
+.brand:hover .brand-logo{transform:scale(1.06) rotate(-1deg)}
+.brand-logo-lg{height:104px}
+.header-in{min-height:72px}
+@media(max-width:640px){.brand-logo{height:48px}.header-in{min-height:62px}}
+.ticket-logo{flex:none;height:62px;width:auto}
+
+/* Header fit: keep nav links on one line; drop the secondary button on mid-size screens */
+.nav a{white-space:nowrap}
+@media(min-width:1061px) and (max-width:1300px){.nav-cta .btn-outline{display:none}.nav a{padding:8px 8px;font-size:.8rem}}
+.brand-logo.brand-logo-lg{height:104px}
+@media(max-width:640px){.brand-logo.brand-logo-lg{height:84px}}

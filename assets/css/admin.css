@@ -172,3 +172,10 @@ a.kpi:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(30,20,10,.1)}
 /* Login: back-to-website button */
 .login-back{margin:12px 0 0}
 .login-back .btn{display:block;text-align:center;text-decoration:none}
+
+/* Real logo in admin */
+.ad-brand{flex-direction:column;align-items:flex-start;gap:4px}
+.ad-logo{height:68px;width:auto;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.ad-tag{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.login-logo{display:block;height:92px;width:auto;margin:0 auto 6px}
+.login-box h1{text-align:center}

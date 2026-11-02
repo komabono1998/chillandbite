@@ -9,7 +9,7 @@
 <?php else: ?>
   <article class="ticket" aria-label="Event ticket">
     <header class="ticket-head">
-      <span class="brand-mark" aria-hidden="true">C&amp;B</span>
+      <img class="ticket-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="261">
       <div><p class="eyebrow gold">Admit <?= (int)$r['guests'] ?> guest<?= (int)$r['guests'] === 1 ? '' : 's' ?></p><h1><?= h($r['title']) ?></h1></div>
     </header>
     <div class="ticket-body">
