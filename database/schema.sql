@@ -193,3 +193,26 @@ CREATE TABLE IF NOT EXISTS audit_log (
   ip VARCHAR(45) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Partnership applications from the public; approval creates a sponsors row (shown under Partners)
+CREATE TABLE IF NOT EXISTS partner_applications (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  company VARCHAR(160) NOT NULL,
+  contact_name VARCHAR(140) NOT NULL,
+  phone VARCHAR(30) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  website VARCHAR(255) NULL,
+  industry VARCHAR(120) NULL,
+  partnership_type VARCHAR(80) NOT NULL,
+  about TEXT NOT NULL,
+  proposal TEXT NULL,
+  logo VARCHAR(255) NOT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  admin_note VARCHAR(255) NULL,
+  sponsor_id INT UNSIGNED NULL,
+  reviewed_by INT UNSIGNED NULL,
+  reviewed_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_pa_status (status, created_at),
+  CONSTRAINT fk_pa_sponsor FOREIGN KEY (sponsor_id) REFERENCES sponsors(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

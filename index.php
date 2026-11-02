@@ -6,6 +6,7 @@ require __DIR__ . '/app/controllers/site.php';
 require __DIR__ . '/app/controllers/booking.php';
 require __DIR__ . '/app/controllers/admin.php';
 require __DIR__ . '/app/controllers/admin_content.php';
+require __DIR__ . '/app/controllers/partners.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -24,6 +25,8 @@ $routes = [
     ['GET',  'news/{slug}',          'page_article'],
     ['GET',  'advertise',            'page_advertise'],
     ['POST', 'advertise',            'post_advertise'],
+    ['GET',  'partner',              'page_partner'],
+    ['POST', 'partner',              'post_partner'],
     ['GET',  'gallery',              'page_gallery'],
     ['GET',  'contact',              'page_contact'],
     ['POST', 'contact',              'post_contact'],
@@ -58,6 +61,8 @@ $routes = [
     ['POST', 'admin/advertising',    'admin_advertising_save'],
     ['GET',  'admin/inquiries',      'admin_inquiries'],
     ['POST', 'admin/inquiries/{id}', 'admin_inquiry_update'],
+    ['GET',  'admin/partners',       'admin_partners'],
+    ['POST', 'admin/partners/{id}',  'admin_partner_action'],
     ['GET',  'admin/users',          'admin_users'],
     ['POST', 'admin/users',          'admin_users_save'],
     ['GET',  'admin/settings',       'admin_settings'],

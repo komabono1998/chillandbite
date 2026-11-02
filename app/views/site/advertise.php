@@ -1,7 +1,7 @@
 <section class="page-hero hero-dark"><div class="wrap"><span class="eyebrow gold">Brands &amp; advertising</span><h1>Your brand deserves to be seen.</h1>
   <p class="lead">Connect your business with professionals, entrepreneurs, creatives, and entertainment lovers through Chill &amp; Bite MEATINGS and our digital media platforms.</p>
-  <a class="btn btn-primary btn-lg" href="#proposal">Request a proposal</a></div></section>
-<?php if ($sponsors): ?><section class="section section-dark"><div class="wrap center"><h2>Our partners</h2><ul class="sponsor-row"><?php foreach ($sponsors as $s): ?><li><?= $s['logo'] ? '<img src="' . h(upload_url($s['logo'])) . '" alt="' . h($s['name']) . '" loading="lazy">' : '<span>' . h($s['name']) . '</span>' ?></li><?php endforeach; ?></ul></div></section><?php endif; ?>
+  <a class="btn btn-primary btn-lg" href="#proposal">Request a proposal</a> <a class="btn btn-outline btn-lg" href="<?= url('partner') ?>">Become a partner</a></div></section>
+<?php if ($sponsors): ?><section class="section section-dark"><div class="wrap center"><h2>Our partners</h2><ul class="sponsor-row"><?php foreach ($sponsors as $s) sponsor_item($s); ?></ul></div></section><?php endif; ?>
 <section class="section section-cream"><div class="wrap">
   <div class="section-head"><span class="eyebrow">Opportunities</span><h2>Ways to partner with us</h2></div>
   <div class="grid grid-4">

@@ -75,7 +75,7 @@ $pageDesc = $desc ?? setting('tagline');
     </div>
     <div>
       <h4>Company</h4>
-      <ul class="plain"><li><a href="<?= url('about') ?>">About Us</a></li><li><a href="<?= url('advertise') ?>">Brands &amp; Advertising</a></li><li><a href="<?= url('contact') ?>">Contact Us</a></li><li><a href="<?= url('privacy') ?>">Privacy &amp; Cookies</a></li></ul>
+      <ul class="plain"><li><a href="<?= url('about') ?>">About Us</a></li><li><a href="<?= url('advertise') ?>">Brands &amp; Advertising</a></li><li><a href="<?= url('partner') ?>">Become a Partner</a></li><li><a href="<?= url('contact') ?>">Contact Us</a></li><li><a href="<?= url('privacy') ?>">Privacy &amp; Cookies</a></li></ul>
     </div>
     <div>
       <h4>Find us</h4>

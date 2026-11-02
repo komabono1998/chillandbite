@@ -52,6 +52,7 @@ function admin_dashboard(): void
         'Pending reservations' => (int)val("SELECT COUNT(*) FROM reservations WHERE status='pending'"),
         'Confirmed guests (upcoming)' => (int)val("SELECT COALESCE(SUM(r.guests),0) FROM reservations r JOIN events e ON e.id=r.event_id WHERE r.status='confirmed' AND e.start_at >= NOW()"),
         'New inquiries' => (int)val("SELECT COUNT(*) FROM inquiries WHERE status='new'"),
+        'Pending partner applications' => (int)val("SELECT COUNT(*) FROM partner_applications WHERE status='pending'"),
         'Published articles' => (int)val("SELECT COUNT(*) FROM articles WHERE status IN ('published','scheduled') AND published_at <= NOW()"),
         'Outstanding balances' => money(val("SELECT COALESCE(SUM(GREATEST(r.amount_due - COALESCE((SELECT SUM(amount) FROM payments p WHERE p.reservation_id=r.id),0),0)),0) FROM reservations r WHERE r.status IN ('pending','confirmed')")),
     ];

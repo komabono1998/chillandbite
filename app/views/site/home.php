@@ -113,8 +113,8 @@
     <span class="eyebrow gold">Brand partners</span>
     <h2>Your Brand Deserves to Be Seen.</h2>
     <p class="lead narrow">Connect your business with professionals, entrepreneurs, creatives, and entertainment lovers through Chill &amp; Bite MEATINGS and our digital media platforms.</p>
-    <?php if ($sponsors): ?><ul class="sponsor-row"><?php foreach ($sponsors as $s): ?><li><?php if ($s['logo']): ?><img src="<?= h(upload_url($s['logo'])) ?>" alt="<?= h($s['name']) ?>" loading="lazy"><?php else: ?><span><?= h($s['name']) ?></span><?php endif; ?></li><?php endforeach; ?></ul><?php endif; ?>
-    <a class="btn btn-primary btn-lg" href="<?= url('advertise#proposal') ?>">Request an advertising proposal</a>
+    <?php if ($sponsors): ?><ul class="sponsor-row"><?php foreach ($sponsors as $s) sponsor_item($s); ?></ul><?php endif; ?>
+    <a class="btn btn-primary btn-lg" href="<?= url('advertise#proposal') ?>">Request an advertising proposal</a> <a class="btn btn-outline btn-lg" href="<?= url('partner') ?>">Become a partner</a>
   </div>
 </section>
 

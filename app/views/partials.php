@@ -143,3 +143,14 @@ function strip_nums(array $sets, int $seed, int $max = 14): array
     mt_srand($seed); shuffle($n); mt_srand();
     return array_slice($n, 0, $max);
 }
+
+/** One partner logo tile; links to the partner's website when they gave one. */
+function sponsor_item(array $s): void
+{
+    $inner = $s['logo']
+        ? '<img src="' . h(upload_url($s['logo'])) . '" alt="' . h($s['name']) . '" loading="lazy" decoding="async">'
+        : '<span>' . h($s['name']) . '</span>';
+    if (!empty($s['website']) && preg_match('#^https?://#i', $s['website']))
+        $inner = '<a href="' . h($s['website']) . '" target="_blank" rel="noopener sponsored nofollow" title="' . h($s['name']) . '">' . $inner . '</a>';
+    echo '<li>' . $inner . '</li>';
+}

@@ -67,7 +67,7 @@
         <?php foreach (['Business owners & founders', 'Companies & corporate teams', 'Entrepreneurs & freelancers', 'Event organizers & promoters', 'Creatives & artists', 'Friends, couples & food lovers'] as $w): ?><li><?= h($w) ?></li><?php endforeach; ?>
       </ul>
     </div>
-    <?php if ($sponsors): ?><h3>Featured partners</h3><ul class="sponsor-row dark-on-light"><?php foreach ($sponsors as $s): ?><li><?= $s['logo'] ? '<img src="' . h(upload_url($s['logo'])) . '" alt="' . h($s['name']) . '" loading="lazy">' : '<span>' . h($s['name']) . '</span>' ?></li><?php endforeach; ?></ul><?php endif; ?>
+    <?php if ($sponsors): ?><h3>Featured partners</h3><ul class="sponsor-row dark-on-light"><?php foreach ($sponsors as $s) sponsor_item($s); ?></ul><?php endif; ?>
   </div>
   <aside class="side-card">
     <h3>Event details</h3>

@@ -1,7 +1,7 @@
 <?php
 $u = current_user();
 $items = [['Dashboard', 'admin', 'dashboard'], ['Events', 'admin/events', 'events'], ['Reservations', 'admin/reservations', 'reservations'], ['News', 'admin/news', 'news'],
-    ['Comedy videos', 'admin/comedy', 'comedy'], ['Gallery', 'admin/gallery', 'gallery'], ['Sponsors & ads', 'admin/advertising', 'advertising'], ['Inquiries', 'admin/inquiries', 'inquiries'],
+    ['Comedy videos', 'admin/comedy', 'comedy'], ['Gallery', 'admin/gallery', 'gallery'], ['Sponsors & ads', 'admin/advertising', 'advertising'], ['Partner applications', 'admin/partners', 'advertising'], ['Inquiries', 'admin/inquiries', 'inquiries'],
     ['Users', 'admin/users', 'users'], ['Settings', 'admin/settings', 'settings'], ['Audit log', 'admin/audit', 'audit']];
 $cur = trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE)), '/');
 ?><!doctype html>
