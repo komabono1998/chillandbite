@@ -6,7 +6,7 @@ $newsLd = ['@context' => 'https://schema.org', '@type' => 'NewsArticle', 'headli
     'mainEntityOfPage' => abs_url('news/' . $art['slug']),
     'publisher' => ['@type' => 'Organization', 'name' => 'The Gulu Chronicles', 'logo' => ['@type' => 'ImageObject', 'url' => abs_url('assets/img/logo.png')]]];
 if ($art['author']) $newsLd['author'] = ['@type' => 'Person', 'name' => $art['author']];
-if ($art['image']) $newsLd['image'] = [abs_url('uploads/' . $art['image'])];
+if ($art['image']) $newsLd['image'] = [(str_starts_with($art['image'], 'img/') ? abs_url('assets/' . $art['image']) : abs_url('uploads/' . $art['image']))];
 ?>
 <script type="application/ld+json"><?= json_encode($newsLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <article>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label=" Illustration of a bridge linking two cities for investment">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#241a10"/><stop offset="1" stop-color="#7a5320"/></linearGradient></defs>
+<rect width="1200" height="675" fill="url(#g)"/><circle cx="930" cy="150" r="70" fill="#ffd978" opacity=".85"/>
+<g fill="#120d08"><rect x="60" y="360" width="70" height="240"/><rect x="140" y="300" width="90" height="300"/><rect x="240" y="400" width="60" height="200"/><rect x="900" y="380" width="80" height="220"/><rect x="990" y="310" width="100" height="290"/><rect x="1100" y="420" width="60" height="180"/></g>
+<rect y="560" width="1200" height="115" fill="#120d08"/>
+<g stroke="#d9a441" stroke-width="10" fill="none" stroke-linecap="round"><path d="M290 520h620"/><path d="M380 520V300M820 520V300"/><path d="M380 300Q600 520 820 300"/><path d="M290 520Q380 330 380 300M910 520Q820 330 820 300"/><path d="M450 520v-60M520 520v-120M600 520v-160M680 520v-120M750 520v-60" stroke-width="5"/></g>
+</svg>

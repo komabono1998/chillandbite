@@ -141,7 +141,7 @@ function page_article(array $a): void
     $related = rows("SELECT a.*, c.name AS category FROM articles a LEFT JOIN article_categories c ON c.id = a.category_id
         WHERE a.id <> ? AND a.status IN ('published','scheduled') AND a.published_at <= NOW() AND a.category_id <=> ?
         ORDER BY a.published_at DESC LIMIT 3", [$art['id'], $art['category_id']]);
-    render('site/article', ['title' => $art['title'] . ' | The Gulu Chronicles', 'desc' => $art['meta_description'] ?: $art['excerpt'], 'art' => $art, 'related' => $related, 'og_image' => $art['image']]);
+    render('site/article', ['title' => $art['title'] . ' | The Gulu Chronicles', 'desc' => $art['meta_description'] ?: $art['excerpt'], 'art' => $art, 'related' => $related, 'og_image' => ($art['image'] && !str_ends_with($art['image'], '.svg')) ? $art['image'] : null]);
 }
 function page_advertise(): void
 {

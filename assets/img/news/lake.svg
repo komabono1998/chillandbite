@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label=" Illustration of a fishing boat on Lake Victoria at sunset">
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c3a5e"/><stop offset=".55" stop-color="#e8955a"/><stop offset="1" stop-color="#f5c27a"/></linearGradient><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b6a8f"/><stop offset="1" stop-color="#123650"/></linearGradient></defs>
+<rect width="1200" height="675" fill="url(#s)"/><circle cx="600" cy="360" r="95" fill="#fff3c9"/>
+<rect y="380" width="1200" height="295" fill="url(#w)"/>
+<g stroke="#fff3c9" stroke-width="5" stroke-linecap="round" opacity=".6"><path d="M520 410h160M490 440h220M470 475h260M500 515h200"/></g>
+<g transform="translate(470 300)"><path d="M0 90h260l-40 45H40z" fill="#1c1c1c"/><path d="M130 90V-10" stroke="#1c1c1c" stroke-width="8"/><path d="M135 -5l90 80h-90z" fill="#1c1c1c" opacity=".9"/></g>
+<path d="M0 380q150-40 300 0t300 0 300 0 300 0" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="3"/>
+</svg>
