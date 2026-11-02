@@ -14,6 +14,7 @@ $groups = [
     'Operations' => [
         ['Events', 'admin/events', 'events', '📅'],
         ['Reservations', 'admin/reservations', 'reservations', '🎟️'],
+        ['Tickets', 'admin/tickets', 'tickets', '🎫'],
         ['Check-in desk', 'admin/checkin', 'checkin', '✅'],
         ['Inquiries', 'admin/inquiries', 'inquiries', '📬'],
     ],

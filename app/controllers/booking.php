@@ -150,7 +150,8 @@ function ticket_message(array $r): string
     $line = "Hello {$r['full_name']},\n\nYour booking is CONFIRMED. Here is your ticket for {$r['title']}.\n\n";
     return $line . 'Date: ' . fmt_date($r['start_at'], 'l, j F Y') . ' at ' . fmt_time($r['start_at']) . "\nVenue: {$r['venue']}, {$r['location']}\n" .
         'Reference: ' . $r['reference'] . "\n" . ($r['package'] ? "Table package: {$r['package']}\n" : '') . "Admits: {$r['guests']} guest(s)\n\n" .
-        'Open your ticket (show the QR code at the entrance): ' . ticket_url((int)$r['id']) . "\n";
+        'Open your ticket (show the QR code at the entrance): ' . ticket_url((int)$r['id']) . "\n\n" .
+        "Lost this message? Track or download your ticket any time with reference {$r['reference']}: " . abs_url('track') . "\n";
 }
 function reservation_with_event(int $id): ?array
 {

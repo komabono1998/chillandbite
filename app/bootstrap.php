@@ -174,7 +174,7 @@ const ROLES = [
 ];
 const ROLE_DESCRIPTIONS = [
     'admin' => 'Full access to everything, including users, settings and the audit log.',
-    'event_manager' => 'Runs events, reservations, approvals, payments, check-in and reports.',
+    'event_manager' => 'Runs events, reservations, approvals, payments, tickets, check-in and reports.',
     'editor' => 'Edits website pages, news, comedy videos and the gallery.',
     'marketing' => 'Manages sponsors, partner applications, advertising enquiries and the Advertise/Partner pages.',
     'finance' => 'Views reservations, records payments and refunds, and exports financial reports.',
@@ -189,6 +189,7 @@ const PERMS = [
     'reservations_manage' => ['event_manager'],                     // approve, reject, cancel, send tickets
     'payments'       => ['event_manager', 'finance'],               // record payments and refunds
     'checkin'        => ['event_manager', 'door'],
+    'tickets'        => ['event_manager'],                          // issue, re-issue, print tickets
     'reports'        => ['event_manager', 'finance'],
     'news'           => ['editor'],
     'comedy'         => ['editor'],
@@ -201,7 +202,7 @@ const PERMS = [
 ];
 const MODULE_LABELS = [
     'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
-    'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in',
+    'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)',
     'reports' => 'Reports & exports', 'news' => 'News', 'comedy' => 'Comedy videos', 'gallery' => 'Gallery',
     'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];

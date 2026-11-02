@@ -228,7 +228,7 @@ function admin_reservation_action(array $a): void
     $r = row('SELECT * FROM reservations WHERE id = ?', [$id]) ?? not_found();
     $act = $_POST['action'] ?? '';
     $back = $_POST['back'] ?? '';
-    $dest = (str_starts_with($back, 'admin/reservations') || preg_match('#^admin/checkin(/[a-f0-9]{24}|\?[A-Za-z0-9=&_%.-]*)?$#', $back)) ? $back
+    $dest = (str_starts_with($back, 'admin/reservations') || preg_match('#^admin/checkin(/[a-f0-9]{24}|\?[A-Za-z0-9=&_%.-]*)?$#', $back) || preg_match('#^admin/tickets(\?[A-Za-z0-9=&_%.+-]*)?$#', $back)) ? $back
         : (can('reservations') ? "admin/reservations/$id" : 'admin/checkin');
     switch ($act) {
         case 'approve':

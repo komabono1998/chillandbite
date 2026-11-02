@@ -179,3 +179,14 @@ a.kpi:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(30,20,10,.1)}
 .ad-tag{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700}
 .login-logo{display:block;height:92px;width:auto;margin:0 auto 6px}
 .login-box h1{text-align:center}
+
+/* Printable ticket sheet */
+.print-tix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ptix{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff;border:2px dashed #b9b0a1;border-radius:14px;padding:14px;break-inside:avoid;page-break-inside:avoid}
+.ptix-logo{height:54px;width:auto;background:#171717;border-radius:8px;padding:5px}
+.ptix p{margin:4px 0}.ptix-title{font-weight:700;font-size:.92rem;line-height:1.25}.ptix-meta{font-size:.78rem;color:#555}
+.ptix-guest{font-size:.9rem}.ptix-guest span{font-size:.76rem;color:#666}
+.ptix-ref{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;letter-spacing:.14em;color:#b9561b;font-size:1.05rem}
+.ptix-qr{line-height:0;padding:6px;border:2px solid #171717;border-radius:10px;background:#fff}
+@media(max-width:900px){.print-tix{grid-template-columns:1fr}}
+@media print{.no-print{display:none!important}.print-tix{gap:10px}.ad-content{padding:0!important}body.admin{background:#fff}.ptix{-webkit-print-color-adjust:exact;print-color-adjust:exact}}

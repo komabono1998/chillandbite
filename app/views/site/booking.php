@@ -54,7 +54,7 @@ $steps = [
   <?php if ($st === 'confirmed'): ?>
     <div class="ticket-cta">
       <div><strong>Your ticket is ready</strong><span>Show the QR code at the entrance. One ticket admits <?= (int)$r['guests'] ?> guest<?= (int)$r['guests'] === 1 ? '' : 's' ?>.</span></div>
-      <a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>">Open my ticket</a>
+      <div class="btn-row"><a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>">Open my ticket</a><a class="btn btn-outline btn-lg" style="border-color:var(--gold);color:var(--gold)" href="<?= h($ticket . '?download=1') ?>">⬇ Download</a></div>
     </div>
   <?php endif; ?>
 

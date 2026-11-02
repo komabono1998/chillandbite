@@ -240,6 +240,25 @@ function site_pages(): array
                 ]],
             ],
         ],
+        'track' => [
+            'label' => 'Track a booking', 'icon' => '🔎', 'url' => 'track', 'roles' => ['editor', 'event_manager'],
+            'desc' => 'Where guests enter their booking reference to see their status and download their ticket.',
+            'related' => [['Tickets', 'admin/tickets', 'tickets'], ['Reservations', 'admin/reservations', 'reservations']],
+            'sections' => [
+                'hero' => ['label' => 'Page header', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Track your booking'),
+                    $f('heading', 'Heading', 'text', 'Find your ticket'),
+                    $f('lead', 'Subtitle', 'text', 'Enter the reference you received when you booked to see your status and download your ticket.'),
+                    $photo(),
+                ]],
+                'form' => ['label' => 'Lookup form', 'fields' => [
+                    $f('label', 'Field label', 'text', 'Booking reference'),
+                    $f('button', 'Button', 'text', 'Find my booking'),
+                    $f('help', 'Help text', 'text', 'Your reference starts with CB and has 8 characters, for example CB7K3M9Q. It was shown after you booked and sent to your email if you gave one.'),
+                    $f('contact', 'Help line', 'text', 'Lost your reference? Contact us and we will help you find it.'),
+                ]],
+            ],
+        ],
         'gallery' => [
             'label' => 'Gallery', 'icon' => '🖼️', 'url' => 'gallery', 'roles' => ['editor'],
             'desc' => 'Photo gallery. Photos and albums are managed under Gallery.',
