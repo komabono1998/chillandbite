@@ -133,3 +133,16 @@
     document.addEventListener('keydown', key);
   });
 })();
+
+// Staggered entrance for tile groups marked data-stagger (food mosaic)
+(function () {
+  'use strict';
+  if (!('IntersectionObserver' in window)) return;
+  document.querySelectorAll('[data-stagger]').forEach(function (group) {
+    group.classList.add('will');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { group.classList.add('in'); io.disconnect(); } });
+    }, { threshold: 0.2 });
+    io.observe(group);
+  });
+})();

@@ -380,3 +380,35 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
 .checkin-ok{border-top-color:var(--ok)}.checkin-ok h2{color:var(--ok)}
 .checkin-warn{border-top-color:#d98a00}.checkin-warn h2{color:#b36f00}
 .checkin-bad{border-top-color:var(--err)}.checkin-bad h2{color:var(--err)}
+
+/* ===== Food mosaic: organised layout + animation ===== */
+.taste{position:relative;overflow:hidden}
+.taste::before{content:"";position:absolute;inset:auto -10% -40% -10%;height:70%;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 50% 100%,rgba(217,107,39,.38),rgba(217,107,39,0) 62%);animation:emberGlow 5s ease-in-out infinite alternate}
+.taste>.wrap{position:relative;z-index:1}
+@keyframes emberGlow{from{opacity:.45;transform:scale(1)}to{opacity:1;transform:scale(1.12)}}
+
+.mosaic{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,clamp(190px,24vw,280px));grid-auto-rows:auto;
+  grid-template-areas:"a a b c" "e e b d";gap:16px}
+.m-a{grid-area:a;--tx:-70px;--ty:20px}.m-b{grid-area:b;--tx:0px;--ty:70px}.m-c{grid-area:c;--tx:70px;--ty:20px}
+.m-e{grid-area:e;--tx:-70px;--ty:40px}.m-d{grid-area:d;--tx:70px;--ty:40px}
+.mosaic-item{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.mosaic-item:hover,.mosaic-item:focus-visible{transform:translateY(-8px);box-shadow:0 22px 44px rgba(217,107,39,.4),0 0 0 3px var(--gold);z-index:2}
+/* slow, staggered "breathing" pan on every photo; pauses on hover */
+.mosaic-item img{transform-origin:50% 50%;animation:foodPan calc(15s + var(--i,0)*2.5s) ease-in-out infinite alternate;animation-delay:calc(var(--i,0)*-4s)}
+.mosaic-item:hover img{animation-play-state:paused;transform:scale(1.18)}
+@keyframes foodPan{from{transform:scale(1.04) translate(0,0)}to{transform:scale(1.17) translate(-2.5%,-2%)}}
+/* captions slide up on hover (always visible on touch screens) */
+.m-cap{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:46px 16px 14px;color:#fff;background:linear-gradient(0deg,rgba(15,15,15,.88),rgba(15,15,15,0));display:flex;flex-direction:column;gap:2px;transform:translateY(12px);opacity:0;transition:transform .35s,opacity .35s}
+.m-cap b{font-size:1.05rem;color:var(--gold)}.m-cap small{font-size:.8rem;color:#eee}
+.mosaic-item:hover .m-cap,.mosaic-item:focus-visible .m-cap{transform:none;opacity:1}
+@media(hover:none){.m-cap{transform:none;opacity:1}}
+.mosaic-item::after{background:linear-gradient(0deg,rgba(217,107,39,.35),transparent 60%)}
+/* staggered entrance when the grid scrolls into view (JS adds .will then .in) */
+.mosaic.will:not(.in) .mosaic-item{opacity:0}
+.mosaic.in .mosaic-item{animation:tileIn .9s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i)*.15s)}
+@keyframes tileIn{from{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.86) rotate(-2.5deg)}to{opacity:1;transform:none}}
+@media(max-width:760px){
+  .mosaic{grid-template-columns:repeat(2,1fr);grid-template-rows:170px 150px 150px 170px;grid-template-areas:"a a" "b c" "b d" "e e";gap:12px}
+  .m-a,.m-e{--tx:0px;--ty:50px}.m-b,.m-c,.m-d{--tx:0px;--ty:50px}
+}
+@media(prefers-reduced-motion:reduce){.taste::before,.mosaic-item img,.mosaic.in .mosaic-item{animation:none}.mosaic.will:not(.in) .mosaic-item{opacity:1}}

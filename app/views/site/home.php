@@ -59,9 +59,18 @@
 <section class="section section-dark taste">
   <div class="wrap">
     <div class="section-head center"><span class="eyebrow gold">Good food</span><h2>Fire. Smoke. Flavour.</h2><p class="lead narrow">Sizzling skewers, slow-roasted chicken, sticky ribs and wings, served all afternoon.</p></div>
-    <div class="mosaic">
-      <?php foreach ([[2, 'wide'], [23, 'tall'], [25, ''], [30, ''], [26, 'wide']] as [$n, $c]): ?>
-        <a class="mosaic-item <?= $c ?>" href="<?= h(photo($n)) ?>" data-lightbox><img src="<?= h(photo($n)) ?>" alt="Grilled food at Chill &amp; Bite MEATINGS" loading="lazy" decoding="async"></a>
+    <div class="mosaic" data-stagger>
+      <?php foreach ([
+          ['a', 2,  'Skewers',          'Charcoal-grilled, served hot'],
+          ['b', 23, 'Slow-roasted chicken', 'Turned over the fire'],
+          ['c', 25, 'Sticky ribs',      'Sweet, smoky glaze'],
+          ['e', 26, 'BBQ ribs',         'Fall-off-the-bone tender'],
+          ['d', 30, 'Glazed wings',     'Crispy outside, juicy inside'],
+      ] as $i => [$area, $n, $name, $sub]): ?>
+        <a class="mosaic-item m-<?= $area ?>" style="--i:<?= $i ?>" href="<?= h(photo($n)) ?>" data-lightbox aria-label="<?= h($name) ?>: view larger">
+          <img src="<?= h(photo($n)) ?>" alt="<?= h($name) ?> at Chill &amp; Bite MEATINGS" loading="lazy" decoding="async">
+          <span class="m-cap"><b><?= h($name) ?></b><small><?= h($sub) ?></small></span>
+        </a>
       <?php endforeach; ?>
     </div>
   </div>
