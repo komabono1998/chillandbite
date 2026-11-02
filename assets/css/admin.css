@@ -190,3 +190,48 @@ a.kpi:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(30,20,10,.1)}
 .ptix-qr{line-height:0;padding:6px;border:2px solid #171717;border-radius:10px;background:#fff}
 @media(max-width:900px){.print-tix{grid-template-columns:1fr}}
 @media print{.no-print{display:none!important}.print-tix{gap:10px}.ad-content{padding:0!important}body.admin{background:#fff}.ptix{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* ---------- Login: split screen ---------- */
+body.admin.admin-login{background:#141210}
+.ad-login-wrap{max-width:none;margin:0;padding:0}
+.ad-login-wrap>.alert{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:50;width:min(520px,92vw);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.lg{display:grid;grid-template-columns:1.15fr 1fr;min-height:100vh}
+.lg-art{position:relative;background:linear-gradient(180deg,rgba(20,18,16,.55),rgba(20,18,16,.92)),var(--lg-photo) center/cover;display:flex;align-items:flex-end;color:#fff;overflow:hidden}
+.lg-art::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 15% 15%,rgba(217,107,39,.35),transparent 50%);pointer-events:none}
+.lg-art-in{position:relative;z-index:1;padding:clamp(28px,5vw,64px);max-width:640px}
+.lg-logo{width:150px;height:auto;margin-bottom:28px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
+.lg-art h2{font-size:clamp(2rem,4vw,3.2rem);line-height:1.08;margin:0 0 14px;color:#fff}
+.lg-art p{color:#e4d9c8;font-size:1.05rem;margin:0 0 24px;max-width:480px}
+.lg-points{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lg-points li{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px);border-radius:12px;padding:10px 14px;font-weight:600;font-size:.9rem}
+.lg-side{display:flex;align-items:center;justify-content:center;padding:32px 20px;background:radial-gradient(circle at 80% 0%,rgba(217,107,39,.14),transparent 45%),#faf5ec}
+.lg-card{width:100%;max-width:410px}
+.lg-logo-sm{display:none;width:96px;height:auto;margin:0 auto 14px}
+.lg-eyebrow{margin:0 0 6px;color:var(--orange);font-weight:800;font-size:.75rem;letter-spacing:.18em;text-transform:uppercase}
+.lg-card h1{margin:0 0 6px;font-size:2.1rem;color:#171717}
+.lg-sub{margin:0 0 26px;color:#6b6258}
+.lg-field{display:block;margin-bottom:18px}
+.lg-field>span:first-child{display:block;font-weight:700;font-size:.85rem;margin-bottom:6px;color:#3b342c}
+.lg-input{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #e3d9c8;border-radius:14px;padding:0 14px;transition:border-color .2s,box-shadow .2s}
+.lg-input:focus-within{border-color:var(--orange);box-shadow:0 0 0 4px rgba(217,107,39,.18)}
+.lg-input i{font-style:normal;opacity:.7}
+.lg-input input{flex:1;min-width:0;border:0;background:transparent;padding:15px 0;font:inherit;font-size:1rem;color:#171717;outline:0;box-shadow:none}
+.lg-input input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #fff inset}
+.lg-eye{border:0;background:#f1e9da;color:#5a5044;font-weight:700;font-size:.75rem;padding:6px 10px;border-radius:8px;cursor:pointer}
+.lg-eye:hover{background:#e8dcc6}
+.lg-caps{display:block;margin-top:6px;color:#b4501a;font-weight:600}
+.lg-submit{padding:15px;font-size:1.05rem;border-radius:14px;margin-top:4px}
+.lg-submit:disabled{opacity:.7;cursor:wait}
+.lg-back{display:block;text-align:center;margin-top:16px;color:#5a5044;font-weight:600;text-decoration:none}
+.lg-back:hover{color:var(--orange)}
+.lg-note{margin:26px 0 0;padding-top:18px;border-top:1px solid #e3d9c8;font-size:.8rem;color:#7a7064;text-align:center}
+.lg-note a{color:var(--orange);font-weight:600}
+@media(max-width:860px){
+  .lg{grid-template-columns:1fr}
+  .lg-art{display:none}
+  .lg-side{min-height:100vh;align-items:flex-start;padding-top:8vh}
+  .lg-logo-sm{display:block}
+  .lg-card{text-align:center}.lg-card form{text-align:left}
+}
+.lg-caps[hidden]{display:none}
+.lg-input input,.lg-input input:focus{border:0!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;outline:0!important;padding:15px 0!important;width:auto}
