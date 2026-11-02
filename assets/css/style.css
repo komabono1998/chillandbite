@@ -508,3 +508,20 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
 @keyframes wallIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
 @media(max-width:640px){.wall-item{height:150px;width:calc(var(--w,260px) * .62);margin-right:10px}.wall{gap:10px}}
 @media(prefers-reduced-motion:reduce){.wall-row{overflow-x:auto}.wall-track{animation:none!important}.wall-dup{display:none}.wall.will:not(.in) .wall-row{opacity:1;transform:none}.wall.in .wall-row{animation:none}.wall{-webkit-mask-image:none;mask-image:none}}
+
+/* ===== Final call to action: photo first ===== */
+.cta-final{position:relative;isolation:isolate;overflow:hidden;background:#171717;color:#fff;padding:clamp(72px,11vw,150px) 0}
+.cta-final::before{content:"";position:absolute;inset:-5%;z-index:-2;background:var(--cta-photo,none) center/cover no-repeat;animation:ctaZoom 30s ease-in-out infinite alternate}
+.cta-final::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(23,23,23,.62) 0%,rgba(23,23,23,.12) 36%,rgba(23,23,23,.1) 62%,rgba(23,23,23,.72) 100%),
+             radial-gradient(ellipse at 50% 118%,rgba(217,107,39,.6),transparent 62%)}
+@keyframes ctaZoom{from{transform:scale(1.02)}to{transform:scale(1.13) translateY(-1.5%)}}
+.cta-card{display:inline-block;max-width:880px;width:100%;padding:clamp(26px,4.5vw,50px) clamp(20px,4vw,48px);border-radius:26px;
+  background:rgba(16,16,16,.3);-webkit-backdrop-filter:blur(6px) saturate(1.25);backdrop-filter:blur(6px) saturate(1.25);
+  border:1px solid rgba(230,182,92,.4);box-shadow:0 24px 70px rgba(0,0,0,.5)}
+.cta-card h2{font-size:clamp(1.7rem,4.6vw,3rem);text-transform:uppercase;margin:.25em 0 .35em;text-shadow:0 3px 22px rgba(0,0,0,.55)}
+.cta-card .lead{color:var(--gold);font-weight:700;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.cta-text{color:#f4ece0;text-shadow:0 2px 12px rgba(0,0,0,.55);max-width:640px;margin-inline:auto}
+.cta-date{display:inline-block;margin:0 0 .4rem;padding:6px 16px;border-radius:99px;background:rgba(217,107,39,.92);font-weight:700;font-size:.85rem;letter-spacing:.04em}
+.cta-card .btn-outline{background:rgba(0,0,0,.25)}
+@media(prefers-reduced-motion:reduce){.cta-final::before{animation:none}}

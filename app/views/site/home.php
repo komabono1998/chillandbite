@@ -139,14 +139,17 @@
 <?php endif; ?>
 
 
-<section class="cta-final" style="--cta-photo:url('<?= h(photo(40)) ?>')">
+<section class="cta-final" style="--cta-photo:url('<?= h(cti('home.cta.photo')) ?>')">
   <div class="wrap center">
-    <h2><?= cth('home.cta.heading') ?></h2>
-    <p class="lead"><?= cth('home.cta.tagline') ?></p>
-    <p><?= cth('home.cta.text') ?></p>
-    <div class="btn-row" style="justify-content:center">
-      <a class="btn btn-dark btn-lg" href="<?= h($reserve) ?>"><?= cth('home.cta.button') ?></a>
-      <?php if (setting('whatsapp_group')): ?><a class="btn btn-outline-dark btn-lg" style="border-color:#fff;color:#fff" href="<?= h(setting('whatsapp_group')) ?>" target="_blank" rel="noopener">Join our WhatsApp group</a><?php endif; ?>
+    <div class="cta-card">
+      <p class="cta-date"><span aria-hidden="true">📅</span> <?= $next_date->format('l, j F Y') ?> · <?= $next_date->format('g:i A') ?></p>
+      <h2><?= cth('home.cta.heading') ?></h2>
+      <p class="lead"><?= cth('home.cta.tagline') ?></p>
+      <p class="cta-text"><?= cth('home.cta.text') ?></p>
+      <div class="btn-row" style="justify-content:center">
+        <a class="btn btn-primary btn-lg" href="<?= h($reserve) ?>"><?= cth('home.cta.button') ?></a>
+        <?php if (setting('whatsapp_group')): ?><a class="btn btn-outline btn-lg" href="<?= h(setting('whatsapp_group')) ?>" target="_blank" rel="noopener">Join our WhatsApp group</a><?php endif; ?>
+      </div>
     </div>
   </div>
 </section>

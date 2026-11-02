@@ -91,6 +91,7 @@ function site_pages(): array
                     $f('tagline', 'Tagline', 'text', 'One Sunday. One Location. Endless Connections.'),
                     $f('text', 'Text', 'text', 'Join us at Revelation Cottages, Gulu City, for the next Chill & Bite MEATINGS experience.'),
                     $f('button', 'Button', 'text', 'Book your place today'),
+                    $f('photo', 'Background photo', 'image', 'img/photos/photo-53.jpg', 'A bright, wide photo works best. Text sits on a frosted panel so the picture stays visible.'),
                 ]],
             ],
         ],
