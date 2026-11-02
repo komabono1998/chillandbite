@@ -82,7 +82,9 @@ if (in_array('--sample', $argv, true) && !(int)val('SELECT COUNT(*) FROM events'
            VALUES (?,?,?,?,?,?,?, 'published', 200, 'instant', ?, ?)", [
             $cat, $title, unique_slug('events', $title),
             'Great food, networking, music, outdoor games, and entertainment.',
-            "The monthly lifestyle and corporate networking experience hosted by MC Kash Owakabi at Revelation Cottages, Gulu City.\n\nEnjoy food, music, comedy, outdoor games and meaningful connections with professionals, entrepreneurs and creatives.",
+            "The monthly lifestyle and corporate networking experience hosted by MC Kash Owakabi at Revelation Cottages, Gulu City.\n\nEnjoy food, music, comedy, outdoor games and meaningful connections with professionals, entrepreneurs and creatives.
+
+Companies and individuals come to network, market their events and promote their products and services to a lively, engaged crowd.",
             $start->format('Y-m-d H:i:s'), $start->setTime(20, 0)->format('Y-m-d H:i:s'),
             $i === 0 ? 1 : 0, $start->modify('-1 hour')->format('Y-m-d H:i:s'),
         ]);
