@@ -7,7 +7,7 @@
   <?php foreach ($list as $r): ?>
   <article class="ptix">
     <div class="ptix-main">
-      <img class="ptix-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
+      <img class="ptix-logo" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
       <p class="ptix-title"><?= h($ev['title']) ?></p>
       <p class="ptix-meta"><?= fmt_date($ev['start_at'], 'D, j M Y') ?> · <?= fmt_time($ev['start_at']) ?><br><?= h($ev['venue']) ?></p>
       <p class="ptix-guest"><b><?= h($r['full_name']) ?></b><br><span><?= h(str_replace(' Reservation', '', RES_TYPES[$r['type']])) ?><?= $r['package'] ? ' · ' . h($r['package']) : '' ?> · admits <?= (int)$r['guests'] ?></span></p>

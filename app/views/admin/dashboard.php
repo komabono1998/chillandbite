@@ -52,6 +52,19 @@ $maxRev = isset($rev_events) && $rev_events ? max(1, max(array_column($rev_event
   <?php endforeach; ?>
 </div><?php endif; ?>
 
+<?php if (can('pages')): $qePages = array_filter(site_pages(), fn($pg, $pid) => can_edit_page($pid), ARRAY_FILTER_USE_BOTH); ?>
+<div class="panel qe-panel">
+  <div class="panel-head"><h2>✏️ Quick edit</h2><span class="muted small">Jump straight to the text or pictures of any page</span></div>
+  <div class="qe-grid">
+    <?php foreach ($qePages as $pid => $pg): ?>
+      <div class="qe-item"><b><?= h($pg['icon']) ?> <?= h($pg['label']) ?></b>
+        <span><a href="<?= url('admin/pages/' . $pid) ?>">Text</a><a href="<?= url('admin/pictures#page-' . $pid) ?>">Pictures</a><a target="_blank" rel="noopener" href="<?= url($pg['url'] === 'home' ? '' : $pg['url']) ?>">View ↗</a></span></div>
+    <?php endforeach; ?>
+    <div class="qe-item qe-item-wide"><b>🖼️ All pictures</b><span><a href="<?= url('admin/pictures#photos') ?>">Photo library</a><a href="<?= url('admin/pictures#brand') ?>">Logo &amp; icon</a><?php if (can('gallery')): ?><a href="<?= url('admin/gallery') ?>">Gallery</a><?php endif; ?><?php if (can('events')): ?><a href="<?= url('admin/events') ?>">Event posters</a><?php endif; ?><?php if (can('djs')): ?><a href="<?= url('admin/djs') ?>">DJs &amp; mixes</a><?php endif; ?></span></div>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="dash-grid">
 <?php if (!empty($next)): $n = $next; $days = max(0, (int)ceil((strtotime($n['start_at']) - time()) / 86400)); ?>
   <div class="col-7"><div class="next-card">

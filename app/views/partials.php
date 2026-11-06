@@ -119,7 +119,7 @@ const PHOTO_SETS = [
     'social' => [11, 22, 31, 33, 35, 38, 46, 50, 34],
     'food'   => [2, 23, 25, 26, 30],
 ];
-function photo(int $n): string { return asset(sprintf('img/photos/photo-%02d.jpg', $n)); }
+function photo(int $n): string { return photo_override($n) ?? asset(sprintf('img/photos/photo-%02d.jpg', $n)); }
 function photo_from(string $set, int $seed): string
 {
     $p = PHOTO_SETS[$set] ?? PHOTO_SETS['crowd'];

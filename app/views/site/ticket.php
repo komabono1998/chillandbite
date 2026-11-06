@@ -17,7 +17,7 @@
 <?php else: ?>
   <article class="ticket" aria-label="Event ticket">
     <header class="ticket-head">
-      <img class="ticket-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
+      <img class="ticket-logo" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
       <div><p class="eyebrow gold">Admit <?= (int)$r['guests'] ?> guest<?= (int)$r['guests'] === 1 ? '' : 's' ?></p><h1><?= h($r['title']) ?></h1></div>
     </header>
     <div class="ticket-body">
@@ -59,7 +59,7 @@
       'date' => fmt_date($r['start_at'], 'l, j F Y'), 'time' => fmt_time($r['start_at']),
       'venue' => $r['venue'] . ', ' . $r['location'], 'name' => $r['full_name'] . ($r['company'] ? ' · ' . $r['company'] : ''),
       'type' => RES_TYPES[$r['type']] . ($r['package'] ? ' · ' . $r['package'] . ' package' : ''),
-      'logo' => asset('img/logo.png'), 'serial' => $serial, 'seal' => $seal,
+      'logo' => brand_logo(), 'serial' => $serial, 'seal' => $seal,
   ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
   <script src="<?= h(asset('js/vendor/qrcode.min.js')) ?>"></script>
   <script>

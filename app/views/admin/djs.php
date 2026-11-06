@@ -18,7 +18,7 @@ $mixForm = function (?array $m) use ($act, $djOpts) { $v = fn($k, $d = '') => $m
       <?php field('status', 'Visibility', ['type' => 'select', 'value' => $v('status', 'published'), 'options' => ['published' => 'Published on the website', 'draft' => 'Draft (hidden)']]); ?>
     </div>
     <label class="chk"><input type="checkbox" name="featured" value="1"<?= $v('featured') ? ' checked' : '' ?>> Featured (shown first)</label>
-    <label class="chk"><input type="checkbox" name="allow_download" value="1"<?= $v('allow_download') ? ' checked' : '' ?>> Let listeners download this mix</label>
+    <p class="small muted">Uploaded audio files always get a <b>Download mix</b> button on the website. Mixes added as links cannot be downloaded.</p>
     <button class="btn btn-primary"><?= $m ? 'Save changes' : 'Publish mix' ?></button>
   </form>
 <?php };

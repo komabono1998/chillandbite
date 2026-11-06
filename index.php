@@ -11,6 +11,7 @@ require __DIR__ . '/app/controllers/admin_hub.php';
 require __DIR__ . '/app/controllers/tickets.php';
 require __DIR__ . '/app/controllers/accreditation.php';
 require __DIR__ . '/app/controllers/djs.php';
+require __DIR__ . '/app/controllers/pictures.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -85,6 +86,8 @@ $routes = [
     ['POST', 'admin/news/{id}/delete', 'admin_article_delete'],
     ['GET',  'admin/comedy',         'admin_comedy'],
     ['POST', 'admin/comedy',         'admin_comedy_save'],
+    ['GET',  'admin/pictures',       'admin_pictures'],
+    ['POST', 'admin/pictures',       'admin_pictures_save'],
     ['GET',  'admin/djs',            'admin_djs'],
     ['POST', 'admin/djs',            'admin_djs_save'],
     ['GET',  'admin/gallery',        'admin_gallery'],

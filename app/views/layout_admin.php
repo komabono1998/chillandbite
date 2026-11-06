@@ -5,6 +5,7 @@ $groups = [
     'Overview' => [['Dashboard', 'admin', 'dashboard', '🏠']],
     'Website' => [
         ['Pages & content', 'admin/pages', 'pages', '📄'],
+        ['Pictures', 'admin/pictures', 'pages', '🖼️'],
         ['News & articles', 'admin/news', 'news', '📰'],
         ['Press accreditation', 'admin/accreditation', 'accreditation', '🪪'],
         ['My stories', 'admin/news', 'my_articles', '✍️'],
@@ -33,7 +34,7 @@ $isActive = fn(string $p) => $p === 'admin' ? $cur === 'admin' : ($cur === $p ||
 ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" type="image/png" href="<?= h(asset('img/favicon.png')) ?>">
+<link rel="icon" type="image/png" href="<?= h(brand_favicon()) ?>">
 <title><?= h($title ?? 'Admin') ?> · Chill &amp; Bite Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= asset_v('css/style.css') ?>">
@@ -43,7 +44,7 @@ $isActive = fn(string $p) => $p === 'admin' ? $cur === 'admin' : ($cur === $p ||
 <?php if ($u): ?>
 <div class="ad-shell">
   <aside class="ad-side" id="adSide" aria-label="Admin navigation">
-    <a class="ad-brand" href="<?= url('admin') ?>"><img class="ad-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"><small class="ad-tag">Admin</small></a>
+    <a class="ad-brand" href="<?= url('admin') ?>"><img class="ad-logo" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"><small class="ad-tag">Admin</small></a>
     <nav>
       <?php foreach ($groups as $gname => $items):
           $vis = array_filter($items, fn($i) => can($i[2]));

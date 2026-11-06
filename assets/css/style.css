@@ -890,3 +890,26 @@ body{overflow-x:clip}
   .announce-timer>span{min-width:38px;padding:4px 3px 3px;border-radius:8px;flex:none}
   .announce-timer b{font-size:1rem}.announce-timer i{font-size:.5rem}
 }
+
+/* ---------- Quick-edit bar for staff ---------- */
+.qe-bar{position:fixed;left:0;right:0;top:0;z-index:200;height:38px;display:flex;align-items:center;gap:12px;padding:0 12px;background:#0f0f0f;color:#fff;border-bottom:2px solid var(--gold);font-size:.8rem;overflow-x:auto;white-space:nowrap}
+.qe-tag{flex:none;background:var(--gold);color:#171717;font-weight:800;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.qe-bar nav{display:flex;gap:4px;flex:1 1 auto}
+.qe-bar a{color:#fff;text-decoration:none;padding:5px 10px;border-radius:8px;font-weight:600}
+.qe-bar a:hover{background:rgba(255,255,255,.14);color:#fff}
+.qe-toggle,.qe-out button{flex:none;font:inherit;font-weight:600;font-size:.76rem;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);padding:4px 10px;border-radius:8px;cursor:pointer}
+.qe-toggle[aria-pressed="true"]{background:var(--orange);border-color:var(--orange)}
+.qe-out{margin:0;flex:none}
+body.has-qe{padding-top:38px}
+body.has-qe .site-header{top:38px}
+.qe-pencil{position:absolute;z-index:150;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#171717;color:#fff!important;text-decoration:none;font-size:.74rem;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);border:2px solid var(--gold);opacity:0;pointer-events:none;transition:opacity .15s}
+.qe-pencil b{font-weight:700;max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .2s}
+.qe-pencil.on{opacity:1;pointer-events:auto}
+.qe-pencil:hover b,.qe-all .qe-pencil b{max-width:220px}
+.qe-pencil:hover{background:var(--orange)}
+@media print{.qe-bar,.qe-pencil{display:none!important}body.has-qe{padding-top:0}}
+
+/* ---------- Mix downloads ---------- */
+.dj-dl{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--gold);color:#171717!important;font-weight:800;font-size:.8rem;text-decoration:none;transition:transform .2s,background .2s}
+.dj-dl:hover{background:#f0c872;transform:translateY(-2px)}
+a.dj-pl-btn{display:grid;place-items:center;text-decoration:none;color:#fff}

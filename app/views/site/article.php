@@ -4,7 +4,7 @@ $byline = $art['author'] ? 'By ' . h($art['author']) . (!empty($art['author_org'
 $newsLd = ['@context' => 'https://schema.org', '@type' => 'NewsArticle', 'headline' => $art['title'], 'datePublished' => date('c', strtotime($art['published_at'])),
     'dateModified' => date('c', strtotime($art['updated_at'] ?? $art['published_at'])), 'description' => $art['excerpt'] ?: excerpt($art['body'], 160),
     'mainEntityOfPage' => abs_url('news/' . $art['slug']),
-    'publisher' => ['@type' => 'Organization', 'name' => 'The Gulu Chronicles', 'logo' => ['@type' => 'ImageObject', 'url' => abs_url('assets/img/logo.png')]]];
+    'publisher' => ['@type' => 'Organization', 'name' => 'The Gulu Chronicles', 'logo' => ['@type' => 'ImageObject', 'url' => abs_from(brand_logo())]]];
 if ($art['author']) $newsLd['author'] = ['@type' => 'Person', 'name' => $art['author']];
 if ($art['image']) $newsLd['image'] = [(str_starts_with($art['image'], 'img/') ? abs_url('assets/' . $art['image']) : abs_url('uploads/' . $art['image']))];
 ?>

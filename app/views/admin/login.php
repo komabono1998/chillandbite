@@ -1,7 +1,7 @@
 <div class="lg">
-  <aside class="lg-art" style="--lg-photo:url('<?= h(asset('img/photos/photo-44.jpg')) ?>')">
+  <aside class="lg-art" style="--lg-photo:url('<?= h(photo(44)) ?>')">
     <div class="lg-art-in">
-      <img class="lg-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
+      <img class="lg-logo" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
       <h2>Run the show,<br>from one place.</h2>
       <p>Bookings, tickets, events, the website and The Gulu Chronicles, all managed by your team in one dashboard.</p>
       <ul class="lg-points">
@@ -14,7 +14,7 @@
   </aside>
   <section class="lg-side">
     <div class="lg-card">
-      <img class="lg-logo-sm" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="160" height="126">
+      <img class="lg-logo-sm" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="160" height="126">
       <p class="lg-eyebrow">Staff &amp; contributors</p>
       <h1>Welcome back</h1>
       <p class="lg-sub">Sign in to manage Chill &amp; Bite MEATINGS.</p>

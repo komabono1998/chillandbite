@@ -11,7 +11,7 @@ $safeLink = fn(string $l) => preg_match('#^[A-Za-z0-9/_\-\#?=&]*$#', $l) ? url($
 // Structured data so search engines understand the organisation and the FAQ
 $org = [
     '@context' => 'https://schema.org', '@type' => 'Organization', 'name' => setting('site_name', 'Chill & Bite MEATINGS'),
-    'url' => abs_url(''), 'logo' => abs_url('assets/img/logo.png'), 'description' => setting('tagline'),
+    'url' => abs_url(''), 'logo' => abs_from(brand_logo()), 'description' => setting('tagline'),
     'address' => ['@type' => 'PostalAddress', 'streetAddress' => setting('venue'), 'addressLocality' => 'Gulu City', 'addressCountry' => 'UG'],
 ];
 if (setting('contact_phone')) $org['contactPoint'] = [['@type' => 'ContactPoint', 'telephone' => setting('contact_phone'), 'contactType' => 'customer service', 'areaServed' => 'UG', 'availableLanguage' => ['English']]];
@@ -111,7 +111,7 @@ $ld = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_
       </div>
     </article>
     <article class="ab-org" data-reveal>
-      <img class="ab-org-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253" loading="lazy">
+      <img class="ab-org-logo" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253" loading="lazy">
       <div>
         <h3><?= cth('about.team.heading') ?></h3>
         <p><?= cth('about.team.text') ?></p>

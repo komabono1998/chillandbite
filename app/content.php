@@ -58,7 +58,7 @@ function site_pages(): array
                     $f('points', 'Highlights (one per line)', 'lines', "Charismatic host and master of ceremonies\nStand-up comedy and live audience engagement\nFounder of Owakabi & The Geng"),
                     $f('button', 'Button', 'text', 'Explore Laugh with Owakabi'),
                     $f('tag', 'Photo label', 'text', 'Your host · MC Kash Owakabi'),
-                    $f('photo', 'Host portrait', 'image', 'img/host-mc-kash-owakabi.jpg', 'Portrait photo, best at 3:4 (for example 600 x 800).'),
+                    $f('photo', 'Host portrait', 'image', 'img/host-mc-kash-crown.jpg', 'Portrait photo, best at 3:4 (for example 600 x 800).'),
                 ]],
                 'comedy' => ['label' => 'Comedy section', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Comedy'),
@@ -213,7 +213,7 @@ function site_pages(): array
                     $f('bio', 'Paragraph 1', 'textarea', 'MC Kash Owakabi is the voice and face of Chill & Bite MEATINGS in Gulu City. He is a charismatic master of ceremonies and stand-up comedian who keeps a room laughing, relaxed and fully involved.'),
                     $f('bio2', 'Paragraph 2', 'textarea', 'He is the founder of Owakabi & The Geng, the creative team behind Chill & Bite MEATINGS, Laugh with Owakabi and The Gulu Chronicles. Whether it is a packed outdoor crowd or a boardroom dinner, he adapts the humour to the audience.'),
                     $f('points', 'Highlights (one per line)', 'lines', "Charismatic host and master of ceremonies\nStand-up comedy and live audience engagement\nClean, audience-friendly humour that suits corporate and family events\nFounder of Owakabi & The Geng"),
-                    $f('photo', 'Host photo', 'image', 'img/host-mc-kash-owakabi.jpg'),
+                    $f('photo', 'Host photo', 'image', 'img/host-mc-kash-crown.jpg'),
                 ]],
                 'services' => ['label' => 'What we offer', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Book MC Kash'),
@@ -584,4 +584,29 @@ function cti(string $key): string
 {
     $v = ct($key);
     return $v !== '' ? upload_url($v) : '';
+}
+
+/* ---------- Editable pictures: photo library and brand images ---------- */
+/** Replacement for built-in photo number $n (uploaded in Admin > Pictures), or null to use the bundled file. */
+function photo_override(int $n): ?string
+{
+    $v = content_overrides()['photolib.' . $n] ?? '';
+    return $v !== '' ? upload_url($v) : null;
+}
+function brand_logo(): string
+{
+    $v = content_overrides()['brand.logo'] ?? '';
+    return $v !== '' ? upload_url($v) : asset('img/logo.png');
+}
+function brand_favicon(): string
+{
+    $v = content_overrides()['brand.favicon'] ?? '';
+    return $v !== '' ? upload_url($v) : asset('img/favicon.png');
+}
+/** Absolute https URL for a site-relative URL such as /chillandbite/uploads/x.png. */
+function abs_from(string $u): string
+{
+    if (preg_match('#^https?://#i', $u)) return $u;
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $u;
 }

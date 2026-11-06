@@ -26,17 +26,18 @@ $pageDesc = $desc ?? setting('tagline');
 <meta property="og:title" content="<?= h($pageTitle) ?>">
 <meta property="og:description" content="<?= h(excerpt($pageDesc, 160)) ?>">
 <meta property="og:type" content="website">
-<meta property="og:image" content="<?= h(!empty($og_image) ? (str_starts_with($og_image, 'img/') ? abs_url('assets/' . $og_image) : abs_url('uploads/' . $og_image)) : abs_url('assets/img/photos/photo-44.jpg')) ?>">
+<meta property="og:image" content="<?= h(!empty($og_image) ? (str_starts_with($og_image, 'img/') ? abs_url('assets/' . $og_image) : abs_url('uploads/' . $og_image)) : abs_from(photo(44))) ?>">
 <?php $heroOverride = cti($seg . '.hero.photo'); // optional photo chosen in Admin > Pages ?>
 <style>:root{--hero-photo:url('<?= h($heroOverride !== '' ? $heroOverride : photo($heroPhoto)) ?>')}</style>
 <?php if (!empty($noindex)): ?><meta name="robots" content="noindex,nofollow"><?php endif; ?>
 <meta name="theme-color" content="#171717">
-<link rel="icon" type="image/png" href="<?= h(asset('img/favicon.png')) ?>"><link rel="apple-touch-icon" href="<?= h(asset('img/favicon.png')) ?>">
+<link rel="icon" type="image/png" href="<?= h(brand_favicon()) ?>"><link rel="apple-touch-icon" href="<?= h(brand_favicon()) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= asset_v('css/style.css') ?>">
 </head>
 <body>
+<?= quick_edit_bar() ?>
 <a class="skip" href="#main">Skip to content</a>
 <?php if (setting('announcement_on', '1') === '1' && setting('announcement') !== ''): ?>
 <?php $barEv = upcoming_events(1, 'chill-bite-meatings')[0] ?? null; $barDate = $barEv ? new DateTimeImmutable($barEv['start_at']) : next_first_sunday(); ?>
@@ -51,7 +52,7 @@ $pageDesc = $desc ?? setting('tagline');
 <?php endif; ?>
 <header class="site-header">
   <div class="wrap header-in">
-    <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"></a>
+    <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"></a>
     <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav id="nav" class="nav" aria-label="Main">
       <ul>
@@ -76,7 +77,7 @@ $pageDesc = $desc ?? setting('tagline');
 <footer class="site-footer">
   <div class="wrap footer-grid">
     <div>
-      <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo brand-logo-lg" src="<?= h(asset('img/logo.png')) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"></a>
+      <a class="brand" href="<?= url() ?>" aria-label="Chill &amp; Bite MEATINGS, home"><img class="brand-logo brand-logo-lg" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253"></a>
       <p class="muted"><?= h(setting('tagline')) ?></p>
       <p class="muted small">Hosted by MC Kash Owakabi.<br>Organized by Owakabi &amp; The Geng.</p>
     </div>

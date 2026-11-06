@@ -23,6 +23,13 @@ function save_audio(string $field): ?string
     return 'mixes/' . $name;
 }
 
+/** Friendly download name such as "Afro Friday Mix - DJ Val.mp3". */
+function mix_filename(array $m): string
+{
+    $ext = strtolower(pathinfo((string)$m['audio'], PATHINFO_EXTENSION)) ?: 'mp3';
+    $base = trim(preg_replace('#[\\\\/:*?"<>|]+#', ' ', $m['title'] . ' - ' . $m['dj_name']));
+    return mb_substr(preg_replace('/\s+/', ' ', $base), 0, 120) . '.' . $ext;
+}
 /** Embeddable player URL for an external mix link, or null when it can only be opened as a link. */
 function mix_embed(string $url): ?array
 {
@@ -112,7 +119,7 @@ function admin_djs_save(): void
             $cover = save_upload('cover', 'mixes');
             if (!$existing && !$audio && $url === '') throw new RuntimeException('Upload an audio file or paste a SoundCloud, Mixcloud or YouTube link.');
             $v = [$djId, $djName, $source, $title, post_str('genre', 80) ?: null, post_str('description', 300) ?: null, $url ?: null,
-                  empty($_POST['allow_download']) ? 0 : 1, empty($_POST['featured']) ? 0 : 1, ($_POST['status'] ?? '') === 'draft' ? 'draft' : 'published'];
+                  1, empty($_POST['featured']) ? 0 : 1, ($_POST['status'] ?? '') === 'draft' ? 'draft' : 'published'];
             if ($existing) {
                 q('UPDATE dj_mixes SET dj_id=?, dj_name=?, source=?, title=?, genre=?, description=?, external_url=?, allow_download=?, featured=?, status=? WHERE id=?', [...$v, $id]);
                 if ($audio) { $unlink($existing['audio']); q('UPDATE dj_mixes SET audio = ? WHERE id = ?', [$audio, $id]); }
