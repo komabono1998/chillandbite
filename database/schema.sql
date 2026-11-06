@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS gallery_images (
 -- contact, comedy performance bookings and advertising enquiries
 CREATE TABLE IF NOT EXISTS inquiries (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  type ENUM('contact','performance','advertising') NOT NULL,
+  type ENUM('contact','performance','advertising','dj') NOT NULL,
   name VARCHAR(140) NOT NULL,
   organization VARCHAR(190) NULL,
   phone VARCHAR(30) NULL,
@@ -264,4 +264,38 @@ CREATE TABLE IF NOT EXISTS partner_applications (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_pa_status (status, created_at),
   CONSTRAINT fk_pa_sponsor FOREIGN KEY (sponsor_id) REFERENCES sponsors(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Podium DJs roster
+CREATE TABLE IF NOT EXISTS djs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  tagline VARCHAR(190) NULL,
+  genres VARCHAR(190) NULL,
+  bio TEXT NULL,
+  photo VARCHAR(255) NULL,
+  instagram VARCHAR(255) NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DJ mixes: an uploaded audio file or an external link (SoundCloud, Mixcloud, YouTube)
+CREATE TABLE IF NOT EXISTS dj_mixes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  dj_id INT UNSIGNED NULL,
+  dj_name VARCHAR(120) NOT NULL,
+  source ENUM('podium','chillbite') NOT NULL DEFAULT 'podium',
+  title VARCHAR(190) NOT NULL,
+  genre VARCHAR(80) NULL,
+  description VARCHAR(300) NULL,
+  audio VARCHAR(255) NULL,
+  external_url VARCHAR(500) NULL,
+  cover VARCHAR(255) NULL,
+  allow_download TINYINT(1) NOT NULL DEFAULT 0,
+  featured TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('draft','published') NOT NULL DEFAULT 'published',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_mix_status (status, source),
+  CONSTRAINT fk_mix_dj FOREIGN KEY (dj_id) REFERENCES djs(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

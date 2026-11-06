@@ -186,10 +186,10 @@ function admin_advertising_save(): void
 function admin_inquiries(): void
 {
     require_can('inquiries');
-    $type = in_array($_GET['type'] ?? '', ['contact', 'performance', 'advertising'], true) ? $_GET['type'] : null;
+    $type = in_array($_GET['type'] ?? '', ['contact', 'performance', 'dj', 'advertising'], true) ? $_GET['type'] : null;
     // Role scoping: marketing sees advertising only, editors see contact/performance, event managers see contact.
     $role = current_user()['role'];
-    $allowed = ['admin' => ['contact', 'performance', 'advertising'], 'marketing' => ['advertising'], 'editor' => ['contact', 'performance'], 'event_manager' => ['contact', 'performance']][$role];
+    $allowed = inquiry_scope($role);
     $types = $type && in_array($type, $allowed, true) ? [$type] : $allowed;
     $in = implode(',', array_fill(0, count($types), '?'));
     admin_view('inquiries', ['title' => 'Inquiries', 'types' => $allowed, 'type' => $type, 'list' => rows("SELECT * FROM inquiries WHERE type IN ($in) ORDER BY id DESC LIMIT 200", $types)]);
@@ -199,7 +199,7 @@ function admin_inquiry_update(array $a): void
     require_can('inquiries');
     $i = row('SELECT * FROM inquiries WHERE id = ?', [(int)$a['id']]) ?? not_found();
     $role = current_user()['role'];
-    $scope = ['admin' => ['contact', 'performance', 'advertising'], 'marketing' => ['advertising'], 'editor' => ['contact', 'performance'], 'event_manager' => ['contact', 'performance']][$role];
+    $scope = inquiry_scope($role);
     if (!in_array($i['type'], $scope, true)) { http_response_code(403); exit('Forbidden'); }
     $st = in_array($_POST['status'] ?? '', ['new', 'in_progress', 'won', 'closed'], true) ? $_POST['status'] : $i['status'];
     q('UPDATE inquiries SET status = ?, follow_up = ?, agreed_package = ? WHERE id = ?', [$st, post_str('follow_up') ?: null, post_str('agreed_package') ?: null, $i['id']]);

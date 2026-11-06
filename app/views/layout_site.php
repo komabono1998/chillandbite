@@ -4,12 +4,12 @@ $reserveUrl = $nextEv ? url('events/' . $nextEv['slug'] . '/reserve') : url('eve
 $nav = [
     'Home' => ['', url()], 'About' => ['about', url('about')], 'Events' => ['events', url('events')],
     'Reservations' => ['reserve', $reserveUrl], 'Laugh with Owakabi' => ['laugh', url('laugh')],
-    'Gulu Chronicles' => ['news', url('news')], 'Advertise With Us' => ['advertise', url('advertise')],
+    'Podium DJs' => ['djs', url('djs')], 'Advertise With Us' => ['advertise', url('advertise')],
 ];
 $cur = trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE)), '/');
 $active = fn($k) => ($k === '' ? $cur === '' : ($k === 'reserve' ? str_contains($cur, '/reserve') : str_starts_with($cur, $k) && !str_contains($cur, '/reserve'))) ? ' aria-current="page"' : '';
 $seg = explode('/', $cur)[0];
-$heroPhotos = ['about' => 10, 'events' => 44, 'booking' => 41, 'laugh' => 12, 'news' => 22, 'advertise' => 42, 'contact' => 33, 'gallery' => 3];
+$heroPhotos = ['about' => 10, 'events' => 44, 'booking' => 41, 'laugh' => 12, 'djs' => 41, 'news' => 22, 'advertise' => 42, 'contact' => 33, 'gallery' => 3];
 $stripSets = ['about' => ['people', 'social', 'crowd'], 'events' => ['stage', 'crowd'], 'booking' => ['crowd', 'stage'], 'laugh' => ['people', 'stage'],
     'news' => ['social', 'people'], 'advertise' => ['stage', 'crowd'], 'contact' => ['food', 'social', 'people']];
 $heroPhoto = $heroPhotos[$seg] ?? 6;
@@ -81,7 +81,7 @@ $pageDesc = $desc ?? setting('tagline');
     </div>
     <div>
       <h4>Explore</h4>
-      <ul class="plain"><li><a href="<?= url('events') ?>">Events Calendar</a></li><li><a href="<?= h($reserveUrl) ?>">Book &amp; Reserve</a></li><li><a href="<?= url('track') ?>">Track your booking</a></li><li><a href="<?= url('laugh') ?>">Laugh with Owakabi</a></li><li><a href="<?= url('news') ?>">The Gulu Chronicles</a></li><li><a href="<?= url('gallery') ?>">Gallery</a></li></ul>
+      <ul class="plain"><li><a href="<?= url('events') ?>">Events Calendar</a></li><li><a href="<?= h($reserveUrl) ?>">Book &amp; Reserve</a></li><li><a href="<?= url('track') ?>">Track your booking</a></li><li><a href="<?= url('laugh') ?>">Laugh with Owakabi</a></li><li><a href="<?= url('djs') ?>">Podium DJs</a></li><li><a href="<?= url('news') ?>">The Gulu Chronicles</a></li><li><a href="<?= url('gallery') ?>">Gallery</a></li></ul>
     </div>
     <div>
       <h4>Company</h4>

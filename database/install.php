@@ -20,6 +20,7 @@ foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) db()->exe
 // Upgrade older databases: finance and door staff roles
 db()->exec("ALTER TABLE users MODIFY role ENUM('admin','event_manager','editor','marketing','finance','door','contributor') NOT NULL DEFAULT 'editor'");
 // Upgrade older databases: contributor organisation, article review status and source credit
+db()->exec("ALTER TABLE inquiries MODIFY type ENUM('contact','performance','advertising','dj') NOT NULL");
 $hasCol = fn(string $t, string $c) => (int)val('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$t, $c]);
 if (!$hasCol('users', 'organization')) db()->exec('ALTER TABLE users ADD COLUMN organization VARCHAR(160) NULL AFTER role');
 db()->exec("ALTER TABLE articles MODIFY status ENUM('draft','pending','scheduled','published') NOT NULL DEFAULT 'draft'");

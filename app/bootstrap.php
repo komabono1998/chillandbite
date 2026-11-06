@@ -197,6 +197,7 @@ const PERMS = [
     'reports'        => ['event_manager', 'finance'],
     'news'           => ['editor'],
     'comedy'         => ['editor'],
+    'djs'            => ['editor', 'marketing'],                    // Podium DJs: roster and mixes
     'gallery'        => ['editor'],
     'advertising'    => ['marketing'],
     'inquiries'      => ['event_manager', 'editor', 'marketing'],
@@ -207,7 +208,7 @@ const PERMS = [
 const MODULE_LABELS = [
     'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
     'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)', 'accreditation' => 'Accreditation (bloggers & media)', 'my_articles' => 'Write own stories (contributor)',
-    'reports' => 'Reports & exports', 'news' => 'News', 'comedy' => 'Comedy videos', 'gallery' => 'Gallery',
+    'reports' => 'Reports & exports', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
     'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];
 function current_user(): ?array

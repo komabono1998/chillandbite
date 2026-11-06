@@ -265,6 +265,71 @@ function site_pages(): array
                 ]],
             ],
         ],
+        'djs' => [
+            'label' => 'Podium DJs', 'icon' => '🎧', 'url' => 'djs', 'roles' => ['editor', 'marketing'],
+            'desc' => 'Book a DJ for an event, meet the roster and listen to mixes from Podium DJs and Chill & Bite MEATINGS. DJs and mixes are managed under DJs & mixes.',
+            'related' => [['Manage DJs & mixes', 'admin/djs', 'djs'], ['DJ booking requests', 'admin/inquiries?type=dj', 'inquiries']],
+            'sections' => [
+                'hero' => ['label' => 'Page header', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Podium DJs'),
+                    $f('heading', 'Heading', 'text', 'The sound that makes your event move.'),
+                    $f('lead', 'Subtitle', 'textarea', 'Book professional DJs for weddings, corporate functions, club nights, concerts and private parties, and listen to mixes from Podium DJs and Chill & Bite MEATINGS.'),
+                    $f('btn_book', 'Button 1', 'text', 'Book a DJ'),
+                    $f('btn_mixes', 'Button 2', 'text', 'Listen to mixes'),
+                    $f('trust', 'Highlights strip (one per line)', 'lines', "Weddings & celebrations\nCorporate functions\nClub & bar nights\nConcerts & festivals\nSchool & campus events\nSound and lights available\nGulu-based, available across Uganda"),
+                    $photo(),
+                ]],
+                'services' => ['label' => 'What we play for', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Events & functions'),
+                    $f('heading', 'Heading', 'text', 'A DJ for every kind of event'),
+                    $f('intro', 'Introduction', 'text', 'Pick your event type and we will match you with the right DJ and set-up.'),
+                    $f('cards', 'Cards (one per line: emoji | Title | text | form value: Wedding, Corporate, Club, Concert, Private, School or Other)', 'lines',
+                        "💍 | Weddings & receptions | Music for the ceremony, the dinner and the dance floor, planned with you. | Wedding\n" .
+                        "🏢 | Corporate functions | Year-end parties, launches and dinners with the right mood all evening. | Corporate\n" .
+                        "🍹 | Club & bar nights | High-energy sets that keep the floor full from the first song. | Club\n" .
+                        "🎪 | Concerts & festivals | Opening sets, interludes and warm-ups that build the crowd. | Concert\n" .
+                        "🎂 | Private parties | Birthdays, anniversaries and house parties with your playlist and ours. | Private\n" .
+                        "🎓 | School & campus events | Fun, clean sets for graduations, galas and student events. | School"),
+                ]],
+                'mixes' => ['label' => 'Mixes', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Mixtapes'),
+                    $f('heading', 'Heading', 'text', 'Listen to the mixes'),
+                    $f('intro', 'Introduction', 'text', 'Fresh mixes from Podium DJs and live sets from Chill & Bite MEATINGS. Press play and keep browsing.'),
+                    $f('empty', 'Message when there are no mixes', 'text', 'New mixes are on the way. Check back soon.'),
+                ]],
+                'roster' => ['label' => 'DJ roster', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'The lineup'),
+                    $f('heading', 'Heading', 'text', 'Meet the DJs'),
+                    $f('intro', 'Introduction', 'text', 'Choose your favourite or let us match you with the best DJ for your event.'),
+                    $f('empty', 'Message when there are no DJs listed', 'text', 'Our lineup is being updated. Send a request and we will match you with a DJ for your event.'),
+                ]],
+                'process' => ['label' => 'How booking works', 'fields' => [
+                    $f('heading', 'Heading', 'text', 'How booking works'),
+                    $f('steps', 'Steps (one per line: Title | text)', 'lines',
+                        "Send your request | Tell us the date, venue, type of event and the hours you need.\n" .
+                        "We confirm | We check the DJ's availability and discuss your music and equipment.\n" .
+                        "Plan the set | Share your must-play songs and the mood you want.\n" .
+                        "Party time | Your DJ arrives, sets up and keeps the energy high."),
+                ]],
+                'faq' => ['label' => 'Frequently asked questions', 'fields' => [
+                    $f('heading', 'Heading', 'text', 'Questions we are often asked'),
+                    $f('items', 'Questions (one per line: Question | Answer)', 'lines',
+                        "Can I choose a specific DJ? | Yes. Pick a DJ in the booking form, or choose \"Any DJ\" and we will match you with the right one.\n" .
+                        "Do you bring the sound system and lights? | Tell us in the form whether you need a sound system and lights or your venue already has them, and we will confirm what is available.\n" .
+                        "Can I send a playlist or must-play songs? | Yes. Add them in the extra details, or share them when we confirm your booking.\n" .
+                        "Do you play outside Gulu? | Yes. Tell us your location and we will confirm availability and arrangements.\n" .
+                        "How far ahead should I book? | As early as possible, especially for weekends, weddings and holidays. Send your request with the date and we will confirm availability."),
+                ]],
+                'booking' => ['label' => 'DJ booking form', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'DJ booking'),
+                    $f('heading', 'Heading', 'text', 'Book a DJ for your event'),
+                    $f('intro', 'Introduction', 'text', 'Tell us about your event and we will get back to you to confirm availability and details.'),
+                    $f('button', 'Submit button', 'text', 'Send DJ request'),
+                    $f('side_title', 'Side panel title', 'text', 'Prefer to talk?'),
+                    $f('side_text', 'Side panel text', 'text', 'Call or WhatsApp our team and we will take your details directly.'),
+                ]],
+            ],
+        ],
         'news' => [
             'label' => 'The Gulu Chronicles', 'icon' => '📰', 'url' => 'news', 'roles' => ['editor'],
             'desc' => 'The Gulu Chronicles: news, gossip and blogs. Articles are managed under News; contributors are accredited under Accreditation.',

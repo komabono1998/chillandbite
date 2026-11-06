@@ -9,6 +9,7 @@ $groups = [
         ['Press accreditation', 'admin/accreditation', 'accreditation', '🪪'],
         ['My stories', 'admin/news', 'my_articles', '✍️'],
         ['Comedy videos', 'admin/comedy', 'comedy', '😂'],
+        ['DJs & mixes', 'admin/djs', 'djs', '🎧'],
         ['Gallery', 'admin/gallery', 'gallery', '🖼️'],
         ['Sponsors & ads', 'admin/advertising', 'advertising', '📣'],
         ['Partner applications', 'admin/partners', 'advertising', '🤝'],
