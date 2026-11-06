@@ -164,3 +164,4 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
   });
 });
 </script>
+<script>try{localStorage.setItem('cb_name',<?= json_encode($r['full_name'], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>);}catch(e){}</script>
