@@ -371,6 +371,10 @@ function dataset_meta(): array
         'events'       => ['perm' => ['events', 'reports'], 'label' => 'Event summary'],
         'inquiries'    => ['perm' => ['inquiries'], 'label' => 'Inquiries'],
         'partners'     => ['perm' => ['advertising'], 'label' => 'Partner applications'],
+        'visitors'          => ['perm' => ['analytics'], 'label' => 'Visitor statistics report'],
+        'visitor_pages'     => ['perm' => ['analytics'], 'label' => 'Most visited pages'],
+        'visitor_countries' => ['perm' => ['analytics'], 'label' => 'Visitors by country'],
+        'visitor_daily'     => ['perm' => ['analytics'], 'label' => 'Visitors per day'],
     ];
 }
 function report_range(): array
@@ -382,6 +386,7 @@ function report_range(): array
 /** Build [title, subtitle, headers, rows] for a dataset from the current request filters. */
 function export_dataset(string $name): ?array
 {
+    if (str_starts_with($name, 'visitor')) return analytics_export_dataset($name);
     switch ($name) {
         case 'reservations': {
             [$w, $p] = reservation_filters();

@@ -187,7 +187,7 @@ Starting fresh on the live site is cleanest. If you want the DJ profiles, host p
 ## 10. Updating the site later
 
 1. Push your changes to GitHub (`git push`). With the webhook the server updates itself. Otherwise open **Advanced → Git → Deploy**.
-2. If the update changed the database (new tables or columns), run the installer again (SSH `php database/install.php`, or the cron method).
+2. If the update changed the database (new tables or columns), sign in as admin and press **Settings → Update database** once (or run the installer again by SSH / cron).
 3. Uploaded pictures, mixes, videos, `.env` and `storage/app.key` are not in Git, so deploys never overwrite them.
 
 ## 11. Backups (do this on a schedule)

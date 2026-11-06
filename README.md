@@ -36,6 +36,7 @@ Sign in at `/admin`. The sidebar is grouped (Overview, Website, Operations, Insi
 - **Reservations, Tickets, Check-in**: approve bookings, email or WhatsApp tickets, update, withdraw and reinstate them; the door screen shows the seal, serial and live code.
 - **DJs & mixes**, **Comedy videos** (MP4 or YouTube), **Gallery**, **Sponsors & ads**, **Partner applications**, **Inquiries**.
 - **Reports & exports** (`/admin/export/{dataset}?format=pdf|docx|xlsx|csv`): reservations, payments, guest list, events, inquiries and partner applications.
+- **Visitors** (`/admin/analytics`): anonymous page views, unique visitors, most visited pages, countries, traffic sources, devices and busiest hours, with PDF / Word / Excel / CSV reports. No cookies, no stored IP addresses, bots/staff/Do-Not-Track excluded. Country comes from the host's header (e.g. Cloudflare); add `GEO_LOOKUP=1` to `.env` to look it up otherwise. After an update that adds tables, press **Settings > Update database** once.
 - **Roles** (`app/bootstrap.php`, `ROLES` / `PERMS`): System Administrator, Event Manager, Ticketing & Reservations Officer, Finance Officer, Door / Gate Staff, Content Editor, Marketing & Advertising Manager, DJ & Music Manager. The matrix is shown under Admin > Users & roles.
 
 After pulling changes, run `php database/install.php` once to apply new tables and columns.

@@ -215,6 +215,25 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Visitor statistics (anonymous: no IP addresses or cookies are stored)
+CREATE TABLE IF NOT EXISTS page_views (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  viewed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  path VARCHAR(190) NOT NULL,
+  visitor CHAR(16) NOT NULL,
+  country CHAR(2) NULL,
+  device ENUM('desktop','mobile','tablet') NOT NULL DEFAULT 'desktop',
+  browser VARCHAR(30) NULL,
+  source VARCHAR(12) NOT NULL DEFAULT 'direct',
+  ref_host VARCHAR(120) NULL,
+  KEY idx_pv_time (viewed_at), KEY idx_pv_path (path, viewed_at), KEY idx_pv_country (country, viewed_at), KEY idx_pv_visitor (visitor, viewed_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS geo_cache (
+  ip_hash CHAR(40) PRIMARY KEY,
+  country CHAR(2) NULL,
+  checked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Editable page content (Admin > Pages). A missing/empty row falls back to the built-in default text.
 CREATE TABLE IF NOT EXISTS site_content (
   `key` VARCHAR(120) PRIMARY KEY,

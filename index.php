@@ -13,6 +13,8 @@ require __DIR__ . '/app/controllers/accreditation.php';
 require __DIR__ . '/app/controllers/djs.php';
 require __DIR__ . '/app/controllers/pictures.php';
 require __DIR__ . '/app/controllers/setup.php';
+require __DIR__ . '/app/analytics.php';
+require __DIR__ . '/app/controllers/analytics.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -57,6 +59,8 @@ $routes = [
     ['POST', 'admin/pages/{page}',   'admin_page_save'],
     ['GET',  'admin/reports',        'admin_reports'],
     ['GET',  'admin/export/{dataset}', 'admin_export'],
+    ['GET',  'admin/analytics',      'admin_analytics'],
+    ['POST', 'admin/system/migrate', 'admin_migrate'],
     ['GET',  'admin/checkin',        'admin_checkin_desk'],
     ['GET',  'admin/accreditation',  'admin_accreditation'],
     ['POST', 'admin/accreditation/{id}', 'admin_accreditation_action'],
@@ -109,6 +113,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 if (BASE !== '' && str_starts_with($path, BASE)) $path = substr($path, strlen(BASE));
 $path = trim(rawurldecode($path), '/');
+
+track_visit($path);
 
 try {
     foreach ($routes as [$m, $pattern, $handler]) {

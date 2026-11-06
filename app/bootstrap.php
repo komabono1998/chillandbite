@@ -178,7 +178,7 @@ const ROLES = [
 const ROLE_ICONS = ['admin' => '👑', 'event_manager' => '📅', 'box_office' => '🎟️', 'finance' => '💰', 'door' => '🚪', 'editor' => '✏️', 'marketing' => '📣', 'dj_manager' => '🎧'];
 const ROLE_DESCRIPTIONS = [
     'admin' => 'Full access to everything, including users, settings and the audit log.',
-    'event_manager' => 'Runs events end to end: creates events, handles reservations, approvals, payments, tickets, check-in and reports.',
+    'event_manager' => 'Runs events end to end: creates events, handles reservations, approvals, payments, tickets, check-in, reports and visitor statistics.',
     'box_office' => 'Handles bookings day to day: approves reservations, records payments, issues, updates and withdraws tickets, and checks guests in. Cannot create events or see reports.',
     'finance' => 'Views reservations, records payments and refunds, and exports financial reports.',
     'door' => 'Checks guests in at the gate. Sees names and ticket status only.',
@@ -198,6 +198,7 @@ const PERMS = [
     'tickets'        => ['event_manager', 'box_office'],                          // issue, update, withdraw, print tickets
     'accreditation'  => ['editor'],                                               // (section hidden) review applications
     'reports'        => ['event_manager', 'finance'],
+    'analytics'      => ['event_manager', 'marketing', 'editor'],                 // visitor statistics
     'news'           => ['editor'],                                               // (section hidden) articles
     'comedy'         => ['editor'],
     'djs'            => ['editor', 'marketing', 'dj_manager'],                    // Podium DJs: roster and mixes
@@ -211,7 +212,7 @@ const PERMS = [
 const MODULE_LABELS = [
     'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
     'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)',
-    'reports' => 'Reports & exports', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
+    'reports' => 'Reports & exports', 'analytics' => 'Visitor statistics', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
     'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];
 function current_user(): ?array
