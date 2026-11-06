@@ -29,7 +29,8 @@ $djForm = function (?array $d) use ($act) { $v = fn($k, $x = '') => $d[$k] ?? $x
       field('tagline', 'Tagline', ['value' => $v('tagline'), 'attrs' => 'placeholder="Weddings, clubs and corporate events"']);
       field('genres', 'Genres (comma separated)', ['value' => $v('genres'), 'attrs' => 'placeholder="Afrobeats, Amapiano, R&B"']);
       field('instagram', 'Instagram link', ['type' => 'url', 'value' => $v('instagram'), 'attrs' => 'placeholder="https://"']);
-      field('sort_order', 'Order on the page (small numbers first)', ['type' => 'number', 'value' => $v('sort_order', '0')]); ?>
+      field('sort_order', 'Order on the page (small numbers first)', ['type' => 'number', 'value' => $v('sort_order', '0')]);
+      field('photo_pos', 'Photo focus (0 = top of photo, 100 = bottom)', ['type' => 'number', 'value' => $v('photo_pos', '15'), 'attrs' => 'min="0" max="100"', 'help' => 'Lower the number if the head is cut off on the website.']); ?>
       <div class="field"><label>Photo</label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif"><?php if ($v('photo')): ?><img src="<?= h(upload_url($v('photo'))) ?>" alt="" style="max-height:60px;margin-top:6px"><?php endif; ?></div>
     </div>
     <?php field('bio', 'Short bio', ['type' => 'textarea', 'rows' => 3, 'value' => $v('bio')]); ?>
@@ -74,11 +75,11 @@ $post = fn(string $a, int $id, string $label, string $cls = 'btn btn-ghost btn-s
   <?php if (!$djs): ?><p class="muted">No DJs yet. Add the first one above. Visitors can still send a booking request and you will match a DJ.</p><?php endif; ?>
   <div class="tbl-wrap"><table class="tbl"><thead><tr><th>DJ</th><th>Genres</th><th>Status</th><th>Manage</th></tr></thead><tbody>
   <?php foreach ($djs as $d): ?><tr>
-    <td><b><?= h($d['name']) ?></b><br><span class="small muted"><?= h($d['tagline']) ?></span></td>
+    <td><div style="display:flex;align-items:center;gap:12px"><?php if ($d['photo']): ?><img src="<?= h(upload_url($d['photo'])) ?>" alt="" style="width:52px;height:64px;object-fit:cover;object-position:center <?= (int)$d['photo_pos'] ?>%;border-radius:10px"><?php endif; ?><span><b><?= h($d['name']) ?></b><br><span class="small muted"><?= h($d['tagline']) ?></span></span></div></td>
     <td class="small"><?= h($d['genres']) ?></td>
     <td><?= $d['active'] ? status_badge('published') : status_badge('draft') ?></td>
     <td><div class="actions">
-      <details><summary class="btn btn-ghost btn-sm" style="display:inline-block;cursor:pointer">Edit</summary><div style="margin-top:10px;min-width:min(560px,80vw)"><?php $djForm($d); ?></div></details>
+      <details><summary class="btn btn-primary btn-sm" style="display:inline-block;cursor:pointer">Edit profile</summary><div style="margin-top:10px;min-width:min(560px,80vw)"><?php $djForm($d); ?></div></details>
       <?= $post('dj_toggle', (int)$d['id'], $d['active'] ? 'Hide' : 'Show') ?>
       <?= $post('dj_delete', (int)$d['id'], 'Delete', 'btn btn-ghost btn-sm', 'Remove this DJ from the roster?') ?>
     </div></td></tr>

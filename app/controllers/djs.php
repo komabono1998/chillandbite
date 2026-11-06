@@ -135,13 +135,13 @@ function admin_djs_save(): void
             $ig = post_str('instagram', 255);
             if ($ig !== '' && !preg_match('#^https?://[^\s]+$#i', $ig)) throw new RuntimeException('The Instagram link must start with http:// or https://');
             $photo = save_upload('photo', 'djs');
-            $v = [$name, post_str('tagline', 190) ?: null, post_str('genres', 190) ?: null, trim((string)($_POST['bio'] ?? '')) ?: null, $ig ?: null, (int)($_POST['sort_order'] ?? 0)];
+            $v = [$name, post_str('tagline', 190) ?: null, post_str('genres', 190) ?: null, trim((string)($_POST['bio'] ?? '')) ?: null, $ig ?: null, (int)($_POST['sort_order'] ?? 0), max(0, min(100, (int)($_POST['photo_pos'] ?? 15)))];
             if ($existing) {
-                q('UPDATE djs SET name=?, tagline=?, genres=?, bio=?, instagram=?, sort_order=? WHERE id=?', [...$v, $id]);
+                q('UPDATE djs SET name=?, tagline=?, genres=?, bio=?, instagram=?, sort_order=?, photo_pos=? WHERE id=?', [...$v, $id]);
                 if ($photo) { $unlink($existing['photo']); q('UPDATE djs SET photo = ? WHERE id = ?', [$photo, $id]); }
                 audit('dj.update', "#$id $name"); flash('DJ updated.');
             } else {
-                q('INSERT INTO djs (name, tagline, genres, bio, instagram, sort_order, photo) VALUES (?,?,?,?,?,?,?)', [...$v, $photo]);
+                q('INSERT INTO djs (name, tagline, genres, bio, instagram, sort_order, photo_pos, photo) VALUES (?,?,?,?,?,?,?,?)', [...$v, $photo]);
                 audit('dj.create', $name); flash('DJ added to the roster.');
             }
         } else {

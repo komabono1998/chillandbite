@@ -68,7 +68,7 @@ $initial = fn(string $n) => h(mb_strtoupper(mb_substr(trim($n), 0, 1)));
     <div class="dj-roster">
       <?php foreach ($djs as $d): ?>
         <article class="dj-card" data-reveal>
-          <div class="dj-photo"><?php if ($d['photo']): ?><img src="<?= h(upload_url($d['photo'])) ?>" alt="<?= h($d['name']) ?>" loading="lazy" decoding="async"><?php else: ?><span class="dj-initial" aria-hidden="true"><?= $initial($d['name']) ?></span><?php endif; ?></div>
+          <div class="dj-photo"><?php if ($d['photo']): ?><img src="<?= h(upload_url($d['photo'])) ?>" alt="<?= h($d['name']) ?>" loading="lazy" decoding="async" style="object-position:center <?= (int)$d['photo_pos'] ?>%"><?php else: ?><span class="dj-initial" aria-hidden="true"><?= $initial($d['name']) ?></span><?php endif; ?></div>
           <div class="dj-info">
             <h3><?= h($d['name']) ?></h3>
             <?php if ($d['tagline']): ?><p class="dj-tag"><?= h($d['tagline']) ?></p><?php endif; ?>
