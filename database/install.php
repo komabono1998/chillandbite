@@ -11,7 +11,10 @@ require "$root/app/bootstrap.php";
 $dbName = env('DB_NAME', 'chillandbite');
 $pdo = new PDO(sprintf('mysql:host=%s;port=%s;charset=utf8mb4', env('DB_HOST', '127.0.0.1'), env('DB_PORT', '3306')),
     env('DB_USER', 'root'), env('DB_PASS', ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-$pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+// Shared hosts (Hostinger etc.) create the database for you and do not allow CREATE DATABASE, so a refusal here is fine.
+try { $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"); }
+catch (PDOException $e) { echo "Using the existing database (could not create it: " . $e->getMessage() . ").\n"; }
+db()->query('SELECT 1');   // fails early with a clear message when the DB name, user or password in .env is wrong
 echo "Database `$dbName` ready.\n";
 
 $sql = file_get_contents("$root/database/schema.sql");

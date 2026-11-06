@@ -8,6 +8,8 @@ PHP 8 + MySQL event, booking, tickets, DJs and advertising platform (no framewor
 3. Public site: http://localhost/chillandbite/ · Admin: http://localhost/chillandbite/admin
 
 ## Deploying to a live server
+A complete step-by-step guide for Hostinger is in [DEPLOY-HOSTINGER.md](DEPLOY-HOSTINGER.md). The short version:
+
 1. **Server**: Apache with `mod_rewrite` and `.htaccess` enabled, PHP 8.1+ with `pdo_mysql`, `fileinfo`, `mbstring`, and a MySQL/MariaDB database.
 2. **Upload** the project folder. Copy `.env.example` to `.env` and set `DB_*`, `APP_DEBUG=0`, `MAIL_ENABLED=1` (if the server can send email), `MAIL_FROM`, and optionally `ADMIN_EMAIL` / `ADMIN_PASSWORD` for the first admin.
 3. **Install** with `php database/install.php` (no `--sample`). It creates the tables and the first admin. Running it again is safe and applies upgrades.

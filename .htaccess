@@ -4,6 +4,7 @@ RewriteEngine On
 # Never serve internal files
 RewriteRule ^(app|database|storage|\.git)(/|$) - [F,L]
 RewriteRule ^\.env - [F,L]
+RewriteRule \.md$ - [F,L]
 RewriteRule ^(install\.php|composer\.(json|lock))$ - [F,L]
 
 # Front controller
@@ -17,10 +18,21 @@ RewriteRule ^ index.php [L]
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# Allow larger DJ mix uploads (ignored if PHP does not run as an Apache module)
+# Allow larger DJ mix and video uploads. Hostinger runs LiteSpeed; Apache uses mod_php. If your host rejects these lines (500 error), delete them and raise the limits in the hosting panel instead.
+<IfModule LiteSpeed>
+  php_value upload_max_filesize 300M
+  php_value post_max_size 310M
+  php_value max_execution_time 600
+  php_value max_input_time 600
+  php_value memory_limit 256M
+</IfModule>
 <IfModule mod_php.c>
   php_value upload_max_filesize 300M
   php_value post_max_size 310M
   php_value max_execution_time 600
   php_value max_input_time 600
 </IfModule>
+
+# Production: uncomment to force HTTPS if your host does not already do it (Hostinger: hPanel > SSL > Force HTTPS)
+#RewriteCond %{HTTPS} off
+#RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
