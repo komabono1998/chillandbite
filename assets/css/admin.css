@@ -351,3 +351,38 @@ dialog.pic-picker::backdrop{background:rgba(15,15,15,.7)}
 .us-pw{font:800 1.05rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;background:#fff;border:1px dashed #d9b86a;border-radius:8px;padding:4px 10px;user-select:all}
 .us-creds-actions{margin:10px 0 0}
 @media print{.us-creds{border:1px solid #000}.us-copy,.us-creds-actions,.adm-head .btn{display:none!important}}
+
+/* ---------- Door check-in on phones: button first, compact security block ---------- */
+@media(max-width:640px){
+  .checkin{display:flex;flex-direction:column}
+  .checkin>form{order:1;margin-top:6px}
+  .checkin>.ck-secure{order:2}
+  .checkin>p:last-child{order:3}
+  .ck-secure{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;padding:10px 12px;text-align:left}
+  .ck-secure .ck-seal{grid-row:1/3}
+  .ck-secure .ck-seal svg{width:68px;height:68px}
+  .ck-secure p{display:none}
+  .ck-secure b.mono{font-size:.95rem}
+  .ck-secure .live-code{font-size:1.6rem}
+  .checkin .summary{font-size:.9rem}
+}
+
+/* ---------- Tickets list on phones: one card per guest ---------- */
+@media(max-width:700px){
+  .tk-table,.tk-table tbody,.tk-table tr,.tk-table td{display:block;width:100%}
+  .tk-table thead{display:none}
+  .tk-table tr{background:#fff;border:1px solid var(--line,#e3d9c8);border-radius:14px;padding:12px 14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(30,20,10,.05)}
+  .tk-table td{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;border:0;padding:6px 0;text-align:right}
+  .tk-table td::before{content:attr(data-label);flex:none;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a8378;padding-top:3px;text-align:left}
+  .tk-table td.tk-cell{display:block;text-align:left;border-top:1px dashed #e3d9c8;margin-top:6px;padding-top:12px}
+  .tk-table td.tk-cell::before{display:block;margin-bottom:8px}
+  .tk-actions{min-width:0;width:100%}
+  .tk-row{gap:8px}
+  .tk-row .btn{flex:1 1 calc(50% - 8px)}
+  .tk-form{width:100%}
+}
+@media(max-width:700px){
+  .tk-table td{display:block;text-align:left;padding:5px 0}
+  .tk-table td::before{display:block;margin:0 0 2px;padding:0}
+  .tk-table td.tk-cell{margin-top:8px}
+}

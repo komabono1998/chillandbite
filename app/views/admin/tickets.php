@@ -28,7 +28,7 @@ $manage = can('reservations_manage');
 <?php if (!$ev): ?><div class="empty">There are no events yet. Create one first.</div>
 <?php elseif (!$list): ?><div class="empty"><?= $q !== '' ? 'No ' . h(strtolower($tabs[$status])) . ' match “' . h($q) . '”.' : 'Nothing here yet for this event.' ?></div>
 <?php else: ?>
-  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Reference</th><th>Guest</th><th>Booking</th><th>Ticket</th><th>Actions</th></tr></thead><tbody>
+  <div class="tbl-wrap"><table class="tbl tk-table"><thead><tr><th>Reference</th><th>Guest</th><th>Booking</th><th>Ticket</th><th>Actions</th></tr></thead><tbody>
   <?php foreach ($list as $r):
       $isConfirmed = $r['status'] === 'confirmed';
       $isWithdrawn = $r['status'] === 'cancelled' && !empty($r['withdrawn_at']);
@@ -39,13 +39,13 @@ $manage = can('reservations_manage');
       $wa = $isConfirmed && $hasPhone ? wa_link($r['phone'], ticket_message($full)) : ($isWithdrawn && $hasPhone ? wa_link($r['phone'], ticket_withdrawn_message($full)) : null);
       $act = fn(string $path) => url('admin/tickets/' . $r['id'] . '/' . $path); ?>
     <tr>
-      <td><a href="<?= url('admin/reservations/' . $r['id']) ?>"><b><?= h($r['reference']) ?></b></a></td>
-      <td><b><?= h($r['full_name']) ?></b><br><span class="small muted"><?= h($r['phone']) ?><?= $r['email'] ? ' · ' . h($r['email']) : '' ?></span></td>
-      <td><?= h(str_replace(' Reservation', '', RES_TYPES[$r['type']])) ?><?= $r['package'] ? ' · ' . h($r['package']) : '' ?><br><span class="small muted"><?= (int)$r['guests'] ?> guest(s)<?= $r['admin_note'] && str_starts_with((string)$r['admin_note'], 'Ticket issued') ? ' · complimentary' : '' ?></span></td>
-      <td><?php if ($isConfirmed): ?><?= $r['checked_in_at'] ? '<span class="badge badge-warn">Checked in ' . h(fmt_time($r['checked_in_at'])) . '</span>' : '<span class="badge badge-ok">Valid</span>' ?>
+      <td data-label="Reference"><a href="<?= url('admin/reservations/' . $r['id']) ?>"><b><?= h($r['reference']) ?></b></a></td>
+      <td data-label="Guest"><b><?= h($r['full_name']) ?></b><br><span class="small muted"><?= h($r['phone']) ?><?= $r['email'] ? ' · ' . h($r['email']) : '' ?></span></td>
+      <td data-label="Booking"><?= h(str_replace(' Reservation', '', RES_TYPES[$r['type']])) ?><?= $r['package'] ? ' · ' . h($r['package']) : '' ?><br><span class="small muted"><?= (int)$r['guests'] ?> guest(s)<?= $r['admin_note'] && str_starts_with((string)$r['admin_note'], 'Ticket issued') ? ' · complimentary' : '' ?></span></td>
+      <td data-label="Ticket"><?php if ($isConfirmed): ?><?= $r['checked_in_at'] ? '<span class="badge badge-warn">Checked in ' . h(fmt_time($r['checked_in_at'])) . '</span>' : '<span class="badge badge-ok">Valid</span>' ?>
           <?php elseif ($isWithdrawn): ?><span class="badge badge-err">Withdrawn</span><br><span class="small muted"><?= h(fmt_date($r['withdrawn_at'], 'j M, H:i')) ?><?= $r['withdrawn_reason'] ? ' · ' . h($r['withdrawn_reason']) : '' ?></span>
           <?php elseif ($r['status'] === 'pending'): ?><span class="badge badge-warn">Not issued yet</span><?php else: ?><span class="badge badge-err">Void</span><?php endif; ?></td>
-      <td class="tk-cell"><div class="tk-actions" data-tk>
+      <td class="tk-cell" data-label="Actions"><div class="tk-actions" data-tk>
         <?php if ($isConfirmed): ?>
           <div class="tk-row tk-share">
             <a class="btn btn-ghost btn-sm" href="<?= h($tUrl) ?>" target="_blank" rel="noopener">Open</a>

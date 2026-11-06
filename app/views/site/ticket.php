@@ -33,23 +33,23 @@
         <div id="qr" data-url="<?= h($checkin_url) ?>" role="img" aria-label="QR code for entry"></div>
         <?= $r['checked_in_at'] ? '<span class="badge badge-warn">Checked in ' . h(fmt_time($r['checked_in_at'])) . '</span>' : '<span class="badge badge-ok">Valid</span>' ?>
       </div>
-      <div class="ticket-seal" title="Gold seal of authenticity. Unique to this ticket."><?= $seal ?><span class="seal-sheen" aria-hidden="true"></span></div>
     </div>
     <div class="ticket-secure">
-      <div><small>Serial</small><b class="mono"><?= h($serial) ?></b></div>
-      <div><small>Live security code</small><b class="mono live-code" id="liveCode"><?= h($code) ?></b><span class="code-bar"><i id="codeBar" style="animation-duration:30s;animation-delay:-<?= 30 - (int)$code_left ?>s"></i></span></div>
-      <div><small>Verified live</small><b class="mono" id="liveClock">--:--:--</b></div>
+      <div class="ts-serial"><small>Serial</small><b class="mono"><?= h($serial) ?></b></div>
+      <div class="ts-code"><small>Live security code</small><b class="mono live-code" id="liveCode"><?= h($code) ?></b><span class="code-bar"><i id="codeBar" style="animation-duration:30s;animation-delay:-<?= 30 - (int)$code_left ?>s"></i></span></div>
+      <div class="ts-clock"><small>Verified live</small><b class="mono" id="liveClock">--:--:--</b></div>
+      <div class="ticket-seal" title="Gold seal of authenticity. Unique to this ticket."><?= $seal ?><span class="seal-sheen" aria-hidden="true"></span></div>
     </div>
     <div class="ticket-tear" aria-hidden="true"></div>
     <footer class="ticket-foot">
       <p>Show this QR code at the entrance. One ticket admits the number of guests shown above. Please arrive with your reference <strong><?= h($r['reference']) ?></strong> if the code cannot be scanned.</p>
-      <p class="small"><b>Authentic ticket:</b> every ticket carries its own gold seal and serial, and is valid for one entry only. The live security code changes every 30 seconds, so a screenshot cannot be passed off as the live ticket. A ticket that has been scanned once is refused at the door.</p>
+      <details class="ticket-auth"><summary>🔒 How this ticket is protected</summary><p class="small">Every ticket carries its own gold seal and serial, and is valid for one entry only. The live security code changes every 30 seconds, so a screenshot cannot be passed off as the live ticket. A ticket that has been scanned once is refused at the door.</p></details>
       <p class="small">Chill &amp; Bite MEATINGS · Organized by Owakabi &amp; The Geng</p>
     </footer>
   </article>
   <div class="btn-row center-row">
     <button class="btn btn-primary" type="button" id="dl-ticket">⬇ Download ticket (image)</button>
-    <button class="btn btn-outline-dark" type="button" onclick="window.print()">Print / Save as PDF</button>
+    <button class="btn btn-outline-dark" type="button" onclick="window.print()">Print / PDF</button>
     <a class="btn btn-ghost-dark" target="_blank" rel="noopener" href="<?= h(gcal_link($r)) ?>">Add to calendar</a>
     <a class="btn btn-ghost-dark" href="<?= url('booking/' . h($r['reference'])) ?>">My booking</a>
   </div>
