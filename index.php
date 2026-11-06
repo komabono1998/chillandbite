@@ -14,6 +14,7 @@ require __DIR__ . '/app/controllers/djs.php';
 require __DIR__ . '/app/controllers/pictures.php';
 require __DIR__ . '/app/controllers/setup.php';
 require __DIR__ . '/app/analytics.php';
+require __DIR__ . '/app/seo.php';
 require __DIR__ . '/app/controllers/analytics.php';
 
 header('X-Frame-Options: SAMEORIGIN');

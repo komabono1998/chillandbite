@@ -19,7 +19,6 @@ if ($socials) $org['sameAs'] = array_values($socials);
 $faqLd = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(fn($q) => ['@type' => 'Question', 'name' => $q[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q[1]]], $faqs)];
 $ld = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP;
 ?>
-<script type="application/ld+json"><?= json_encode($org, $ld) ?></script>
 <?php if ($faqs): ?><script type="application/ld+json"><?= json_encode($faqLd, $ld) ?></script><?php endif; ?>
 
 <section class="page-hero ab-hero"><div class="wrap">

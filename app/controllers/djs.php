@@ -45,7 +45,7 @@ function mix_embed(string $url): ?array
 function page_djs(): void
 {
     render('site/djs', [
-        'title' => 'Podium DJs | Book a DJ and Listen to Mixes',
+        'title' => 'Podium DJs | Book a DJ & Listen to Mixes | Chill & Bite MEATINGS',
         'desc' => 'Book Podium DJs for weddings, corporate events, club nights and festivals, and listen to mixes from Podium DJs and Chill & Bite MEATINGS.',
         'djs' => rows("SELECT * FROM djs WHERE active = 1 AND role = 'dj' ORDER BY sort_order, id"),
         'hosts' => rows("SELECT * FROM djs WHERE active = 1 AND role = 'host' ORDER BY sort_order, id"),

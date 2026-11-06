@@ -26,10 +26,19 @@ $pageDesc = $desc ?? setting('tagline');
 <meta property="og:title" content="<?= h($pageTitle) ?>">
 <meta property="og:description" content="<?= h(excerpt($pageDesc, 160)) ?>">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Chill &amp; Bite MEATINGS">
+<meta property="og:locale" content="en_UG">
+<meta property="og:url" content="<?= h(abs_url($cur)) ?>">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?= h($pageTitle) ?>">
+<meta name="twitter:description" content="<?= h(excerpt($pageDesc, 160)) ?>">
+<?php if (empty($noindex)): ?><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1"><?php endif; ?>
+<meta name="author" content="Owakabi &amp; The Geng">
 <meta property="og:image" content="<?= h(!empty($og_image) ? (str_starts_with($og_image, 'img/') ? abs_url('assets/' . $og_image) : abs_url('uploads/' . $og_image)) : abs_from(photo(44))) ?>">
 <?php $heroOverride = cti($seg . '.hero.photo'); // optional photo chosen in Admin > Pages ?>
 <style>:root{--hero-photo:url('<?= h($heroOverride !== '' ? $heroOverride : photo($heroPhoto)) ?>')}</style>
 <?php if (!empty($noindex)): ?><meta name="robots" content="noindex,nofollow"><?php endif; ?>
+<?php if (empty($noindex)) echo seo_schema($seg, ($seg === 'events' && isset($e['slug'])) ? $e : null, $packages ?? [], $pageTitle); ?>
 <meta name="theme-color" content="#171717">
 <link rel="icon" type="image/png" href="<?= h(brand_favicon()) ?>"><link rel="apple-touch-icon" href="<?= h(brand_favicon()) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

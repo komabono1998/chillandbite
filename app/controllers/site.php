@@ -61,8 +61,8 @@ function page_home(): void
     $events = $next ? array_merge([$next], array_values(array_filter($events, fn($e) => $e['id'] !== $next['id']))) : [];
     $events = array_slice($events, 0, 4);
     render('site/home', [
-        'title' => 'Chill & Bite MEATINGS | Gulu City Monthly Lifestyle & Networking Experience',
-        'desc' => setting('tagline'),
+        'title' => 'Chill & Bite MEATINGS | Monthly Event in Gulu by MC Kash Owakabi',
+        'desc' => 'Chill & Bite MEATINGS is the Gulu City monthly food, music, comedy and networking event, hosted by MC Kash Owakabi and organized by Owakabi & The Geng. Reserve your table today.',
         'next' => $next,
         'next_date' => $next ? new DateTimeImmutable($next['start_at']) : next_first_sunday(),
         'others' => array_slice($events, 1),
@@ -77,7 +77,8 @@ function page_about(): void
 {
     $next = upcoming_events(1, 'chill-bite-meatings')[0] ?? (upcoming_events(1)[0] ?? null);
     render('site/about', [
-        'title' => 'About Us | Chill & Bite MEATINGS',
+        'title' => 'About Chill & Bite MEATINGS | MC Kash Owakabi & The Geng, Gulu',
+        'desc' => 'The story of Chill & Bite MEATINGS, the monthly lifestyle and networking experience in Gulu City, Uganda, hosted by MC Kash Owakabi and organized by Owakabi & The Geng.',
         'desc' => 'The story, mission, team and partners behind Chill & Bite MEATINGS, the monthly lifestyle and corporate networking experience in Gulu City.',
         'sponsors' => approved_partners(),
         'next' => $next,
@@ -96,7 +97,8 @@ function page_events(): void
     if ($cat) { $sql .= ' AND c.slug = ?'; $p[] = $cat; }
     $events = rows($sql . ' ORDER BY e.start_at', $p);
     render('site/events', [
-        'title' => 'Events Calendar | Chill & Bite MEATINGS', 'events' => $events, 'month' => $month, 'cat' => $cat, 'view' => $view,
+        'title' => 'Events in Gulu | Chill & Bite MEATINGS Calendar & Reservations',
+        'desc' => 'See upcoming Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu City, Uganda, and reserve your table or tickets online.', 'events' => $events, 'month' => $month, 'cat' => $cat, 'view' => $view,
         'categories' => rows('SELECT * FROM event_categories ORDER BY id'),
         'upcoming' => $view === 'list' && !isset($_GET['month']) ? upcoming_events(12, $cat) : null,
     ]);
@@ -113,7 +115,7 @@ function page_event(array $a): void
 function page_laugh(): void
 {
     render('site/laugh', [
-        'title' => 'Laugh with Owakabi | Comedy Shows & Videos',
+        'title' => 'Laugh with Owakabi | Comedy Shows & Videos by MC Kash Owakabi',
         'desc' => 'Life is better with a little humour! Comedy shows, videos and performance bookings with MC Kash Owakabi.',
         'videos' => rows('SELECT * FROM videos ORDER BY featured DESC, id DESC'),
         'shows' => upcoming_events(6, 'laugh-with-owakabi-comedy-shows'),
@@ -122,7 +124,8 @@ function page_laugh(): void
 function page_advertise(): void
 {
     render('site/advertise', [
-        'title' => 'Advertise With Us | Chill & Bite MEATINGS',
+        'title' => 'Advertise & Sponsor | Chill & Bite MEATINGS Gulu, Uganda',
+        'desc' => 'Advertise your business or sponsor Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu. Banner ads, sponsored articles, brand activations and annual partnerships.',
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
     ]);
 }
@@ -133,24 +136,29 @@ function page_gallery(): void
     $p = [];
     if ($album) { $sql .= ' WHERE a.slug = ?'; $p[] = $album; }
     render('site/gallery', [
-        'title' => 'Event Gallery | Chill & Bite MEATINGS', 'album' => $album,
+        'title' => 'Photo Gallery | Chill & Bite MEATINGS Events in Gulu',
+        'desc' => 'Photos from Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu City, Uganda.', 'album' => $album,
         'images' => rows($sql . ' ORDER BY i.id DESC', $p), 'albums' => rows('SELECT * FROM gallery_albums ORDER BY id'),
     ]);
 }
-function page_contact(): void { render('site/contact', ['title' => 'Contact Us | Chill & Bite MEATINGS']); }
+function page_contact(): void { render('site/contact', ['title' => 'Contact Chill & Bite MEATINGS | Owakabi & The Geng, Gulu', 'desc' => 'Contact Chill & Bite MEATINGS and Owakabi & The Geng in Gulu City, Uganda for bookings, partnerships and enquiries.']); }
 function page_privacy(): void { render('site/privacy', ['title' => 'Privacy & Cookies | Chill & Bite MEATINGS']); }
 function page_robots(): void
 {
     header('Content-Type: text/plain');
-    echo "User-agent: *\nDisallow: /admin\nDisallow: /app\nSitemap: " . abs_url('sitemap.xml') . "\n";
+    echo "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /app\nDisallow: /booking/\nDisallow: /ticket/\nDisallow: /track\nDisallow: /setup\nSitemap: " . abs_url('sitemap.xml') . "\n";
 }
 function page_sitemap(): void
 {
     header('Content-Type: application/xml; charset=utf-8');
-    $u = array_map('abs_url', ['', 'about', 'events', 'laugh', 'djs', 'advertise', 'partner', 'gallery', 'contact', 'track', 'privacy']);
-    foreach (rows("SELECT slug FROM events WHERE status = 'published'") as $r) $u[] = abs_url('events/' . $r['slug']);
+    $pri = ['' => ['1.0', 'weekly'], 'events' => ['0.9', 'daily'], 'about' => ['0.8', 'monthly'], 'laugh' => ['0.8', 'weekly'], 'djs' => ['0.7', 'weekly'], 'advertise' => ['0.6', 'monthly'],
+            'partner' => ['0.5', 'monthly'], 'gallery' => ['0.6', 'weekly'], 'contact' => ['0.6', 'yearly'], 'privacy' => ['0.2', 'yearly']];
+    $u = [];
+    foreach ($pri as $p => [$prio, $freq]) $u[] = [abs_url($p), null, $prio, $freq];
+    foreach (rows("SELECT slug, updated_at FROM events WHERE status = 'published' ORDER BY start_at DESC") as $r)
+        $u[] = [abs_url('events/' . $r['slug']), date('c', strtotime((string)$r['updated_at'])), '0.8', 'weekly'];
     echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-    foreach ($u as $l) echo '<url><loc>' . h($l) . '</loc></url>';
+    foreach ($u as [$l, $mod, $prio, $freq]) echo '<url><loc>' . h($l) . '</loc>' . ($mod ? '<lastmod>' . $mod . '</lastmod>' : '') . '<changefreq>' . $freq . '</changefreq><priority>' . $prio . '</priority></url>';
     echo '</urlset>';
 }
 
