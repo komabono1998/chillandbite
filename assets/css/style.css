@@ -920,3 +920,17 @@ a.dj-pl-btn{display:grid;place-items:center;text-decoration:none;color:#fff}
 .video-dl{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--gold);color:#171717!important;font-weight:800;font-size:.76rem;text-decoration:none;white-space:nowrap;transition:transform .2s,background .2s}
 .video-dl:hover{background:#f0c872;transform:translateY(-2px)}
 .dj-pl-btn[hidden]{display:none}
+
+/* ---------- Booking code, track and ticket buttons ---------- */
+.bk-hero-actions{margin-top:1.1rem;align-items:center}
+.bk-hero-actions .btn[disabled]{opacity:.55;cursor:not-allowed;filter:grayscale(.2)}
+.bk-wait{flex-basis:100%;font-size:.82rem;color:#e8dfd1;opacity:.9}
+.bk-newcode{background:var(--cream);padding:clamp(28px,5vw,48px) 0 0}
+.bk-code-card{max-width:620px;margin:0 auto;text-align:center;background:#fff;border:2px dashed var(--gold);border-radius:22px;padding:clamp(20px,4vw,34px);box-shadow:0 16px 40px rgba(0,0,0,.12);color:var(--charcoal)}
+.bk-code-card h2{margin:.2rem 0 .3rem;font-size:1.5rem}
+.bk-code-card p{margin:.2rem auto 1rem;max-width:460px;color:#5a5044}
+.bk-code-ic{font-size:2rem}
+.bk-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;font-size:clamp(1.8rem,7vw,2.8rem);letter-spacing:.22em;color:var(--orange-d);background:linear-gradient(90deg,#fff7e6,#fff);border:1px solid #efe3c4;border-radius:14px;padding:12px 14px;margin:0 auto 1rem;user-select:all}
+.bk-code-card .btn-row{justify-content:center}
+.track-btns{display:flex;gap:10px;flex-wrap:wrap}
+.track-btns .btn{flex:1 1 200px}

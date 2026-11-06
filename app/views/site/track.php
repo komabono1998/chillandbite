@@ -7,10 +7,13 @@
   <form class="form-card track-card" method="post" action="<?= url('track') ?>" novalidate><?= csrf_field() ?><?php honeypot(); ?>
     <div class="field">
       <label for="f_reference"><?= cth('track.form.label') ?></label>
-      <input id="f_reference" name="reference" class="track-input" value="<?= h(old('reference')) ?>" required maxlength="14"
+      <input id="f_reference" name="reference" class="track-input" value="<?= h(old('reference') ?: (string)($_GET['ref'] ?? '')) ?>" required maxlength="14"
              autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="CB7K3M9Q" autofocus>
     </div>
-    <button class="btn btn-primary btn-lg btn-block"><?= cth('track.form.button') ?></button>
+    <div class="track-btns">
+      <button class="btn btn-primary btn-lg" name="go" value="status"><?= cth('track.form.button') ?></button>
+      <button class="btn btn-outline-dark btn-lg" name="go" value="ticket" title="Opens your ticket if your booking is approved">🎟️ Get my ticket</button>
+    </div>
     <p class="small muted track-help"><?= cth('track.form.help') ?></p>
   </form>
 

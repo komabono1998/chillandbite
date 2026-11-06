@@ -19,6 +19,11 @@ function post_track(): void
         redirect('track');
     }
     clear_old();
+    if (($_POST['go'] ?? '') === 'ticket') {
+        $r = row('SELECT id, status, withdrawn_at FROM reservations WHERE reference = ?', [$ref]);
+        if ($r['status'] === 'confirmed') redirect('ticket/' . ticket_token((int)$r['id']));
+        flash($r['status'] === 'pending' ? 'Your booking is not approved yet. Your ticket will appear here as soon as it is.' : 'There is no active ticket for this booking.', $r['status'] === 'pending' ? 'ok' : 'err');
+    }
     redirect('booking/' . $ref);
 }
 

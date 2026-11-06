@@ -116,19 +116,30 @@ function post_reserve(array $a): void
         send_ticket((int)$rid);   // free + instant bookings get their ticket straight away
     } elseif ($d['email']) {
         send_mail($d['email'], "Chill & Bite booking $ref received", "Hello {$d['full_name']},\n\nYour booking has been received and is awaiting approval from the event team. " .
-            "You will get your ticket as soon as it is approved.\n\nReference: $ref\nEvent: {$e['title']}\nWhen: " .
+            "You will get your ticket as soon as it is approved.\n\nYour booking code: $ref (keep it safe)\nEvent: {$e['title']}\nWhen: " .
             fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\nGuests: {$d['guests']}\n" . ($d['package'] ? "Table package: {$d['package']}\n" : '') .
-            ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') . "\nTrack your booking: " . abs_url('booking/' . $ref));
+            ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') . "\nTrack your booking and get your ticket once approved: " . abs_url('booking/' . $ref));
     }
     flash($status === 'confirmed' ? 'Your reservation is confirmed!' : 'Booking received. We will confirm it shortly.');
-    redirect('booking/' . $ref);
+    redirect('booking/' . $ref . '?new=1');
 }
 
 function page_booking(array $a): void
 {
     $r = row('SELECT r.*, e.title, e.slug, e.short_desc, e.description, e.poster, e.start_at, e.end_at, e.venue, e.location FROM reservations r JOIN events e ON e.id = r.event_id WHERE r.reference = ?', [strtoupper($a['ref'])]) ?? not_found();
     $ticket = $r['status'] === 'confirmed' ? ticket_url((int)$r['id']) : null;
-    render('site/booking', ['title' => 'Booking ' . $r['reference'], 'r' => $r, 'paid' => res_paid((int)$r['id']), 'ticket' => $ticket, 'noindex' => true]);
+    render('site/booking', ['title' => 'Booking ' . $r['reference'], 'is_new' => isset($_GET['new']), 'r' => $r, 'paid' => res_paid((int)$r['id']), 'ticket' => $ticket, 'noindex' => true]);
+}
+
+/** Live status for an open booking page: it reloads itself when the booking is approved. */
+function page_booking_status(array $a): void
+{
+    header('Content-Type: application/json');
+    header('Cache-Control: no-store');
+    if (rate_limited('bkstatus', 240, 3600)) { http_response_code(429); echo json_encode(['error' => 'slow down']); return; }
+    $r = row('SELECT id, status, withdrawn_at FROM reservations WHERE reference = ?', [strtoupper($a['ref'])]);
+    if (!$r) { http_response_code(404); echo json_encode(['error' => 'not found']); return; }
+    echo json_encode(['status' => $r['status'], 'withdrawn' => $r['withdrawn_at'] !== null, 'ticket' => $r['status'] === 'confirmed' ? ticket_url((int)$r['id']) : null]);
 }
 
 /* ================= Tickets ================= */

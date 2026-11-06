@@ -43,8 +43,31 @@ $steps = [
   <span class="eyebrow gold">Your booking</span>
   <h1><span aria-hidden="true"><?= $emoji ?></span> <?= h($head) ?></h1>
   <p class="lead bk-msg"><?= h($msg) ?></p>
-  <p class="ref-chip">Reference <strong id="ref"><?= h($r['reference']) ?></strong> <button type="button" class="chip-copy" data-copy="<?= h($r['reference']) ?>">Copy</button></p>
+  <p class="ref-chip">Booking code <strong id="ref"><?= h($r['reference']) ?></strong> <button type="button" class="chip-copy" data-copy="<?= h($r['reference']) ?>">Copy</button></p>
+  <?php if (!in_array($st, ['rejected', 'cancelled'], true)): ?>
+  <div class="btn-row bk-hero-actions" id="bkActions">
+    <a class="btn btn-outline btn-lg" href="<?= url('booking/' . h($r['reference'])) ?>" id="bkTrack">🔎 Track my booking</a>
+    <?php if ($st === 'confirmed' && $ticket): ?><a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>" id="bkTicket">🎟️ Get my ticket</a>
+    <?php else: ?><button class="btn btn-primary btn-lg" type="button" id="bkTicket" disabled aria-disabled="true" title="Available once your booking is approved">🎟️ Get my ticket</button><span class="bk-wait" id="bkWait">Available as soon as your booking is approved. This page updates by itself.</span><?php endif; ?>
+  </div>
+  <?php endif; ?>
 </div></section>
+
+<?php if (!empty($is_new)): ?>
+<section class="bk-newcode"><div class="wrap">
+  <div class="bk-code-card" role="status">
+    <span class="bk-code-ic" aria-hidden="true">✅</span>
+    <h2><?= $st === 'confirmed' ? 'Booking confirmed' : 'Booking submitted' ?></h2>
+    <p>Your booking code has been generated. Keep it safe: it is how you track your booking and get your ticket.</p>
+    <div class="bk-code" aria-label="Your booking code"><?= h($r['reference']) ?></div>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="bkCopyBig" data-copy="<?= h($r['reference']) ?>">Copy code</button>
+      <a class="btn btn-outline-dark" target="_blank" rel="noopener" href="https://wa.me/?text=<?= rawurlencode('My Chill & Bite booking code is ' . $r['reference'] . '. Track it and get my ticket here: ' . abs_url('booking/' . $r['reference'])) ?>">Save on WhatsApp</a>
+    </div>
+    <?php if (!empty($r['email'])): ?><p class="small muted">We also emailed the code to <?= h($r['email']) ?>.</p><?php endif; ?>
+  </div>
+</div></section>
+<?php endif; ?>
 
 <section class="section section-cream bk-section"><div class="wrap">
   <ol class="tracker" aria-label="Booking progress">
@@ -120,6 +143,20 @@ $steps = [
   <p class="bk-thanks">Thank you for choosing <strong>Chill &amp; Bite MEATINGS</strong>. Where connections are made and good vibes never end. 🧡</p>
 </div></section>
 <script>
+(function () {
+  if (location.search.indexOf('new=') > -1 && history.replaceState) history.replaceState(null, '', location.pathname);
+  var big = document.getElementById('bkCopyBig');
+  if (big) big.addEventListener('click', function () { var t = big.dataset.copy, done = function () { big.textContent = 'Copied!'; setTimeout(function () { big.textContent = 'Copy code'; }, 1600); }; if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, done); else done(); });
+  // Pending bookings: check every 15 seconds and refresh the page as soon as the booking is approved
+  var st = <?= json_encode($st) ?>;
+  if (st !== 'pending' || !window.fetch) return;
+  var url = <?= json_encode(url('booking/' . $r['reference'] . '/status')) ?>;
+  function check() {
+    if (document.hidden) return;
+    fetch(url, { cache: 'no-store' }).then(function (x) { return x.json(); }).then(function (j) { if (j && j.status && j.status !== 'pending') location.reload(); }).catch(function () {});
+  }
+  setInterval(check, 15000); document.addEventListener('visibilitychange', check);
+})();
 document.querySelectorAll('.chip-copy').forEach(function (b) {
   b.addEventListener('click', function () {
     var t = b.dataset.copy, done = function () { b.textContent = 'Copied!'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
