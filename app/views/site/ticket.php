@@ -33,10 +33,17 @@
         <div id="qr" data-url="<?= h($checkin_url) ?>" role="img" aria-label="QR code for entry"></div>
         <?= $r['checked_in_at'] ? '<span class="badge badge-warn">Checked in ' . h(fmt_time($r['checked_in_at'])) . '</span>' : '<span class="badge badge-ok">Valid</span>' ?>
       </div>
+      <div class="ticket-seal" title="Gold seal of authenticity. Unique to this ticket."><?= $seal ?><span class="seal-sheen" aria-hidden="true"></span></div>
+    </div>
+    <div class="ticket-secure">
+      <div><small>Serial</small><b class="mono"><?= h($serial) ?></b></div>
+      <div><small>Live security code</small><b class="mono live-code" id="liveCode"><?= h($code) ?></b><span class="code-bar"><i id="codeBar" style="animation-duration:30s;animation-delay:-<?= 30 - (int)$code_left ?>s"></i></span></div>
+      <div><small>Verified live</small><b class="mono" id="liveClock">--:--:--</b></div>
     </div>
     <div class="ticket-tear" aria-hidden="true"></div>
     <footer class="ticket-foot">
       <p>Show this QR code at the entrance. One ticket admits the number of guests shown above. Please arrive with your reference <strong><?= h($r['reference']) ?></strong> if the code cannot be scanned.</p>
+      <p class="small"><b>Authentic ticket:</b> every ticket carries its own gold seal and serial, and is valid for one entry only. The live security code changes every 30 seconds, so a screenshot cannot be passed off as the live ticket. A ticket that has been scanned once is refused at the door.</p>
       <p class="small">Chill &amp; Bite MEATINGS · Organized by Owakabi &amp; The Geng</p>
     </footer>
   </article>
@@ -52,7 +59,7 @@
       'date' => fmt_date($r['start_at'], 'l, j F Y'), 'time' => fmt_time($r['start_at']),
       'venue' => $r['venue'] . ', ' . $r['location'], 'name' => $r['full_name'] . ($r['company'] ? ' · ' . $r['company'] : ''),
       'type' => RES_TYPES[$r['type']] . ($r['package'] ? ' · ' . $r['package'] . ' package' : ''),
-      'logo' => asset('img/logo.png'),
+      'logo' => asset('img/logo.png'), 'serial' => $serial, 'seal' => $seal,
   ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
   <script src="<?= h(asset('js/vendor/qrcode.min.js')) ?>"></script>
   <script>
@@ -65,6 +72,8 @@
     // Draw the ticket onto a canvas so it can be saved as a PNG (works offline once downloaded)
     var logo = new Image(); logo.src = d.logo;
     var logoReady = new Promise(function (res) { logo.onload = res; logo.onerror = res; });
+    var sealImg = new Image(); sealImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(d.seal.replace('width="200" height="200"', 'width="400" height="400"'));
+    var sealReady = new Promise(function (res) { sealImg.onload = res; sealImg.onerror = res; });
     function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
     function wrap(c, text, x, y, maxW, lh, maxLines) {
       var words = String(text).split(/\s+/), line = '', lines = [];
@@ -78,8 +87,8 @@
       new QRCode(holder, { text: el.dataset.url, width: 560, height: 560, correctLevel: QRCode.CorrectLevel.M });
       var qr = holder.querySelector('canvas');
       var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-      return Promise.all([logoReady, fonts]).then(function () {
-        var W = 1080, H = 1660, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      return Promise.all([logoReady, sealReady, fonts]).then(function () {
+        var W = 1080, H = 1720, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
         var c = cv.getContext('2d'), F = 'Poppins, "Segoe UI", Arial, sans-serif';
         c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
         var g = c.createLinearGradient(0, 0, W, 300); g.addColorStop(0, '#171717'); g.addColorStop(1, '#3a2210');
@@ -101,7 +110,9 @@
         c.imageSmoothingEnabled = false; c.drawImage(qr, 260, 864, 560, 560); c.imageSmoothingEnabled = true;
         c.textAlign = 'center'; c.fillStyle = '#8a8378'; c.font = '600 24px ' + F; c.fillText('REFERENCE', W / 2, 1500);
         c.fillStyle = '#b9561b'; c.font = '700 64px "Courier New", monospace'; c.fillText(d.ref, W / 2, 1572);
-        c.fillStyle = '#6b6258'; c.font = '500 22px ' + F; c.fillText('Show this QR code at the entrance · Chill & Bite MEATINGS', W / 2, 1626);
+        c.fillStyle = '#7a4d0c'; c.font = '700 28px "Courier New", monospace'; c.fillText('SERIAL ' + d.serial, W / 2, 1622);
+        if (sealImg.naturalWidth) { c.save(); c.translate(135, 1150); c.rotate(-0.14); c.drawImage(sealImg, -100, -100, 200, 200); c.restore(); }
+        c.fillStyle = '#6b6258'; c.font = '500 22px ' + F; c.fillText('Show this QR code at the entrance · Chill & Bite MEATINGS · valid for one entry', W / 2, 1676);
         return cv;
       });
     }
@@ -128,6 +139,18 @@
     fetch(url, { cache: 'no-store' }).then(function (x) { return x.json(); }).then(function (j) { if (j && j.v && j.v !== ver) location.reload(); }).catch(function () {});
   }
   setInterval(check, 15000);
+  // Live code and clock: a still screenshot cannot keep these moving
+  var codeEl = document.getElementById('liveCode'), clockEl = document.getElementById('liveClock'), barEl = document.getElementById('codeBar');
+  function pad(n) { return n < 10 ? '0' + n : n; }
+  function tick() { if (clockEl) { var n = new Date(); clockEl.textContent = pad(n.getHours()) + ':' + pad(n.getMinutes()) + ':' + pad(n.getSeconds()); } }
+  tick(); setInterval(tick, 1000);
+  function refreshCode() {
+    if (!codeEl || !window.fetch) return;
+    fetch(url, { cache: 'no-store' }).then(function (x) { return x.json(); }).then(function (j) {
+      if (j && j.code) { codeEl.textContent = j.code; if (barEl) { barEl.style.animation = 'none'; void barEl.offsetWidth; barEl.style.animation = ''; barEl.style.animationDuration = '30s'; barEl.style.animationDelay = '-' + (30 - j.left) + 's'; } setTimeout(refreshCode, Math.max(1500, j.left * 1000 + 300)); }
+    }).catch(function () { setTimeout(refreshCode, 10000); });
+  }
+  if (codeEl) setTimeout(refreshCode, <?= max(1500, (int)($code_left ?? 30) * 1000 + 300) ?>);
   document.addEventListener('visibilitychange', check);
 })();
 </script>

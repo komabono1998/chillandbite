@@ -857,3 +857,21 @@ body.has-player{padding-bottom:78px}
 
 .tk-void{max-width:560px;margin:0 auto;border-top:6px solid #c0392b}
 .tk-void-ic{font-size:3rem;margin:0}
+
+/* ---------- Ticket security: gold seal, serial, live code ---------- */
+.ticket-body{position:relative}
+.ticket-seal{position:absolute;right:22px;bottom:-92px;width:116px;height:116px;z-index:3;transform:rotate(-9deg);filter:drop-shadow(0 6px 10px rgba(80,50,5,.45));border-radius:50%;overflow:hidden}
+.ticket-seal svg{display:block;width:100%;height:100%}
+.seal-sheen{position:absolute;inset:0;border-radius:50%;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.75) 48%,rgba(255,240,170,.5) 52%,transparent 65%);background-size:260% 100%;background-position:130% 0;mix-blend-mode:overlay;animation:sealSheen 3.6s ease-in-out infinite}
+@keyframes sealSheen{0%{background-position:130% 0}55%,100%{background-position:-60% 0}}
+.ticket-secure{display:flex;flex-wrap:wrap;gap:10px 28px;padding:12px 26px;background:linear-gradient(90deg,#fff8e6,#fff);border-top:1px solid #efe3c4}
+.ticket-secure small{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.14em;color:#8a6a1f}
+.ticket-secure b{font-size:1rem;color:#4a2c05}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em}
+.live-code{font-size:1.5rem!important;color:#b9561b!important;letter-spacing:.3em}
+.code-bar{display:block;height:3px;width:100%;background:#eadfc5;border-radius:3px;overflow:hidden;margin-top:3px}
+.code-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#c98d2b,#f6d77a);transform-origin:left;animation:codeBar 30s linear infinite}
+@keyframes codeBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media(max-width:640px){.ticket-seal{position:relative;right:auto;bottom:auto;margin:-6px auto 0}.ticket-secure{justify-content:center;text-align:center}}
+@media print{.seal-sheen{display:none}.ticket-seal{filter:none}}
+@media(prefers-reduced-motion:reduce){.seal-sheen,.code-bar i{animation:none}}

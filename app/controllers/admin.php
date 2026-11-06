@@ -217,7 +217,14 @@ function admin_checkin(array $a): void
     require_can_any(['reservations', 'checkin']);
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) not_found();
     $r = row(RES_SELECT . ' WHERE r.ticket_token = ?', [$a['token']]);
-    admin_view('checkin', ['title' => 'Check-in', 'r' => $r, 'token' => $a['token']]);
+    $dups = 0;
+    if ($r && $r['status'] === 'confirmed' && $r['checked_in_at'] && strtotime($r['checked_in_at']) < time() - 20) {   // the redirect right after a check-in is not a duplicate
+        audit('ticket.duplicate_scan', $r['reference'] . ' scanned again; first entry ' . $r['checked_in_at']);
+        $dups = (int)val("SELECT COUNT(*) FROM audit_log WHERE action = 'ticket.duplicate_scan' AND detail LIKE ?", [$r['reference'] . ' %']);
+    } elseif ($r && $r['status'] !== 'confirmed') {
+        audit('ticket.invalid_scan', $r['reference'] . ' scanned while ' . ($r['withdrawn_at'] ? 'withdrawn' : $r['status']));
+    }
+    admin_view('checkin', ['title' => 'Check-in', 'r' => $r, 'token' => $a['token'], 'dups' => $dups]);
 }
 function admin_reservation_action(array $a): void
 {

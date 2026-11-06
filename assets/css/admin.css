@@ -260,3 +260,11 @@ body.admin.admin-login{background:#141210}
 .tk-form-actions{display:flex;gap:8px}
 .tk-withdraw-btn{background:#c0392b;border-color:#c0392b}.tk-withdraw-btn:hover{background:#a93226}
 .tbl:has(.tk-actions) td{vertical-align:top}
+
+/* ---------- Door screen: seal, serial, live code ---------- */
+.ck-secure{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center;margin:14px 0;padding:14px 16px;border:1px solid #efe3c4;border-radius:14px;background:#fffaf0}
+.ck-seal svg{display:block;width:84px;height:84px;filter:drop-shadow(0 3px 6px rgba(80,50,5,.35))}
+.ck-secure small{display:block;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:#8a6a1f}
+.ck-secure b.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.1rem;color:#4a2c05}
+.ck-secure .live-code{font-size:2rem;letter-spacing:.3em;color:#b9561b}
+.ck-secure p{margin:2px 0 0;max-width:260px}
