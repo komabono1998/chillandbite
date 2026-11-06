@@ -934,3 +934,11 @@ a.dj-pl-btn{display:grid;place-items:center;text-decoration:none;color:#fff}
 .bk-code-card .btn-row{justify-content:center}
 .track-btns{display:flex;gap:10px;flex-wrap:wrap}
 .track-btns .btn{flex:1 1 200px}
+
+/* ---------- Track a reservation from the reserve page ---------- */
+.rs-track{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:0 0 1.2rem;padding:14px 18px;background:#fff;border:1px solid #e9dcc0;border-left:5px solid var(--gold);border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.06);color:var(--charcoal)}
+.rs-track-text{display:flex;flex-direction:column;flex:1 1 150px;font-size:.85rem;color:#5a5044}.rs-track-text b{font-size:1rem;color:var(--charcoal)}
+.rs-track-row{display:flex;flex-wrap:wrap;gap:8px;flex:3 1 440px;align-items:center}.rs-track-row .btn{white-space:nowrap}
+.rs-track-row input{flex:1 1 140px;min-width:0;padding:10px 14px;border:2px solid #e3d9c8;border-radius:10px;font:600 .95rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;background:#fffaf1}
+.rs-track-row input::placeholder{text-transform:none;letter-spacing:0;font-weight:400;font-family:inherit}
+.rs-track-row input:focus{outline:0;border-color:var(--orange);box-shadow:0 0 0 3px rgba(217,107,39,.18)}
