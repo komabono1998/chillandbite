@@ -171,7 +171,7 @@ function page_robots(): void
 function page_sitemap(): void
 {
     header('Content-Type: application/xml; charset=utf-8');
-    $u = array_map('abs_url', ['', 'about', 'events', 'laugh', 'news', 'advertise', 'gallery', 'contact']);
+    $u = array_map('abs_url', ['', 'about', 'events', 'laugh', 'djs', 'news', 'accreditation', 'advertise', 'partner', 'gallery', 'contact', 'track', 'privacy']);
     foreach (rows("SELECT slug FROM events WHERE status = 'published'") as $r) $u[] = abs_url('events/' . $r['slug']);
     foreach (rows("SELECT slug FROM articles WHERE status IN ('published','scheduled') AND published_at <= NOW()") as $r) $u[] = abs_url('news/' . $r['slug']);
     echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';

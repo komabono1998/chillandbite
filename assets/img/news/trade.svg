@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label=" Illustration of imports rising above exports on a bar chart">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10261f"/><stop offset="1" stop-color="#25503f"/></linearGradient></defs>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#171717"/><stop offset="1" stop-color="#3a2210"/></linearGradient></defs>
 <rect width="1200" height="675" fill="url(#g)"/>
 <g stroke="#fff" stroke-opacity=".12" stroke-width="2"><path d="M180 140h840M180 240h840M180 340h840M180 440h840M180 540h840"/></g>
-<g><rect x="230" y="420" width="70" height="120" rx="8" fill="#d9a441"/><rect x="310" y="380" width="70" height="160" rx="8" fill="#e5654a"/>
-<rect x="470" y="400" width="70" height="140" rx="8" fill="#d9a441"/><rect x="550" y="300" width="70" height="240" rx="8" fill="#e5654a"/>
-<rect x="710" y="380" width="70" height="160" rx="8" fill="#d9a441"/><rect x="790" y="190" width="70" height="350" rx="8" fill="#e5654a"/></g>
+<g><rect x="230" y="420" width="70" height="120" rx="8" fill="#d9a441"/><rect x="310" y="380" width="70" height="160" rx="8" fill="#D96B27"/>
+<rect x="470" y="400" width="70" height="140" rx="8" fill="#d9a441"/><rect x="550" y="300" width="70" height="240" rx="8" fill="#D96B27"/>
+<rect x="710" y="380" width="70" height="160" rx="8" fill="#d9a441"/><rect x="790" y="190" width="70" height="350" rx="8" fill="#D96B27"/></g>
 <path d="M200 500L420 420 600 340 880 160" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="2 14"/><path d="M850 150l45 4-10 42z" fill="#fff"/>
-<g font-family="Poppins,Arial,sans-serif" font-size="30" font-weight="700" fill="#fff"><rect x="250" y="110" width="26" height="26" rx="5" fill="#d9a441"/><text x="288" y="132">Exports</text><rect x="420" y="110" width="26" height="26" rx="5" fill="#e5654a"/><text x="458" y="132">Imports</text></g>
+<g font-family="Poppins,Arial,sans-serif" font-size="30" font-weight="700" fill="#fff"><rect x="250" y="110" width="26" height="26" rx="5" fill="#d9a441"/><text x="288" y="132">Exports</text><rect x="420" y="110" width="26" height="26" rx="5" fill="#D96B27"/><text x="458" y="132">Imports</text></g>
 </svg>

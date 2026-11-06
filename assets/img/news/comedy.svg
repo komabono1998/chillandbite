@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label=" Illustration of a stage microphone and spotlight">
-<defs><radialGradient id="s" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#ffd978" stop-opacity=".85"/><stop offset="1" stop-color="#ffd978" stop-opacity="0"/></radialGradient><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1320"/><stop offset="1" stop-color="#3a1f2b"/></linearGradient></defs>
+<defs><radialGradient id="s" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#ffd978" stop-opacity=".85"/><stop offset="1" stop-color="#ffd978" stop-opacity="0"/></radialGradient><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#171717"/><stop offset="1" stop-color="#3a2210"/></linearGradient></defs>
 <rect width="1200" height="675" fill="url(#g)"/><path d="M600 0L330 675h540z" fill="url(#s)" opacity=".55"/>
 <rect y="590" width="1200" height="85" fill="#0f0a12"/>
 <g transform="translate(600 120)"><rect x="-45" y="0" width="90" height="170" rx="45" fill="#cfcfd6"/><g stroke="#8a8a96" stroke-width="4"><path d="M-45 40h90M-45 70h90M-45 100h90M-45 130h90"/></g>

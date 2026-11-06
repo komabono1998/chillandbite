@@ -22,6 +22,7 @@ $pageDesc = $desc ?? setting('tagline');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= h($pageTitle) ?></title>
 <meta name="description" content="<?= h(excerpt($pageDesc, 160)) ?>">
+<?php if (empty($noindex)): ?><link rel="canonical" href="<?= h(abs_url(trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE)), '/'))) ?>"><?php endif; ?>
 <meta property="og:title" content="<?= h($pageTitle) ?>">
 <meta property="og:description" content="<?= h(excerpt($pageDesc, 160)) ?>">
 <meta property="og:type" content="website">

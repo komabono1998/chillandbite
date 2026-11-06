@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label=" Illustration of a digital number plate">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14202b"/><stop offset="1" stop-color="#2f4a63"/></linearGradient></defs>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#171717"/><stop offset="1" stop-color="#3a2210"/></linearGradient></defs>
 <rect width="1200" height="675" fill="url(#g)"/>
 <g opacity=".12" stroke="#fff" stroke-width="2"><path d="M0 560h1200M0 600h1200M0 640h1200"/></g>
 <g transform="translate(250 190)"><rect width="700" height="230" rx="26" fill="#f7f1e3" stroke="#1d1d1d" stroke-width="10"/><rect x="22" y="22" width="656" height="186" rx="16" fill="none" stroke="#1d1d1d" stroke-width="4"/>

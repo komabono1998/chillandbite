@@ -55,6 +55,12 @@ $selType = old('event_type');
   </div>
 </div></section>
 
+<section class="section section-cream" id="shows"><div class="wrap">
+  <div class="section-head"><span class="eyebrow"><?= cth('laugh.shows.eyebrow') ?></span><h2><?= cth('laugh.shows.heading') ?></h2></div>
+  <?php if ($shows): ?><div class="grid grid-3"><?php foreach ($shows as $e) event_card($e); ?></div>
+  <?php else: ?><div class="lw-empty lw-empty-light"><span aria-hidden="true">🎭</span><p><?= cth('laugh.shows.empty') ?></p><a class="btn btn-primary" href="#book">Book a private performance</a></div><?php endif; ?>
+</div></section>
+
 <section class="section section-dark lw-videos" id="videos"><div class="wrap">
   <div class="section-head"><span class="eyebrow gold"><?= cth('laugh.videos.eyebrow') ?></span><h2><?= cth('laugh.videos.heading') ?></h2><p><?= cth('laugh.videos.intro') ?></p></div>
   <?php if ($videos): ?>
@@ -69,20 +75,14 @@ $selType = old('event_type');
   <?php endif; ?>
 </div></section>
 
-<section class="section section-cream" id="shows"><div class="wrap">
-  <div class="section-head"><span class="eyebrow"><?= cth('laugh.shows.eyebrow') ?></span><h2><?= cth('laugh.shows.heading') ?></h2></div>
-  <?php if ($shows): ?><div class="grid grid-3"><?php foreach ($shows as $e) event_card($e); ?></div>
-  <?php else: ?><div class="lw-empty lw-empty-light"><span aria-hidden="true">🎭</span><p><?= cth('laugh.shows.empty') ?></p><a class="btn btn-primary" href="#book">Book a private performance</a></div><?php endif; ?>
-</div></section>
-
-<section class="section section-dark lw-process"><div class="wrap">
-  <div class="section-head center"><span class="eyebrow gold">Simple process</span><h2><?= cth('laugh.process.heading') ?></h2></div>
+<section class="section section-cream"><div class="wrap">
+  <div class="section-head center"><span class="eyebrow">Simple process</span><h2><?= cth('laugh.process.heading') ?></h2></div>
   <div class="steps acc-steps">
     <?php foreach (ctrows('laugh.process.steps') as $i => [$t, $d]): ?><div data-reveal><b><?= $i + 1 ?></b><h4><?= h($t) ?></h4><p><?= h($d) ?></p></div><?php endforeach; ?>
   </div>
 </div></section>
 
-<section class="section section-cream lw-book" id="book"><div class="wrap lw-book-in">
+<section class="section section-dark lw-book dj-book" id="book"><div class="wrap lw-book-in">
   <div>
     <div class="section-head"><span class="eyebrow"><?= cth('laugh.booking.eyebrow') ?></span><h2><?= cth('laugh.booking.heading') ?></h2><p><?= cth('laugh.booking.intro') ?></p></div>
     <form class="form-card" id="lwForm" method="post" action="<?= url('laugh') ?>"><?= csrf_field() ?><?php honeypot(); ?>
@@ -109,7 +109,7 @@ $selType = old('event_type');
   </aside>
 </div></section>
 
-<section class="section section-dark"><div class="narrow-wrap">
+<section class="section section-cream"><div class="narrow-wrap">
   <div class="section-head center"><span class="eyebrow gold">FAQ</span><h2><?= cth('laugh.faq.heading') ?></h2></div>
   <div class="ab-faq">
     <?php foreach (ctrows('laugh.faq.items') as [$qq, $aa]): ?><details><summary><?= h($qq) ?></summary><p><?= h($aa) ?></p></details><?php endforeach; ?>
