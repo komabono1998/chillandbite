@@ -108,15 +108,6 @@
   </div>
 </section>
 
-<section class="section">
-  <div class="wrap">
-    <div class="section-head"><span class="eyebrow"><?= cth('home.news.eyebrow') ?></span><h2><?= cth('home.news.heading') ?></h2></div>
-    <?php if ($articles): ?><div class="grid grid-3"><?php foreach ($articles as $a) article_card($a); ?></div>
-    <?php else: ?><p class="muted">Fresh stories are on the way.</p><?php endif; ?>
-    <p class="center mt"><a class="btn btn-outline-dark" href="<?= url('news') ?>"><?= cth('home.news.button') ?></a></p>
-  </div>
-</section>
-
 <section class="section section-dark">
   <div class="wrap center">
     <span class="eyebrow gold"><?= cth('home.partners.eyebrow') ?></span>

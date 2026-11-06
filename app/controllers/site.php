@@ -66,7 +66,6 @@ function page_home(): void
         'next' => $next,
         'next_date' => $next ? new DateTimeImmutable($next['start_at']) : next_first_sunday(),
         'others' => array_slice($events, 1),
-        'articles' => published_articles(3),
         'video' => row('SELECT * FROM videos ORDER BY featured DESC, id DESC LIMIT 1'),
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
         'gallery' => wall_photos(36),
