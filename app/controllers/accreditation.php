@@ -77,7 +77,7 @@ function admin_accreditation_action(array $a): void
 function admin_account(): void
 {
     if (!current_user()) redirect('admin/login');
-    admin_view('account', ['title' => 'My account', 'u' => row('SELECT id, name, email, role, organization, last_login FROM users WHERE id = ?', [current_user()['id']])]);
+    admin_view('account', ['title' => 'My account', 'u' => row('SELECT id, name, email, role, organization, last_login, must_change FROM users WHERE id = ?', [current_user()['id']])]);
 }
 function admin_account_save(): void
 {
@@ -96,7 +96,7 @@ function admin_account_save(): void
         elseif ($new !== $conf) flash('The new passwords do not match.', 'err');
         elseif ($new === $cur) flash('Choose a password that is different from the current one.', 'err');
         else {
-            q('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $me['id']]);
+            q('UPDATE users SET password_hash = ?, must_change = 0 WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $me['id']]);
             session_regenerate_id(true);
             audit('account.password', 'own password changed');
             flash('Password changed.');

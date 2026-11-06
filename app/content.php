@@ -260,7 +260,7 @@ function site_pages(): array
             ],
         ],
         'djs' => [
-            'label' => 'Podium DJs', 'icon' => '🎧', 'url' => 'djs', 'roles' => ['editor', 'marketing'],
+            'label' => 'Podium DJs', 'icon' => '🎧', 'url' => 'djs', 'roles' => ['editor', 'marketing', 'dj_manager'],
             'desc' => 'Book a DJ for an event, meet the roster and listen to mixes from Podium DJs and Chill & Bite MEATINGS. DJs and mixes are managed under DJs & mixes.',
             'related' => [['Manage DJs & mixes', 'admin/djs', 'djs'], ['DJ booking requests', 'admin/inquiries?type=dj', 'inquiries']],
             'sections' => [

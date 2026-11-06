@@ -1,4 +1,5 @@
 <div class="adm-head"><div><h1>My account</h1><p class="adm-sub"><?= h($u['email']) ?> · <?= h(ROLES[$u['role']] ?? $u['role']) ?><?= $u['organization'] ? ' · ' . h($u['organization']) : '' ?></p></div></div>
+<?php if (!empty($u["must_change"])): ?><p class="alert alert-ok"><b>Choose your own password.</b> You are using a temporary password. Set a new one below to open the rest of the admin.</p><?php endif; ?>
 <div class="panel">
   <div class="panel-head"><h2>Your name</h2></div>
   <form method="post" action="<?= url('admin/account') ?>"><?= csrf_field() ?><input type="hidden" name="action" value="profile">

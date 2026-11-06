@@ -18,10 +18,11 @@ $sql = file_get_contents("$root/database/schema.sql");
 $sql = preg_replace('/^--.*$/m', '', $sql);
 foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) db()->exec($stmt);
 // Upgrade older databases: finance and door staff roles
-db()->exec("ALTER TABLE users MODIFY role ENUM('admin','event_manager','editor','marketing','finance','door','contributor') NOT NULL DEFAULT 'editor'");
+db()->exec("ALTER TABLE users MODIFY role ENUM('admin','event_manager','box_office','editor','marketing','dj_manager','finance','door','contributor') NOT NULL DEFAULT 'editor'");
 // Upgrade older databases: contributor organisation, article review status and source credit
 db()->exec("ALTER TABLE inquiries MODIFY type ENUM('contact','performance','advertising','dj') NOT NULL");
 $hasCol = fn(string $t, string $c) => (int)val('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$t, $c]);
+if (!$hasCol('users', 'must_change')) db()->exec('ALTER TABLE users ADD COLUMN must_change TINYINT(1) NOT NULL DEFAULT 0 AFTER active');
 if (!$hasCol('reservations', 'withdrawn_at')) db()->exec('ALTER TABLE reservations ADD COLUMN withdrawn_at DATETIME NULL AFTER checked_in_at, ADD COLUMN withdrawn_reason VARCHAR(255) NULL AFTER withdrawn_at');
 if (!$hasCol('videos', 'file')) db()->exec('ALTER TABLE videos ADD COLUMN file VARCHAR(255) NULL AFTER url, ADD COLUMN poster VARCHAR(255) NULL AFTER file');
 db()->exec('ALTER TABLE videos MODIFY url VARCHAR(255) NULL');
@@ -82,15 +83,15 @@ if (!(int)val("SELECT COUNT(*) FROM gallery_images WHERE file LIKE 'img/photos/%
     echo "Event photos added to the gallery.\n";
 }
 
-// First admin
+// First admin (use ADMIN_EMAIL and ADMIN_PASSWORD in .env to choose your own, otherwise a password is generated)
 if (!(int)val("SELECT COUNT(*) FROM users")) {
-    $email = 'admin@chillandbite.local';
-    $pass = rtrim(strtr(base64_encode(random_bytes(12)), '+/', 'Aa'), '=');
-    q('INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,?)',
-        ['System Administrator', $email, password_hash($pass, PASSWORD_DEFAULT), 'admin']);
-    echo "\n=== FIRST ADMIN ACCOUNT (shown once) ===\nEmail:    $email\nPassword: $pass\nChange these after first login (Admin > Users).\n\n";
+    $email = strtolower(trim((string)env('ADMIN_EMAIL', 'admin@chillandbite.local')));
+    $given = (string)env('ADMIN_PASSWORD', '');
+    $pass = strlen($given) >= 10 ? $given : rtrim(strtr(base64_encode(random_bytes(12)), '+/', 'Aa'), '=');
+    q('INSERT INTO users (name, email, password_hash, role, must_change) VALUES (?,?,?,?,?)',
+        ['System Administrator', $email, password_hash($pass, PASSWORD_DEFAULT), 'admin', strlen($given) >= 10 ? 0 : 1]);
+    echo "\n=== FIRST ADMIN ACCOUNT ===\nEmail:    $email\n" . (strlen($given) >= 10 ? "Password: (the ADMIN_PASSWORD from your .env)\n" : "Password: $pass (shown once; you must choose a new one at first sign-in)\n") . "Create the rest of your team under Admin > Users & roles.\n\n";
 }
-
 // Sample content
 if (in_array('--sample', $argv, true) && !(int)val('SELECT COUNT(*) FROM events')) {
     $cat = (int)val("SELECT id FROM event_categories WHERE slug = 'chill-bite-meatings'");
@@ -123,16 +124,6 @@ Companies and individuals come to network, market their events and promote their
     foreach ([['individual', 20000, 1, 1], ['couple', 20000, 2, 2], ['vip', 50000, 1, 6]] as [$ty, $p, $mn, $mx])
         q('INSERT INTO event_reservation_options (event_id, type, price_per_guest, min_guests, max_guests) VALUES (?,?,?,?,?)', [$eid, $ty, $p, $mn, $mx]);
 
-    $adminId = (int)val("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
-    $ent = (int)val("SELECT id FROM article_categories WHERE slug = 'entertainment'");
-    $gos = (int)val("SELECT id FROM article_categories WHERE slug = 'gossip'");
-    $arts = [
-        ['Welcome to The Gulu Chronicles', $ent, 'news', 'Gulu news, gossip and blogs from Uganda and the world.', "The Gulu Chronicles is the news, gossip and blogs home of Chill & Bite MEATINGS.\n\nThis is a sample article. Replace it with your own reporting from Gulu and the wider Northern Uganda region."],
-        ['Sample gossip column: what people are talking about', $gos, 'gossip', 'Clearly labelled entertainment chatter. Not verified news.', "This is a sample entertainment gossip piece. Gossip is clearly labelled and must not present allegations about identifiable people as established fact."],
-    ];
-    foreach ($arts as [$title, $c, $label, $ex, $body])
-        q("INSERT INTO articles (category_id, author_id, title, slug, excerpt, body, label, status, published_at, featured) VALUES (?,?,?,?,?,?,?, 'published', NOW(), ?)",
-            [$c, $adminId, $title, unique_slug('articles', $title), $ex, $body, $label, $label === 'news' ? 1 : 0]);
     echo "Sample content added.\n";
 }
 echo "Done.\n";

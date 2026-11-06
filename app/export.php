@@ -360,7 +360,7 @@ function export_buttons(string $dataset, array $query = []): string
 /** Inquiry types a role may see (shared with the Inquiries screen). */
 function inquiry_scope(string $role): array
 {
-    return ['admin' => ['contact', 'performance', 'dj', 'advertising'], 'marketing' => ['advertising', 'dj'], 'editor' => ['contact', 'performance', 'dj'], 'event_manager' => ['contact', 'performance', 'dj']][$role] ?? [];
+    return ['admin' => ['contact', 'performance', 'dj', 'advertising'], 'marketing' => ['advertising', 'dj'], 'editor' => ['contact', 'performance', 'dj'], 'event_manager' => ['contact', 'performance', 'dj'], 'dj_manager' => ['dj']][$role] ?? [];
 }
 function dataset_meta(): array
 {

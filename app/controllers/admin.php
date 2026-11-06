@@ -280,7 +280,23 @@ function admin_reservation_action(array $a): void
 function admin_users(): void
 {
     require_can('users');
-    admin_view('users', ['title' => 'Users & permissions', 'users' => rows('SELECT * FROM users ORDER BY id')]);
+    $creds = $_SESSION['new_creds'] ?? [];
+    unset($_SESSION['new_creds']);                                  // login details are shown once
+    admin_view('users', ['title' => 'Users & permissions', 'users' => rows('SELECT * FROM users ORDER BY id'), 'creds' => $creds]);
+}
+/** Creates a staff account and remembers its login details for the one-time "Login details" panel. */
+function create_staff_user(string $name, string $email, string $role, ?string $password, bool $mustChange, bool $emailIt): void
+{
+    $pw = $password !== null && $password !== '' ? $password : generate_password();
+    q('INSERT INTO users (name, email, password_hash, role, must_change) VALUES (?,?,?,?,?)', [$name, $email, password_hash($pw, PASSWORD_DEFAULT), $role, $mustChange ? 1 : 0]);
+    audit('user.create', "$email ($role)");
+    $login = abs_url('admin/login');
+    $_SESSION['new_creds'][] = ['name' => $name, 'email' => $email, 'role' => ROLES[$role], 'password' => $pw, 'login' => $login, 'must_change' => $mustChange, 'emailed' => false];
+    if ($emailIt) {
+        $sent = send_mail($email, 'Your Chill & Bite admin login', "Hello $name,\n\nAn account was created for you as: " . ROLES[$role] . ".\n\nSign in: $login\nEmail: $email\nTemporary password: $pw\n" .
+            ($mustChange ? "You will be asked to choose your own password the first time you sign in.\n" : '') . "\nChill & Bite MEATINGS\n");
+        $_SESSION['new_creds'][array_key_last($_SESSION['new_creds'])]['emailed'] = $sent;
+    }
 }
 function admin_users_save(): void
 {
@@ -288,15 +304,32 @@ function admin_users_save(): void
     $me = current_user();
     $act = $_POST['action'] ?? '';
     if ($act === 'create') {
-        $email = strtolower(post_str('email', 190)); $pw = (string)($_POST['password'] ?? '');
+        $email = strtolower(post_str('email', 190)); $pw = trim((string)($_POST['password'] ?? ''));
         $role = $_POST['role'] ?? '';
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !isset(ROLES[$role]) || mb_strlen(post_str('name')) < 2) flash('Name, valid email and role are required.', 'err');
-        elseif (strlen($pw) < 10) flash('Password must be at least 10 characters.', 'err');
+        elseif ($pw !== '' && strlen($pw) < 10) flash('A password you type must be at least 10 characters. Leave it empty to generate one.', 'err');
         elseif (val('SELECT id FROM users WHERE email = ?', [$email])) flash('That email is already used.', 'err');
         else {
-            q('INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,?)', [post_str('name', 120), $email, password_hash($pw, PASSWORD_DEFAULT), $role]);
-            audit('user.create', "$email ($role)"); flash('User created.');
+            create_staff_user(post_str('name', 120), $email, $role, $pw, !empty($_POST['must_change']), !empty($_POST['email_login']));
+            flash('Account created. Copy the login details below and share them securely: the password is shown only once.');
         }
+    } elseif ($act === 'bulk') {
+        $made = 0; $skipped = [];
+        $byLabel = array_change_key_case(array_flip(ROLES), CASE_LOWER);
+        foreach (preg_split('/\R/', (string)($_POST['lines'] ?? '')) as $line) {
+            $line = trim($line);
+            if ($line === '') continue;
+            $p = array_map('trim', preg_split('/[,;\t]/', $line));
+            $name = $p[0] ?? ''; $email = strtolower($p[1] ?? ''); $r = strtolower($p[2] ?? '');
+            $role = isset(ROLES[$r]) ? $r : ($byLabel[$r] ?? ($byLabel[str_replace('_', ' ', $r)] ?? ''));
+            if (mb_strlen($name) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL) || !isset(ROLES[$role])) { $skipped[] = "$line (needs: Name, email, role)"; continue; }
+            if (val('SELECT id FROM users WHERE email = ?', [$email])) { $skipped[] = "$email (already exists)"; continue; }
+            create_staff_user(mb_substr($name, 0, 120), $email, $role, null, true, !empty($_POST['email_login']));
+            $made++;
+        }
+        if ($made) flash("$made account(s) created. Copy the login details below: passwords are shown only once.");
+        foreach ($skipped as $x) flash("Skipped: $x", 'err');
+        if (!$made && !$skipped) flash('Type one person per line: Name, email, role.', 'err');
     } else {
         $id = (int)($_POST['id'] ?? 0);
         if ($act === 'toggle' && $id !== (int)$me['id']) { q('UPDATE users SET active = 1 - active WHERE id = ?', [$id]); audit('user.toggle', "#$id"); flash('User updated.'); }
@@ -304,7 +337,21 @@ function admin_users_save(): void
         elseif ($act === 'password') {
             $pw = (string)($_POST['password'] ?? '');
             if (strlen($pw) < 10) flash('Password must be at least 10 characters.', 'err');
-            else { q('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($pw, PASSWORD_DEFAULT), $id]); audit('user.password', "#$id"); flash('Password changed.'); }
+            else { q('UPDATE users SET password_hash = ?, must_change = ? WHERE id = ?', [password_hash($pw, PASSWORD_DEFAULT), $id === (int)$me['id'] ? 0 : 1, $id]); audit('user.password', "#$id"); flash('Password changed. The person will be asked to choose their own at next sign-in.'); }
+        } elseif ($act === 'reset') {
+            $u = row('SELECT * FROM users WHERE id = ?', [$id]);
+            if (!$u || $id === (int)$me['id']) flash('Use the My account page to change your own password.', 'err');
+            else {
+                $pw = generate_password();
+                q('UPDATE users SET password_hash = ?, must_change = 1 WHERE id = ?', [password_hash($pw, PASSWORD_DEFAULT), $id]);
+                audit('user.reset', "#$id {$u['email']}");
+                $_SESSION['new_creds'][] = ['name' => $u['name'], 'email' => $u['email'], 'role' => ROLES[$u['role']] ?? $u['role'], 'password' => $pw, 'login' => abs_url('admin/login'), 'must_change' => true, 'emailed' => false];
+                if (!empty($_POST['email_login'])) {
+                    $sent = send_mail($u['email'], 'Your Chill & Bite admin password was reset', "Hello {$u['name']},\n\nYour password was reset.\n\nSign in: " . abs_url('admin/login') . "\nTemporary password: $pw\nYou will be asked to choose your own password.\n");
+                    $_SESSION['new_creds'][array_key_last($_SESSION['new_creds'])]['emailed'] = $sent;
+                }
+                flash('Password reset. Copy the new temporary password below: it is shown only once.');
+            }
         } elseif ($act === 'profile') {
             $name = post_str('name', 120); $email = strtolower(post_str('email', 190));
             if (mb_strlen($name) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL)) flash('Enter a name and a valid email.', 'err');

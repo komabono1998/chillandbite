@@ -167,47 +167,49 @@ function save_setting(string $key, string $value): void
 const ROLES = [
     'admin' => 'System Administrator',
     'event_manager' => 'Event Manager',
-    'editor' => 'Content Editor',
-    'marketing' => 'Marketing & Advertising Manager',
+    'box_office' => 'Ticketing & Reservations Officer',
     'finance' => 'Finance Officer',
     'door' => 'Door / Gate Staff',
-    'contributor' => 'Accredited Contributor',
+    'editor' => 'Content Editor',
+    'marketing' => 'Marketing & Advertising Manager',
+    'dj_manager' => 'DJ & Music Manager',
 ];
+const ROLE_ICONS = ['admin' => '👑', 'event_manager' => '📅', 'box_office' => '🎟️', 'finance' => '💰', 'door' => '🚪', 'editor' => '✏️', 'marketing' => '📣', 'dj_manager' => '🎧'];
 const ROLE_DESCRIPTIONS = [
     'admin' => 'Full access to everything, including users, settings and the audit log.',
-    'event_manager' => 'Runs events, reservations, approvals, payments, tickets, check-in and reports.',
-    'editor' => 'Edits website pages, news, comedy videos and the gallery.',
-    'marketing' => 'Manages sponsors, partner applications, advertising enquiries and the Advertise/Partner pages.',
+    'event_manager' => 'Runs events end to end: creates events, handles reservations, approvals, payments, tickets, check-in and reports.',
+    'box_office' => 'Handles bookings day to day: approves reservations, records payments, issues, updates and withdraws tickets, and checks guests in. Cannot create events or see reports.',
     'finance' => 'Views reservations, records payments and refunds, and exports financial reports.',
     'door' => 'Checks guests in at the gate. Sees names and ticket status only.',
-    'contributor' => 'Accredited blogger or media house. Writes stories for The Gulu Chronicles; an editor reviews each one before it goes live.',
+    'editor' => 'Edits website pages and pictures, comedy videos, the gallery and the DJ roster and mixes.',
+    'marketing' => 'Manages sponsors, partner applications, advertising enquiries, the Advertise and Partner pages, and DJ mixes.',
+    'dj_manager' => 'Manages the Podium DJs page: DJ profiles, host profile, mixes and DJ booking requests.',
 ];
 /** module => roles allowed (admin is always allowed). Enforced server-side on every request. */
 const PERMS = [
-    'dashboard'      => ['event_manager', 'editor', 'marketing', 'finance', 'door', 'contributor'],
-    'pages'          => ['editor', 'marketing', 'event_manager'],   // plus a per-page role list in app/content.php
+    'dashboard'      => ['event_manager', 'box_office', 'editor', 'marketing', 'finance', 'door', 'dj_manager'],
+    'pages'          => ['editor', 'marketing', 'event_manager', 'dj_manager'],   // plus a per-page role list in app/content.php
     'events'         => ['event_manager'],
-    'reservations'   => ['event_manager', 'finance'],               // view bookings and guest lists
-    'reservations_manage' => ['event_manager'],                     // approve, reject, cancel, send tickets
-    'payments'       => ['event_manager', 'finance'],               // record payments and refunds
-    'checkin'        => ['event_manager', 'door'],
-    'tickets'        => ['event_manager'],                          // issue, re-issue, print tickets
-    'accreditation'  => ['editor'],                                 // review blogger / media house applications
-    'my_articles'    => ['contributor'],                            // write and submit own stories for review
+    'reservations'   => ['event_manager', 'box_office', 'finance'],               // view bookings and guest lists
+    'reservations_manage' => ['event_manager', 'box_office'],                     // approve, reject, cancel, send tickets
+    'payments'       => ['event_manager', 'box_office', 'finance'],               // record payments and refunds
+    'checkin'        => ['event_manager', 'box_office', 'door'],
+    'tickets'        => ['event_manager', 'box_office'],                          // issue, update, withdraw, print tickets
+    'accreditation'  => ['editor'],                                               // (section hidden) review applications
     'reports'        => ['event_manager', 'finance'],
-    'news'           => ['editor'],
+    'news'           => ['editor'],                                               // (section hidden) articles
     'comedy'         => ['editor'],
-    'djs'            => ['editor', 'marketing'],                    // Podium DJs: roster and mixes
+    'djs'            => ['editor', 'marketing', 'dj_manager'],                    // Podium DJs: roster and mixes
     'gallery'        => ['editor'],
     'advertising'    => ['marketing'],
-    'inquiries'      => ['event_manager', 'editor', 'marketing'],
+    'inquiries'      => ['event_manager', 'editor', 'marketing', 'dj_manager'],
     'users'          => [],
     'settings'       => [],
     'audit'          => [],
 ];
 const MODULE_LABELS = [
     'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
-    'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)', 'accreditation' => 'Accreditation (bloggers & media)', 'my_articles' => 'Write own stories (contributor)',
+    'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)',
     'reports' => 'Reports & exports', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
     'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];
@@ -217,7 +219,7 @@ function current_user(): ?array
     if ($u === false) {
         $u = null;
         if (!empty($_SESSION['uid'])) {
-            $u = row('SELECT id, name, email, role FROM users WHERE id = ? AND active = 1', [$_SESSION['uid']]);
+            $u = row('SELECT id, name, email, role, must_change FROM users WHERE id = ? AND active = 1', [$_SESSION['uid']]);
             if (!$u) unset($_SESSION['uid']);
         }
     }
@@ -235,7 +237,39 @@ function require_can(string $module): void
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') $_SESSION['next'] = $_SERVER['REQUEST_URI'] ?? ''; // return here after login (e.g. scanned ticket)
         redirect('admin/login');
     }
+    enforce_password_change();
     if (!can($module)) { http_response_code(403); render('admin/forbidden', [], 'admin'); exit; }
+}
+/** New accounts must choose their own password before using the admin. */
+function enforce_password_change(): void
+{
+    $u = current_user();
+    if (!$u || empty($u['must_change'])) return;
+    $path = (string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if (preg_match('#/admin/(account|logout)$#', $path)) return;
+    flash('Welcome! Please choose your own password to continue.');
+    redirect('admin/account');
+}
+/** Readable list of what a role can open, for the role cards on the Users page. */
+function role_access(string $role): array
+{
+    $out = [];
+    foreach (MODULE_LABELS as $mod => $label) {
+        if (in_array($mod, ['dashboard'], true)) continue;
+        if ($role === 'admin' || in_array($role, PERMS[$mod] ?? [], true)) $out[] = $label;
+    }
+    return $out;
+}
+/** Strong, easy-to-read temporary password (no look-alike characters). */
+function generate_password(int $len = 14): string
+{
+    $sets = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnpqrstuvwxyz', '23456789'];
+    $all = implode('', $sets);
+    do {
+        $p = '';
+        for ($i = 0; $i < $len; $i++) $p .= $all[random_int(0, strlen($all) - 1)];
+    } while (!preg_match('/[A-Z]/', $p) || !preg_match('/[a-z]/', $p) || !preg_match('/[2-9]/', $p));
+    return $p;
 }
 /** Allow the request when the user has at least one of the modules. */
 function can_any(array $modules): bool
@@ -249,6 +283,7 @@ function require_can_any(array $modules): void
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') $_SESSION['next'] = $_SERVER['REQUEST_URI'] ?? '';
         redirect('admin/login');
     }
+    enforce_password_change();
     if (!can_any($modules)) { http_response_code(403); render('admin/forbidden', [], 'admin'); exit; }
 }
 function audit(string $action, string $detail = ''): void

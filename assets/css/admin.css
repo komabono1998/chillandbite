@@ -333,3 +333,21 @@ dialog.pic-picker::backdrop{background:rgba(15,15,15,.7)}
 .pp-item{padding:0;border:2px solid transparent;border-radius:12px;overflow:hidden;background:#f1e9da;cursor:pointer;aspect-ratio:4/3;transition:transform .15s,border-color .15s}
 .pp-item:hover,.pp-item:focus-visible{border-color:var(--orange,#D96B27);transform:scale(1.03)}
 .pp-item img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ---------- Users: role cards, login details ---------- */
+.us-roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:18px}
+.us-role{display:block;cursor:pointer}
+.us-role input{position:absolute;opacity:0;pointer-events:none}
+.us-role-body{display:flex;flex-direction:column;gap:5px;height:100%;padding:14px 16px;background:#fff;border:2px solid var(--line,#e3d9c8);border-radius:14px;transition:border-color .2s,box-shadow .2s,transform .2s}
+.us-role:hover .us-role-body{transform:translateY(-2px)}
+.us-role input:checked+.us-role-body{border-color:var(--orange,#D96B27);box-shadow:0 0 0 3px rgba(217,107,39,.18);background:#fffaf3}
+.us-role input:focus-visible+.us-role-body{outline:3px solid var(--gold,#E6B65C);outline-offset:2px}
+.us-role-ic{font-size:1.5rem}
+.us-role b{font-size:.95rem}.us-role small{color:#6b6258;line-height:1.4;font-size:.78rem}
+.us-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.us-chips i{font-style:normal;font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#f1e9da;color:#5a5044}
+.us-pw-row{display:flex;gap:8px}.us-pw-row input{flex:1;min-width:0}
+.us-creds{border:2px solid var(--gold,#E6B65C);background:#fffaf0}
+.us-pw{font:800 1.05rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;background:#fff;border:1px dashed #d9b86a;border-radius:8px;padding:4px 10px;user-select:all}
+.us-creds-actions{margin:10px 0 0}
+@media print{.us-creds{border:1px solid #000}.us-copy,.us-creds-actions,.adm-head .btn{display:none!important}}
