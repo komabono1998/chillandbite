@@ -185,3 +185,87 @@ function page_ticket_status(array $a): void
     header('Cache-Control: no-store');
     echo json_encode(['v' => ticket_version($r)]);
 }
+
+/* ================= Ticket security: gold seal, serial and live code ================= */
+/** Private signing key (APP_KEY in .env, otherwise a random key kept in storage/app.key). */
+function app_secret(): string
+{
+    static $k = null;
+    if ($k !== null) return $k;
+    $k = (string)env('APP_KEY', '');
+    if ($k === '') {
+        $file = ROOT . '/storage/app.key';
+        if (!is_file($file)) @file_put_contents($file, bin2hex(random_bytes(32)));
+        $k = is_file($file) ? trim((string)file_get_contents($file)) : '';
+        if ($k === '') $k = hash('sha256', ROOT . php_uname());
+    }
+    return $k;
+}
+/** Hex fingerprint that only this server can produce for a given ticket. */
+function ticket_hash(string $token): string { return hash_hmac('sha256', 'seal|' . $token, app_secret()); }
+/** Unique serial printed on the seal, for example CB-4F2A-91C7-03DE. */
+function ticket_serial(string $token): string
+{
+    $h = strtoupper(ticket_hash($token));
+    return 'CB-' . substr($h, 0, 4) . '-' . substr($h, 4, 4) . '-' . substr($h, 8, 4);
+}
+/** Four-digit code that changes every 30 seconds. Only the live ticket page (and the door screen) can show it. */
+function ticket_live_code(string $token, int $offset = 0): string
+{
+    $win = intdiv(time(), 30) + $offset;
+    $n = hexdec(substr(hash_hmac('sha256', 'live|' . $token . '|' . $win, app_secret()), 0, 8));
+    return str_pad((string)($n % 10000), 4, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Gold rosette seal. The pattern (petal count, ring shapes, phases) is derived from the ticket's secret hash,
+ * so every ticket gets a different seal that cannot be recreated without the server key.
+ */
+function ticket_seal_svg(string $token, int $size = 200): string
+{
+    $hash = ticket_hash($token);
+    $b = array_values(unpack('C*', hex2bin(substr($hash, 0, 48))));
+    $f = fn(float $n) => number_format($n, 2, '.', '');
+    $id = 'g' . substr($hash, 0, 6);
+    $cx = 100; $cy = 100;
+    // scalloped outer edge
+    $bumps = 28 + ($b[0] % 9); $edge = '';
+    for ($i = 0; $i <= $bumps * 8; $i++) {
+        $t = $i / ($bumps * 8) * 2 * M_PI;
+        $r = 96 - 2.6 * (0.5 + 0.5 * cos($bumps * $t));
+        $edge .= ($i ? 'L' : 'M') . $f($cx + $r * cos($t)) . ' ' . $f($cy + $r * sin($t));
+    }
+    $edge .= 'Z';
+    // three guilloche rings, each with its own petal count, depth and phase
+    $rings = '';
+    for ($k = 0; $k < 3; $k++) {
+        $petals = 7 + ($b[1 + $k] % 10) + $k * 2;
+        $depth = 0.05 + ($b[5 + $k] % 8) / 100;
+        $phase = ($b[9 + $k] / 255) * 2 * M_PI;
+        $base = 80 - $k * 10;
+        $d = '';
+        for ($i = 0; $i <= 240; $i++) {
+            $t = $i / 240 * 2 * M_PI;
+            $r = $base * (1 + $depth * cos($petals * $t + $phase)) - $k * 3;
+            $d .= ($i ? 'L' : 'M') . $f($cx + $r * cos($t)) . ' ' . $f($cy + $r * sin($t));
+        }
+        $rings .= '<path d="' . $d . 'Z" fill="none" stroke="#7a4d0c" stroke-opacity=".75" stroke-width=".7"/>';
+    }
+    $serial = ticket_serial($token);
+    $ring = 'CHILL &amp; BITE MEATINGS · ORIGINAL TICKET · ' . $serial . ' · ';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="' . $size . '" height="' . $size . '" role="img" aria-label="Gold seal of authenticity, serial ' . $serial . '">'
+        . '<defs><linearGradient id="' . $id . '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a12"/><stop offset=".25" stop-color="#f6d77a"/><stop offset=".5" stop-color="#c98d2b"/><stop offset=".75" stop-color="#fff0b0"/><stop offset="1" stop-color="#a8741c"/></linearGradient>'
+        . '<radialGradient id="' . $id . 'r" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff8d8" stop-opacity=".45"/><stop offset="1" stop-color="#fff8d8" stop-opacity="0"/></radialGradient>'
+        . '<path id="' . $id . 'c" d="M100 100m-70 0a70 70 0 1 1 140 0a70 70 0 1 1-140 0"/></defs>'
+        . '<path d="' . $edge . '" fill="url(#' . $id . ')" stroke="#6b430a" stroke-width="1.2"/>'
+        . '<circle cx="100" cy="100" r="89" fill="none" stroke="#fff3bf" stroke-opacity=".7" stroke-width="1"/>'
+        . $rings
+        . '<circle cx="100" cy="100" r="43" fill="url(#' . $id . ')" stroke="#6b430a" stroke-width="1.4"/>'
+        . '<circle cx="100" cy="100" r="38" fill="none" stroke="#6b430a" stroke-opacity=".6" stroke-width=".8" stroke-dasharray="2 2"/>'
+        . '<text font-family="Arial,Helvetica,sans-serif" font-size="6.1" font-weight="700" letter-spacing="1" fill="#2e1a02"><textPath href="#' . $id . 'c" startOffset="0">' . str_repeat($ring, 1) . '</textPath></text>'
+        . '<text x="100" y="97" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#2e1a02">C&amp;B</text>'
+        . '<text x="100" y="111" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="6.5" font-weight="700" letter-spacing="1.2" fill="#2e1a02">AUTHENTIC</text>'
+        . '<text x="100" y="121" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="5.2" fill="#2e1a02">' . substr($serial, 3) . '</text>'
+        . '<circle cx="100" cy="100" r="96" fill="url(#' . $id . 'r)"/>'
+        . '</svg>';
+}
