@@ -343,7 +343,18 @@ function site_pages(): array
                 'opportunities' => ['label' => 'Ways to partner', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Opportunities'),
                     $f('heading', 'Heading', 'text', 'Ways to partner with us'),
-                    $f('cards', 'Cards (one per line: Title | description)', 'lines', "Event Sponsorship | Sponsor a monthly event or a specific activity.\nWebsite Banner Advertising | Advertise on selected website pages.\nSponsored Articles | Clearly labelled promotional articles.\nSocial Media Promotion | Campaigns across our social channels.\nBrand Activations | Engage attendees with approved activities.\nProduct Showcases | Put products and services in front of guests.\nComedy Show Sponsorship | Sponsor Laugh with Owakabi performances.\nAnnual Partnerships | Longer-term promotional partnerships."),
+                    $f('ads_title', 'Advertise: tab title', 'text', 'Advertise with us'),
+                    $f('ads_tag', 'Advertise: short line', 'text', 'Put your brand in front of our online audience.'),
+                    $f('ads_cards', 'Advertise: cards (one per line: Title | description)', 'lines', "Website Banner Advertising | Advertise on selected website pages.
+Sponsored Articles | Clearly labelled promotional articles.
+Social Media Promotion | Campaigns across our social channels.
+Product Showcases | Put products and services in front of guests."),
+                    $f('spons_title', 'Sponsor: tab title', 'text', 'Sponsor & partner'),
+                    $f('spons_tag', 'Sponsor: short line', 'text', 'Be part of the event itself and build a lasting partnership.'),
+                    $f('spons_cards', 'Sponsor: cards (one per line: Title | description)', 'lines', "Event Sponsorship | Sponsor a monthly event or a specific activity.
+Brand Activations | Engage attendees with approved activities.
+Comedy Show Sponsorship | Sponsor Laugh with Owakabi performances.
+Annual Partnerships | Longer-term promotional partnerships."),
                     $f('note', 'Note under the cards', 'text', 'All paid promotions are clearly identified as sponsored content.'),
                 ]],
                 'proposal' => ['label' => 'Proposal form', 'fields' => [

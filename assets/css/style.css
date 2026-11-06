@@ -978,3 +978,29 @@ a.dj-pl-btn{display:grid;place-items:center;text-decoration:none;color:#fff}
 .ticket-auth[open] summary{border-bottom:1px solid #efe3c4}
 .ticket-auth p{margin:0;padding:10px 12px}
 @media print{.ticket-auth{display:none}}
+
+/* Advertise page: two ways to work with us */
+.way-tabs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:6px 0 26px}
+.way-tab{display:flex;align-items:center;gap:14px;text-align:left;border:2px solid #eadfcb;background:#fff;color:#171717;border-radius:18px;padding:18px 20px;cursor:pointer;font:inherit;transition:transform .2s,box-shadow .2s,border-color .2s,background .2s}
+.way-tab:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.12)}
+.way-tab b{display:block;font-size:1.15rem;font-weight:800}.way-tab small{display:block;color:#6b6258;font-size:.82rem;line-height:1.35;margin-top:2px}
+.way-ic{flex:none;display:grid;place-items:center;width:54px;height:54px;border-radius:16px;font-size:1.6rem;background:#fdeee0}
+.way-tab.g-spons .way-ic{background:#f6ead2}
+.way-tab.on{border-color:var(--orange);box-shadow:0 12px 30px rgba(217,107,39,.25)}
+.way-tab.g-ads.on{background:linear-gradient(135deg,#fff,#fdeee0)}.way-tab.g-spons.on{border-color:var(--gold);box-shadow:0 12px 30px rgba(230,182,92,.35);background:linear-gradient(135deg,#fff,#f9efd9)}
+.way-pane-title{display:none;margin:0 0 14px;color:#171717}
+.way-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.way-card{position:relative;display:flex;flex-direction:column;gap:6px;background:#fff;color:#171717;text-decoration:none;border-radius:20px;padding:24px 22px 20px;border:1px solid #efe5d3;box-shadow:0 4px 16px rgba(30,20,10,.06);overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .25s}
+.way-card::before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:linear-gradient(90deg,var(--orange),var(--gold))}
+.g-spons .way-card::before{background:linear-gradient(90deg,var(--gold),var(--orange))}
+.way-card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(30,20,10,.18);border-color:var(--orange);color:#171717}
+.way-card-ic{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:#fdeee0;font-size:1.5rem;margin-bottom:6px;transition:transform .25s}
+.way-card:hover .way-card-ic{transform:scale(1.12) rotate(-6deg)}
+.way-card h4{margin:0;font-size:1.08rem}.way-card p{margin:0;color:#5a5249;font-size:.92rem;flex:1}
+.way-go{margin-top:10px;font-weight:700;font-size:.86rem;color:var(--orange-d)}.way-go i{display:inline-block;font-style:normal;transition:transform .2s}.way-card:hover .way-go i{transform:translateX(5px)}
+.is-tabs .way-pane{display:none}.is-tabs .way-pane.on{display:block;animation:wayIn .35s}
+@keyframes wayIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#ways:not(.is-tabs) .way-pane{margin-bottom:26px}#ways:not(.is-tabs) .way-pane-title{display:block}#ways:not(.is-tabs) .way-tabs{display:none}
+@media(max-width:960px){.way-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.way-tabs{grid-template-columns:1fr}.way-grid{grid-template-columns:1fr}.way-card{padding:20px}}
+@media(prefers-reduced-motion:reduce){.way-card,.way-tab,.way-card-ic,.is-tabs .way-pane.on{transition:none;animation:none}}
