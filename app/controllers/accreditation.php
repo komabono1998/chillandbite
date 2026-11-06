@@ -8,52 +8,6 @@ const ACC_TYPES = [
     'vlogger' => 'Vlogger / content creator',
 ];
 
-/* ================= Public: apply for accreditation ================= */
-function page_accreditation(): void
-{
-    render('site/accreditation', [
-        'title' => 'Press Accreditation | The Gulu Chronicles',
-        'desc' => 'Bloggers, journalists and media houses: apply to be accredited to publish news and blogs on The Gulu Chronicles.',
-    ]);
-}
-function post_accreditation(): void
-{
-    $back = 'accreditation#apply';
-    if (!empty($_POST['hp_site'])) { flash('Thank you!'); redirect('accreditation'); }                          // honeypot
-    if (rate_limited('accreditation', 6, 3600)) { flash('Too many applications from your connection. Please try again later.', 'err'); redirect($back); }
-    $d = [];
-    foreach ($_POST as $k => $v) if (is_string($v)) $d[$k] = trim($v);
-    $err = [];
-    $type = $d['applicant_type'] ?? '';
-    if (!isset(ACC_TYPES[$type])) $err[] = 'Please choose what best describes you.';
-    if (mb_strlen($d['full_name'] ?? '') < 2) $err[] = 'Please enter your full name.';
-    if ($type === 'media_house' && mb_strlen($d['organization'] ?? '') < 2) $err[] = 'Please enter the name of your media house.';
-    if (!filter_var($d['email'] ?? '', FILTER_VALIDATE_EMAIL)) $err[] = 'Please enter a valid email address. Your login details will be sent there.';
-    if (!valid_phone($d['phone'] ?? '')) $err[] = 'Please enter a valid telephone number.';
-    $site = $d['website'] ?? '';
-    if ($site !== '' && !preg_match('#^https?://[^\s]+$#i', $site)) $err[] = 'Website or blog link must start with http:// or https://';
-    if (mb_strlen($d['samples'] ?? '') < 10) $err[] = 'Please share at least one link to your published work, or describe it.';
-    if (mb_strlen($d['about'] ?? '') < 30) $err[] = 'Please tell us a little about yourself and what you cover (at least a sentence or two).';
-    if (empty($_POST['standards'])) $err[] = 'Please confirm that you agree to the editorial standards.';
-    $email = strtolower($d['email'] ?? '');
-    if (!$err && val("SELECT id FROM accreditation_applications WHERE email = ? AND status = 'pending'", [$email])) $err[] = 'You already have an application waiting for review. We will be in touch.';
-    $doc = null;
-    if (!$err) {
-        try { $doc = save_upload('document', 'accreditation'); }
-        catch (RuntimeException $e) { $err[] = $e->getMessage(); }
-    }
-    if ($err) { keep_old($d); foreach ($err as $x) flash($x, 'err'); redirect($back); }
-    q('INSERT INTO accreditation_applications (applicant_type, full_name, organization, email, phone, location, website, socials, coverage, samples, about, document) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', [
-        $type, mb_substr($d['full_name'], 0, 140), mb_substr($d['organization'] ?? '', 0, 160) ?: null, $email, $d['phone'],
-        mb_substr($d['location'] ?? '', 0, 140) ?: null, $site ?: null, mb_substr($d['socials'] ?? '', 0, 500) ?: null,
-        mb_substr($d['coverage'] ?? '', 0, 255) ?: null, mb_substr($d['samples'], 0, 3000), mb_substr($d['about'], 0, 3000), $doc]);
-    send_mail($email, 'We received your accreditation application',
-        "Hello {$d['full_name']},\n\nThank you for applying to be accredited to publish on The Gulu Chronicles. Our editors will review your application and contact you at this email address.\n\nThe Gulu Chronicles\nChill & Bite MEATINGS\n");
-    clear_old();
-    flash('Application received! Our editors will review it and contact you by email.');
-    redirect('accreditation');
-}
-
 /* ================= Admin: review applications ================= */
 function temp_password(): string { return strtr(base64_encode(random_bytes(9)), '+/', 'Xy'); }
 

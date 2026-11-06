@@ -83,7 +83,7 @@ $pageDesc = $desc ?? setting('tagline');
     </div>
     <div>
       <h4>Explore</h4>
-      <ul class="plain"><li><a href="<?= url('events') ?>">Events Calendar</a></li><li><a href="<?= h($reserveUrl) ?>">Book &amp; Reserve</a></li><li><a href="<?= url('track') ?>">Track your booking</a></li><li><a href="<?= url('laugh') ?>">Laugh with Owakabi</a></li><li><a href="<?= url('djs') ?>">Podium DJs</a></li><li><a href="<?= url('news') ?>">The Gulu Chronicles</a></li><li><a href="<?= url('gallery') ?>">Gallery</a></li></ul>
+      <ul class="plain"><li><a href="<?= url('events') ?>">Events Calendar</a></li><li><a href="<?= h($reserveUrl) ?>">Book &amp; Reserve</a></li><li><a href="<?= url('track') ?>">Track your booking</a></li><li><a href="<?= url('laugh') ?>">Laugh with Owakabi</a></li><li><a href="<?= url('djs') ?>">Podium DJs</a></li><li><a href="<?= url('gallery') ?>">Gallery</a></li></ul>
     </div>
     <div>
       <h4>Company</h4>

@@ -3,11 +3,11 @@
     <div class="lg-art-in">
       <img class="lg-logo" src="<?= h(brand_logo()) ?>" alt="Chill &amp; Bite MEATINGS" width="320" height="253">
       <h2>Run the show,<br>from one place.</h2>
-      <p>Bookings, tickets, events, the website and The Gulu Chronicles, all managed by your team in one dashboard.</p>
+      <p>Bookings, tickets, events, DJs and the website, all managed by your team in one dashboard.</p>
       <ul class="lg-points">
         <li><span aria-hidden="true">🎟️</span>Reservations &amp; tickets</li>
         <li><span aria-hidden="true">✅</span>Door check-in</li>
-        <li><span aria-hidden="true">📰</span>News &amp; contributors</li>
+        <li><span aria-hidden="true">🎧</span>DJs &amp; mixes</li>
         <li><span aria-hidden="true">📊</span>Reports &amp; exports</li>
       </ul>
     </div>
@@ -28,7 +28,7 @@
         <button class="btn btn-primary btn-block lg-submit" id="lgBtn">Sign in</button>
       </form>
       <a class="lg-back" href="<?= url() ?>">&larr; Back to website</a>
-      <p class="lg-note">Authorised staff and accredited contributors only. Want to write for The Gulu Chronicles? <a href="<?= url('accreditation') ?>">Apply for accreditation</a>.</p>
+      <p class="lg-note">Authorised staff only.</p>
     </div>
   </section>
 </div>

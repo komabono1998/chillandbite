@@ -14,12 +14,7 @@ if (isset($revenue)) $k[] = ['💰', 'Payments received', money($revenue), url('
 if (isset($outstanding)) $k[] = ['🧾', 'Outstanding balances', money($outstanding), url('admin/reports'), $outstanding ? 'warn' : ''];
 if (isset($stat_inquiries)) $k[] = ['📬', 'New inquiries', $stat_inquiries, url('admin/inquiries'), $stat_inquiries ? 'warn' : ''];
 if (isset($stat_partners)) $k[] = ['🤝', 'Partner applications', $stat_partners, url('admin/partners?status=pending'), $stat_partners ? 'warn' : ''];
-if (isset($stat_accred)) $k[] = ['🪪', 'Press applications', $stat_accred, url('admin/accreditation?status=pending'), $stat_accred ? 'warn' : ''];
-if (isset($stat_review)) $k[] = ['📝', 'Stories to review', $stat_review, url('admin/news'), $stat_review ? 'warn' : ''];
-if (isset($stat_mine)) $k[] = ['✍️', 'My published stories', $stat_mine, url('admin/news'), 'ok'];
 if (isset($stat_sponsors))$k[] = ['📣', 'Live sponsors', $stat_sponsors, url('admin/advertising'), 'info'];
-if (isset($stat_articles)) $k[] = ['📰', 'Published articles', $stat_articles, url('admin/news'), ''];
-if (isset($stat_drafts)) $k[] = ['✏️', 'Drafts', $stat_drafts, url('admin/news'), ''];
 
 // Donut (reservation status mix)
 $statusColors = ['confirmed' => '#2f9e56', 'pending' => '#f1b84a', 'cancelled' => '#c8c1b4', 'rejected' => '#d9534f'];
@@ -179,7 +174,7 @@ $maxRev = isset($rev_events) && $rev_events ? max(1, max(array_column($rev_event
     <div class="panel-head"><h2>Quick actions</h2></div>
     <div class="quick">
       <?php foreach ([
-          ['pages', '✏️', 'Edit website pages', 'admin/pages'], ['events', '➕', 'New event', 'admin/events/new'], ['news', '📝', 'Write an article', 'admin/news/new'],
+          ['pages', '✏️', 'Edit website pages', 'admin/pages'], ['events', '➕', 'New event', 'admin/events/new'],
           ['gallery', '📷', 'Upload photos', 'admin/gallery'], ['checkin', '✅', 'Check-in desk', 'admin/checkin'], ['reservations', '🎟️', 'Reservations', 'admin/reservations'],
           ['reports', '📊', 'Reports & exports', 'admin/reports'], ['advertising', '🤝', 'Partner applications', 'admin/partners'], ['users', '👥', 'Users & roles', 'admin/users'],
       ] as [$mod, $ic, $label, $path]) if (can($mod)): ?><a href="<?= url($path) ?>"><span><?= $ic ?></span><?= h($label) ?></a><?php endif; ?>

@@ -50,7 +50,6 @@ function admin_pictures(): void
             ['Sponsor & partner logos', 'admin/advertising', 'advertising', '📣', (int)val('SELECT COUNT(*) FROM sponsors'), 'logos'],
             ['DJ and host photos', 'admin/djs', 'djs', '🎧', (int)val("SELECT COUNT(*) FROM djs WHERE photo IS NOT NULL AND photo <> ''"), 'photos'],
             ['Mix cover images', 'admin/djs', 'djs', '💿', (int)val("SELECT COUNT(*) FROM dj_mixes WHERE cover IS NOT NULL AND cover <> ''"), 'covers'],
-            ['News story pictures', 'admin/news', 'news', '📰', (int)val("SELECT COUNT(*) FROM articles WHERE image IS NOT NULL AND image <> ''"), 'pictures'],
         ],
     ]);
 }
@@ -148,17 +147,14 @@ function quick_edit_target(): array
 {
     $path = trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE)), '/');
     $seg = explode('/', $path);
-    $pages = ['' => 'home', 'about' => 'about', 'events' => 'events', 'laugh' => 'laugh', 'djs' => 'djs', 'news' => 'news', 'advertise' => 'advertise', 'partner' => 'partner',
-              'accreditation' => 'accreditation', 'track' => 'track', 'gallery' => 'gallery', 'contact' => 'contact'];
+    $pages = ['' => 'home', 'about' => 'about', 'events' => 'events', 'laugh' => 'laugh', 'djs' => 'djs', 'advertise' => 'advertise', 'partner' => 'partner',
+              'track' => 'track', 'gallery' => 'gallery', 'contact' => 'contact'];
     $t = ['page' => null, 'record' => null, 'record_label' => ''];
     if (count($seg) === 1 && isset($pages[$seg[0]])) $t['page'] = $pages[$seg[0]];
     elseif ($seg[0] === 'events' && !empty($seg[1]) && can('events')) {
         $id = val('SELECT id FROM events WHERE slug = ?', [$seg[1]]);
         if ($id) { $t['record'] = url('admin/events/' . $id); $t['record_label'] = 'Edit this event'; }
         $t['page'] = 'events';
-    } elseif ($seg[0] === 'news' && !empty($seg[1]) && can_any(['news'])) {
-        $id = val('SELECT id FROM articles WHERE slug = ?', [$seg[1]]);
-        if ($id) { $t['record'] = url('admin/news/' . $id); $t['record_label'] = 'Edit this story'; }
     }
     if ($t['page'] && !can_edit_page($t['page'])) $t['page'] = null;
     return $t;
@@ -192,7 +188,6 @@ function quick_edit_map(?string $currentPage = null): array
         foreach (rows("SELECT cover FROM dj_mixes WHERE cover IS NOT NULL AND cover <> ''") as $r) $add(upload_url($r['cover']), 'Edit this mix', url('admin/djs'), true);
     }
     if (can('comedy')) foreach (rows("SELECT poster FROM videos WHERE poster IS NOT NULL AND poster <> ''") as $r) $add(upload_url($r['poster']), 'Edit this video', url('admin/comedy'), true);
-    if (can('news')) foreach (rows("SELECT id, image FROM articles WHERE image IS NOT NULL AND image <> ''") as $r) $add(upload_url($r['image']), 'Edit this story', url('admin/news/' . $r['id']), true);
     if (can('advertising')) foreach (rows("SELECT logo FROM sponsors WHERE logo IS NOT NULL AND logo <> ''") as $r) $add(upload_url($r['logo']), 'Edit sponsor logo', url('admin/advertising'), true);
     foreach (picture_slots() as $s)
         if ($s['page'] === $currentPage) $add($s['url'], 'Edit ' . strtolower($s['label']), url('admin/pictures#slot-' . str_replace('.', '-', $s['key'])));

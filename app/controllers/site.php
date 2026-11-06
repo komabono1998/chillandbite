@@ -119,29 +119,6 @@ function page_laugh(): void
         'shows' => upcoming_events(6, 'laugh-with-owakabi-comedy-shows'),
     ]);
 }
-function page_news(): void
-{
-    $cat = preg_match('/^[a-z0-9-]+$/', $_GET['cat'] ?? '') ? $_GET['cat'] : null;
-    $pg = max(1, (int)($_GET['p'] ?? 1));
-    $q = mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80);
-    render('site/news', [
-        'title' => 'The Gulu Chronicles | News, Gossip & Blogs from Gulu, Uganda and the World', 'cat' => $cat, 'pg' => $pg, 'q' => $q, 'per_page' => 11,
-        'desc' => 'News, gossip and blogs from Gulu, Uganda and the world, from our editors and accredited bloggers and media houses.',
-        'articles' => published_articles(11, $cat, ($pg - 1) * 11, $q),
-        'ticker' => published_articles(6),
-        'categories' => rows('SELECT * FROM article_categories ORDER BY id'),
-    ]);
-}
-function page_article(array $a): void
-{
-    $art = row("SELECT a.*, c.name AS category, c.slug AS category_slug, u.name AS author, u.organization AS author_org, u.role AS author_role FROM articles a
-        LEFT JOIN article_categories c ON c.id = a.category_id LEFT JOIN users u ON u.id = a.author_id
-        WHERE a.slug = ? AND a.status IN ('published','scheduled') AND a.published_at <= NOW()", [$a['slug']]) ?? not_found();
-    $related = rows("SELECT a.*, c.name AS category FROM articles a LEFT JOIN article_categories c ON c.id = a.category_id
-        WHERE a.id <> ? AND a.status IN ('published','scheduled') AND a.published_at <= NOW() AND a.category_id <=> ?
-        ORDER BY a.published_at DESC LIMIT 3", [$art['id'], $art['category_id']]);
-    render('site/article', ['title' => $art['title'] . ' | The Gulu Chronicles', 'desc' => $art['meta_description'] ?: $art['excerpt'], 'art' => $art, 'related' => $related, 'og_image' => ($art['image'] && !str_ends_with($art['image'], '.svg')) ? $art['image'] : null]);
-}
 function page_advertise(): void
 {
     render('site/advertise', [
@@ -170,9 +147,8 @@ function page_robots(): void
 function page_sitemap(): void
 {
     header('Content-Type: application/xml; charset=utf-8');
-    $u = array_map('abs_url', ['', 'about', 'events', 'laugh', 'djs', 'news', 'accreditation', 'advertise', 'partner', 'gallery', 'contact', 'track', 'privacy']);
+    $u = array_map('abs_url', ['', 'about', 'events', 'laugh', 'djs', 'advertise', 'partner', 'gallery', 'contact', 'track', 'privacy']);
     foreach (rows("SELECT slug FROM events WHERE status = 'published'") as $r) $u[] = abs_url('events/' . $r['slug']);
-    foreach (rows("SELECT slug FROM articles WHERE status IN ('published','scheduled') AND published_at <= NOW()") as $r) $u[] = abs_url('news/' . $r['slug']);
     echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach ($u as $l) echo '<url><loc>' . h($l) . '</loc></url>';
     echo '</urlset>';

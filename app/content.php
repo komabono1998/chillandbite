@@ -21,8 +21,8 @@ function site_pages(): array
     $pages = [
         'home' => [
             'label' => 'Home page', 'icon' => '🏠', 'url' => '', 'roles' => ['editor'],
-            'desc' => 'The first page visitors see: hero, next event, host, food, comedy, news, partners and the final call to action.',
-            'related' => [['Events', 'admin/events', 'events'], ['News', 'admin/news', 'news'], ['Gallery', 'admin/gallery', 'gallery'], ['Sponsors', 'admin/advertising', 'advertising']],
+            'desc' => 'The first page visitors see: hero, next event, host, food, comedy, partners and the final call to action.',
+            'related' => [['Events', 'admin/events', 'events'], ['Gallery', 'admin/gallery', 'gallery'], ['Sponsors', 'admin/advertising', 'advertising']],
             'sections' => [
                 'hero' => ['label' => 'Hero banner', 'fields' => [
                     $f('eyebrow', 'Small label above the headline', 'text', 'Gulu City · Every first Sunday'),
@@ -67,11 +67,6 @@ function site_pages(): array
                     $f('blurb', 'Short text', 'textarea', 'Guest comedians, behind-the-scenes clips and show announcements. Want MC Kash Owakabi at your event?'),
                     $f('btn_book', 'Button 1', 'text', 'Book a performance'),
                     $f('btn_more', 'Button 2', 'text', 'More comedy'),
-                ]],
-                'news' => ['label' => 'News section', 'fields' => [
-                    $f('eyebrow', 'Small label', 'text', 'News, Gossip & Blogs'),
-                    $f('heading', 'Heading', 'text', 'The Gulu Chronicles: Stories from Gulu and Beyond'),
-                    $f('button', 'Button', 'text', 'All stories'),
                 ]],
                 'partners' => ['label' => 'Brand partners', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Brand partners'),
@@ -123,14 +118,13 @@ function site_pages(): array
                 ]],
                 'pillars' => ['label' => 'What we do', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'What we do'),
-                    $f('heading', 'Heading', 'text', 'One team, four ways to connect'),
+                    $f('heading', 'Heading', 'text', 'One team, three ways to connect'),
                     $f('intro', 'Introduction', 'text', 'Beyond the monthly event, Owakabi & The Geng runs a small ecosystem of brands for Northern Uganda.'),
                     $f('cards', 'Cards (one per line: emoji | Title | text | page link | photo path)', 'lines',
                         "🔥 | Chill & Bite MEATINGS | The monthly lifestyle and corporate networking experience at Revelation Cottages. | events | img/photos/photo-03.jpg\n" .
                         "😂 | Laugh with Owakabi | Comedy shows, video highlights and performance bookings with MC Kash Owakabi. | laugh | img/photos/photo-12.jpg\n" .
-                        "📰 | The Gulu Chronicles | News, gossip and blogs from Gulu, Uganda and the world, with accredited bloggers and media houses. | news | img/photos/photo-22.jpg\n" .
                         "🤝 | Brand partnerships | Sponsorships, activations and advertising in front of an engaged audience. | advertise | img/photos/photo-42.jpg",
-                        'Page link is a page name such as events, laugh, news or advertise. Photo path starts with img/photos/.'),
+                        'Page link is a page name such as events, laugh or advertise. Photo path starts with img/photos/.'),
                 ]],
                 'mission' => ['label' => 'Mission, vision & values', 'fields' => [
                     $f('mission_title', 'Mission title', 'text', 'Our mission'),
@@ -148,7 +142,7 @@ function site_pages(): array
                 'team' => ['label' => 'Team & host', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'The people'),
                     $f('heading', 'Heading', 'text', 'Owakabi & The Geng'),
-                    $f('text', 'Organizer text', 'textarea', 'The creative team behind Chill & Bite MEATINGS, Laugh with Owakabi, and The Gulu Chronicles news, gossip and blogs platform.'),
+                    $f('text', 'Organizer text', 'textarea', 'The creative team behind Chill & Bite MEATINGS, and Laugh with Owakabi.'),
                     $f('button', 'Organizer button', 'text', 'See upcoming events'),
                     $f('host_role', 'Host title', 'text', 'Host & master of ceremonies'),
                     $f('host_bio', 'Host biography', 'textarea', setting('host_bio', 'From electrifying crowds to creating memorable experiences, MC Kash Owakabi brings charisma, humor, and exceptional audience engagement to every event.')),
@@ -211,7 +205,7 @@ function site_pages(): array
                     $f('eyebrow', 'Small label', 'text', 'Meet the host'),
                     $f('heading', 'Heading', 'text', 'MC Kash Owakabi'),
                     $f('bio', 'Paragraph 1', 'textarea', 'MC Kash Owakabi is the voice and face of Chill & Bite MEATINGS in Gulu City. He is a charismatic master of ceremonies and stand-up comedian who keeps a room laughing, relaxed and fully involved.'),
-                    $f('bio2', 'Paragraph 2', 'textarea', 'He is the founder of Owakabi & The Geng, the creative team behind Chill & Bite MEATINGS, Laugh with Owakabi and The Gulu Chronicles. Whether it is a packed outdoor crowd or a boardroom dinner, he adapts the humour to the audience.'),
+                    $f('bio2', 'Paragraph 2', 'textarea', 'He is the founder of Owakabi & The Geng, the creative team behind Chill & Bite MEATINGS, and Laugh with Owakabi. Whether it is a packed outdoor crowd or a boardroom dinner, he adapts the humour to the audience.'),
                     $f('points', 'Highlights (one per line)', 'lines', "Charismatic host and master of ceremonies\nStand-up comedy and live audience engagement\nClean, audience-friendly humour that suits corporate and family events\nFounder of Owakabi & The Geng"),
                     $f('photo', 'Host photo', 'image', 'img/host-mc-kash-crown.jpg'),
                 ]],
@@ -330,22 +324,6 @@ function site_pages(): array
                 ]],
             ],
         ],
-        'news' => [
-            'label' => 'The Gulu Chronicles', 'icon' => '📰', 'url' => 'news', 'roles' => ['editor'],
-            'desc' => 'The Gulu Chronicles: news, gossip and blogs. Articles are managed under News; contributors are accredited under Accreditation.',
-            'related' => [['Manage articles', 'admin/news', 'news']],
-            'sections' => [
-                'hero' => ['label' => 'Page header', 'fields' => [
-                    $f('eyebrow', 'Small label', 'text', 'News, Gossip & Blogs'),
-                    $f('heading', 'Heading', 'text', 'The Gulu Chronicles'),
-                    $f('lead', 'Subtitle', 'text', 'News, gossip and blogs from Gulu, Uganda and the world, from our team and from accredited bloggers and media houses.'),
-                    $photo(),
-                ]],
-                'misc' => ['label' => 'Notes', 'fields' => [
-                    $f('empty', 'Message when there are no stories', 'text', 'No stories here yet.'),
-                ]],
-            ],
-        ],
         'advertise' => [
             'label' => 'Brands & advertising', 'icon' => '📣', 'url' => 'advertise', 'roles' => ['editor', 'marketing'],
             'desc' => 'Advertising and sponsorship opportunities, partner logos and the proposal form.',
@@ -403,63 +381,6 @@ function site_pages(): array
                     $f('eyebrow', 'Small label', 'text', 'Partnership application'),
                     $f('heading', 'Heading', 'text', 'Apply to become a partner'),
                     $f('intro', 'Introduction', 'text', 'Fields marked * are required. Approved partners are featured with their logo and a link to their website.'),
-                    $f('button', 'Submit button', 'text', 'Submit application'),
-                ]],
-            ],
-        ],
-        'accreditation' => [
-            'label' => 'Press accreditation', 'icon' => '🪪', 'url' => 'accreditation', 'roles' => ['editor'],
-            'desc' => 'Where bloggers and media houses apply to be accredited to publish on The Gulu Chronicles.',
-            'related' => [['Review applications', 'admin/accreditation', 'accreditation'], ['Manage articles', 'admin/news', 'news']],
-            'sections' => [
-                'hero' => ['label' => 'Page header', 'fields' => [
-                    $f('eyebrow', 'Small label', 'text', 'For bloggers & media houses'),
-                    $f('heading', 'Heading', 'text', 'Get accredited to publish on The Gulu Chronicles'),
-                    $f('lead', 'Subtitle', 'textarea', 'Join a growing network of bloggers, journalists and media houses telling the stories of Gulu, Uganda and the world, with your name and your organisation on every story.'),
-                    $f('btn_apply', 'Button', 'text', 'Apply for accreditation'),
-                    $photo(),
-                ]],
-                'who' => ['label' => 'Who can apply', 'fields' => [
-                    $f('heading', 'Heading', 'text', 'Who can apply'),
-                    $f('cards', 'Cards (one per line: emoji | Title | text)', 'lines',
-                        "✍️ | Bloggers | Independent writers covering news, lifestyle, entertainment, business or community stories.\n" .
-                        "🎙️ | Journalists | Reporters and freelancers who want a regional platform for their work.\n" .
-                        "🏢 | Media houses | Newspapers, radio, TV, online outlets and community media organisations.\n" .
-                        "🎬 | Vloggers & creators | Video and audio creators with news, culture or entertainment channels."),
-                ]],
-                'benefits' => ['label' => 'What accredited contributors get', 'fields' => [
-                    $f('heading', 'Heading', 'text', 'What you get'),
-                    $f('cards', 'Cards (one per line: emoji | Title | text)', 'lines',
-                        "🏷️ | Byline and badge | Your name and organisation on every story, with an Accredited contributor badge.\n" .
-                        "🖥️ | Contributor dashboard | Your own login to write, save drafts and submit stories.\n" .
-                        "🧑‍⚖️ | Editorial support | An editor reviews each story before it is published.\n" .
-                        "📣 | A real audience | Readers from Chill & Bite MEATINGS events and the Gulu community.\n" .
-                        "🎟️ | Event access | Opportunities for press access to our events, subject to approval."),
-                ]],
-                'process' => ['label' => 'How it works', 'fields' => [
-                    $f('heading', 'Heading', 'text', 'How accreditation works'),
-                    $f('steps', 'Steps (one per line: Title | text)', 'lines',
-                        "Apply | Fill in the form below and share links to your best work.\n" .
-                        "We review | Our editors check your work and your details.\n" .
-                        "Get your login | Approved applicants receive a contributor account by email.\n" .
-                        "Publish | Submit stories for review. Approved stories go live with your byline."),
-                ]],
-                'standards' => ['label' => 'Editorial standards', 'fields' => [
-                    $f('heading', 'Heading', 'text', 'Our editorial standards'),
-                    $f('intro', 'Introduction', 'text', 'Everyone publishing on The Gulu Chronicles agrees to these standards.'),
-                    $f('list', 'Standards (one per line)', 'lines',
-                        "Be accurate. Check facts and name your sources.\n" .
-                        "Do not present allegations about identifiable people as established fact.\n" .
-                        "Label opinion, commentary and gossip clearly.\n" .
-                        "Respect privacy and protect children and vulnerable people.\n" .
-                        "Publish only original work, and credit and link anything you summarise.\n" .
-                        "Correct mistakes quickly and openly.\n" .
-                        "Paid or sponsored content must always be labelled as sponsored."),
-                ]],
-                'apply' => ['label' => 'Application form', 'fields' => [
-                    $f('eyebrow', 'Small label', 'text', 'Accreditation application'),
-                    $f('heading', 'Heading', 'text', 'Apply to become an accredited contributor'),
-                    $f('intro', 'Introduction', 'text', 'Fields marked * are required. We will contact you at the email you give.'),
                     $f('button', 'Submit button', 'text', 'Submit application'),
                 ]],
             ],
