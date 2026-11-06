@@ -39,8 +39,10 @@ function admin_pictures(): void
     sort($photos);
     $usage = photo_usage();
     $lib = array_map(fn($n) => ['n' => $n, 'url' => photo($n), 'overridden' => photo_override($n) !== null, 'used' => $usage[$n] ?? []], $photos);
+    $pickGallery = array_map(fn($r) => ['id' => 'g:' . $r['id'], 'url' => upload_url($r['file']), 'label' => (string)($r['caption'] ?: 'Gallery photo ' . $r['id'])], rows('SELECT id, file, caption FROM gallery_images ORDER BY id DESC LIMIT 400'));
+    $pickLib = array_map(fn($p) => ['id' => 'p:' . $p['n'], 'url' => $p['url'], 'label' => 'Library photo ' . $p['n']], $lib);
     admin_view('pictures', [
-        'title' => 'Pictures', 'slots' => picture_slots(), 'lib' => $lib, 'brandOk' => can('settings'),
+        'title' => 'Pictures', 'slots' => picture_slots(), 'lib' => $lib, 'brandOk' => can('settings'), 'pickGallery' => $pickGallery, 'pickLib' => $pickLib,
         'brand' => ['logo' => brand_logo(), 'favicon' => brand_favicon(), 'logo_ov' => (content_overrides()['brand.logo'] ?? '') !== '', 'fav_ov' => (content_overrides()['brand.favicon'] ?? '') !== ''],
         'elsewhere' => [
             ['Event posters & flyers', 'admin/events', 'events', '📅', (int)val("SELECT COUNT(*) FROM events WHERE poster IS NOT NULL AND poster <> ''"), 'posters'],
@@ -51,6 +53,41 @@ function admin_pictures(): void
             ['News story pictures', 'admin/news', 'news', '📰', (int)val("SELECT COUNT(*) FROM articles WHERE image IS NOT NULL AND image <> ''"), 'pictures'],
         ],
     ]);
+}
+/** Stored value for a picture chosen from the gallery or photo library, e.g. "g:12" or "p:44". Uploaded files are copied so deleting the original cannot break the page. */
+function picture_pick_value(string $source): string
+{
+    $copy = function (string $file): string {
+        if (str_starts_with($file, 'img/')) return $file;                       // bundled photo: nothing to copy
+        $src = ROOT . '/uploads/' . $file;
+        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        if (!is_file($src) || !in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) throw new RuntimeException('That picture could not be found.');
+        $dir = ROOT . '/uploads/site';
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        $name = 'site/' . bin2hex(random_bytes(10)) . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+        if (!copy($src, ROOT . '/uploads/' . $name)) throw new RuntimeException('Could not copy the picture.');
+        return $name;
+    };
+    if (preg_match('/^g:(\d+)$/', $source, $m)) {
+        $file = val('SELECT file FROM gallery_images WHERE id = ?', [(int)$m[1]]);
+        if (!$file) throw new RuntimeException('That gallery picture no longer exists.');
+        return $copy((string)$file);
+    }
+    if (preg_match('/^p:(\d+)$/', $source, $m)) {
+        $n = (int)$m[1];
+        if (!is_file(ROOT . sprintf('/assets/img/photos/photo-%02d.jpg', $n))) throw new RuntimeException('That photo does not exist.');
+        $ov = content_overrides()['photolib.' . $n] ?? '';
+        return $ov !== '' ? $copy($ov) : sprintf('img/photos/photo-%02d.jpg', $n);
+    }
+    throw new RuntimeException('Choose a picture from the gallery.');
+}
+/** New picture for a replace action: an uploaded file, or one picked from the gallery. */
+function picture_new_value(string $act): string
+{
+    if (str_ends_with($act, '_pick')) return picture_pick_value((string)($_POST['source'] ?? ''));
+    $up = save_upload('image', 'site');
+    if (!$up) throw new RuntimeException('Choose a picture to upload, or pick one from the gallery.');
+    return $up;
 }
 function admin_pictures_save(): void
 {
@@ -65,37 +102,34 @@ function admin_pictures_save(): void
         if ($old !== '' && $old !== $file && preg_match('#^site/[a-f0-9]+\.(jpg|png|webp|gif)$#', $old) && !val('SELECT COUNT(*) FROM site_content WHERE `value` = ?', [$old])) @unlink(ROOT . '/uploads/' . $old);
     };
     try {
-        if (in_array($act, ['slot_replace', 'slot_reset'], true)) {
+        if (in_array($act, ['slot_replace', 'slot_pick', 'slot_reset'], true)) {
             $key = (string)($_POST['key'] ?? '');
             $fd = content_fields()[$key] ?? null;
             if (!$fd || $fd['type'] !== 'image' || !can_edit_page(explode('.', $key)[0])) not_found();
             $back .= '#slot-' . str_replace('.', '-', $key);
             if ($act === 'slot_reset') { $put($key, null); flash('Picture reset to the original.'); }
             else {
-                $up = save_upload('image', 'site');
-                if (!$up) throw new RuntimeException('Choose a picture to upload.');
+                $up = picture_new_value($act);
                 $put($key, $up); flash('Picture updated. It is live on the website now.');
             }
             audit('picture.' . $act, $key);
-        } elseif (in_array($act, ['photo_replace', 'photo_reset'], true)) {
+        } elseif (in_array($act, ['photo_replace', 'photo_pick', 'photo_reset'], true)) {
             $n = (int)($_POST['n'] ?? 0);
             if ($n < 1 || !is_file(ROOT . sprintf('/assets/img/photos/photo-%02d.jpg', $n))) not_found();
             $back .= '#photo-' . $n;
             if ($act === 'photo_reset') { $put("photolib.$n", null); flash("Photo $n reset to the original."); }
             else {
-                $up = save_upload('image', 'site');
-                if (!$up) throw new RuntimeException('Choose a picture to upload.');
+                $up = picture_new_value($act);
                 $put("photolib.$n", $up); flash("Photo $n replaced everywhere it appears.");
             }
             audit('picture.' . $act, "photo $n");
-        } elseif (in_array($act, ['brand_replace', 'brand_reset'], true)) {
+        } elseif (in_array($act, ['brand_replace', 'brand_pick', 'brand_reset'], true)) {
             require_can('settings');
             $which = ($_POST['which'] ?? '') === 'favicon' ? 'favicon' : 'logo';
             $back .= '#brand';
             if ($act === 'brand_reset') { $put("brand.$which", null); flash(ucfirst($which) . ' reset to the original.'); }
             else {
-                $up = save_upload('image', 'site');
-                if (!$up) throw new RuntimeException('Choose a picture to upload.');
+                $up = picture_new_value($act);
                 $put("brand.$which", $up); flash(ucfirst($which) . ' updated.');
             }
             audit('picture.' . $act, $which);

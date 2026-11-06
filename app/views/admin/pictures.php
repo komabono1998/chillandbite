@@ -9,6 +9,9 @@ $replaceForm = function (array $hidden, string $btn = 'Replace picture') use ($a
     <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" required aria-label="Choose a new picture">
     <button class="btn btn-primary btn-sm"><?= h($btn) ?></button>
   </form>
+  <?php $pick = $hidden; $pick['action'] = str_replace('_replace', '_pick', (string)$hidden['action']); $lab = $hidden['key'] ?? (isset($hidden['n']) ? 'photo ' . $hidden['n'] : ($hidden['which'] ?? 'picture')); ?>
+  <span class="pic-or">or</span>
+  <button type="button" class="btn btn-ghost btn-sm pic-choose" data-pick="<?= h(json_encode($pick)) ?>" data-label="<?= h((string)$lab) ?>">🖼️ Choose from gallery</button>
 <?php };
 $resetForm = function (array $hidden) use ($act) { ?>
   <form class="pic-reset" method="post" action="<?= $act ?>" onsubmit="return confirm('Go back to the original picture?')"><?= csrf_field() ?>
@@ -89,3 +92,56 @@ $resetForm = function (array $hidden) use ($act) { ?>
     <?php endforeach; ?>
   </div>
 </div>
+
+<dialog class="pic-picker" id="picPicker" aria-labelledby="picPickerTitle">
+  <div class="pp-head">
+    <h2 id="picPickerTitle">Choose a picture</h2>
+    <nav class="pp-tabs" role="tablist"><button type="button" class="on" data-tab="gallery" role="tab">Gallery (<?= count($pickGallery) ?>)</button><button type="button" data-tab="lib" role="tab">Photo library (<?= count($pickLib) ?>)</button></nav>
+    <button type="button" class="pp-close" id="ppClose" aria-label="Close">✕</button>
+  </div>
+  <p class="pp-hint small muted">Click a picture to use it. The original stays where it is, so nothing is lost.</p>
+  <div class="pp-body">
+    <div class="pp-grid" data-pane="gallery">
+      <?php foreach ($pickGallery as $p): ?><button type="button" class="pp-item" data-source="<?= h($p['id']) ?>" title="<?= h($p['label']) ?>"><img data-src="<?= h($p['url']) ?>" alt="<?= h($p['label']) ?>"></button><?php endforeach; ?>
+      <?php if (!$pickGallery): ?><p class="muted">The gallery is empty. Upload photos under Gallery, or use the Photo library tab.</p><?php endif; ?>
+    </div>
+    <div class="pp-grid" data-pane="lib" hidden>
+      <?php foreach ($pickLib as $p): ?><button type="button" class="pp-item" data-source="<?= h($p['id']) ?>" title="<?= h($p['label']) ?>"><img data-src="<?= h($p['url']) ?>" alt="<?= h($p['label']) ?>"></button><?php endforeach; ?>
+    </div>
+  </div>
+  <form id="ppForm" method="post" action="<?= $act ?>"><?= csrf_field() ?><input type="hidden" name="source" id="ppSource"></form>
+</dialog>
+<script>
+(function () {
+  var dlg = document.getElementById('picPicker'), form = document.getElementById('ppForm'), target = null, loaded = false;
+  if (!dlg || !dlg.showModal) { document.querySelectorAll('.pic-choose').forEach(function (b) { b.hidden = true; }); return; }
+  function loadThumbs(pane) {
+    dlg.querySelectorAll('[data-pane="' + pane + '"] img[data-src]').forEach(function (i) { i.src = i.dataset.src; i.removeAttribute('data-src'); i.loading = 'lazy'; });
+  }
+  document.addEventListener('click', function (e) {
+    var open = e.target.closest('.pic-choose');
+    if (open) {
+      target = JSON.parse(open.dataset.pick);
+      document.getElementById('picPickerTitle').textContent = 'Choose a picture for: ' + ((open.closest('.pic-body') && open.closest('.pic-body').querySelector('b') ? open.closest('.pic-body').querySelector('b').textContent.replace(/changed$/, '').trim() : '') || open.dataset.label || 'this picture');
+      dlg.showModal(); loadThumbs(dlg.querySelector('.pp-tabs .on').dataset.tab); return;
+    }
+    if (e.target.closest('#ppClose') || e.target === dlg) { dlg.close(); return; }
+    var tab = e.target.closest('.pp-tabs button');
+    if (tab) {
+      dlg.querySelectorAll('.pp-tabs button').forEach(function (b) { b.classList.toggle('on', b === tab); });
+      dlg.querySelectorAll('.pp-grid').forEach(function (g) { g.hidden = g.dataset.pane !== tab.dataset.tab; });
+      loadThumbs(tab.dataset.tab); return;
+    }
+    var item = e.target.closest('.pp-item');
+    if (item && target) {
+      Object.keys(target).forEach(function (k) {
+        var el = form.querySelector('[name="' + k + '"]');
+        if (!el) { el = document.createElement('input'); el.type = 'hidden'; el.name = k; form.appendChild(el); }
+        el.value = target[k];
+      });
+      document.getElementById('ppSource').value = item.dataset.source;
+      form.submit();
+    }
+  });
+})();
+</script>
