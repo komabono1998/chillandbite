@@ -913,3 +913,9 @@ body.has-qe .site-header{top:38px}
 .dj-dl{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--gold);color:#171717!important;font-weight:800;font-size:.8rem;text-decoration:none;transition:transform .2s,background .2s}
 .dj-dl:hover{background:#f0c872;transform:translateY(-2px)}
 a.dj-pl-btn{display:grid;place-items:center;text-decoration:none;color:#fff}
+
+/* ---------- Uploaded MP4 videos ---------- */
+.video-file video{display:block;width:100%;aspect-ratio:16/9;background:#000;border-radius:var(--radius);object-fit:contain}
+.video-file figcaption{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.video-dl{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--gold);color:#171717!important;font-weight:800;font-size:.76rem;text-decoration:none;white-space:nowrap;transition:transform .2s,background .2s}
+.video-dl:hover{background:#f0c872;transform:translateY(-2px)}

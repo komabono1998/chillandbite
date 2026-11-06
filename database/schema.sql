@@ -145,7 +145,9 @@ CREATE TABLE IF NOT EXISTS articles (
 CREATE TABLE IF NOT EXISTS videos (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(190) NOT NULL,
-  url VARCHAR(255) NOT NULL,
+  url VARCHAR(255) NULL,
+  file VARCHAR(255) NULL,
+  poster VARCHAR(255) NULL,
   kind ENUM('clip','full_show','behind_scenes','interview','highlight') NOT NULL DEFAULT 'clip',
   description VARCHAR(300) NULL,
   featured TINYINT(1) NOT NULL DEFAULT 0,

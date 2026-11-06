@@ -19,7 +19,8 @@ RewriteRule ^ index.php [L]
 
 # Allow larger DJ mix uploads (ignored if PHP does not run as an Apache module)
 <IfModule mod_php.c>
-  php_value upload_max_filesize 120M
-  php_value post_max_size 128M
-  php_value max_execution_time 300
+  php_value upload_max_filesize 300M
+  php_value post_max_size 310M
+  php_value max_execution_time 600
+  php_value max_input_time 600
 </IfModule>

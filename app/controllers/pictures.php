@@ -157,6 +157,7 @@ function quick_edit_map(?string $currentPage = null): array
         foreach (rows("SELECT photo FROM djs WHERE photo IS NOT NULL AND photo <> ''") as $r) $add(upload_url($r['photo']), 'Edit this DJ', url('admin/djs'), true);
         foreach (rows("SELECT cover FROM dj_mixes WHERE cover IS NOT NULL AND cover <> ''") as $r) $add(upload_url($r['cover']), 'Edit this mix', url('admin/djs'), true);
     }
+    if (can('comedy')) foreach (rows("SELECT poster FROM videos WHERE poster IS NOT NULL AND poster <> ''") as $r) $add(upload_url($r['poster']), 'Edit this video', url('admin/comedy'), true);
     if (can('news')) foreach (rows("SELECT id, image FROM articles WHERE image IS NOT NULL AND image <> ''") as $r) $add(upload_url($r['image']), 'Edit this story', url('admin/news/' . $r['id']), true);
     if (can('advertising')) foreach (rows("SELECT logo FROM sponsors WHERE logo IS NOT NULL AND logo <> ''") as $r) $add(upload_url($r['logo']), 'Edit sponsor logo', url('admin/advertising'), true);
     foreach (picture_slots() as $s)

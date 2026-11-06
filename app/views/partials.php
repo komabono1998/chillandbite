@@ -59,10 +59,27 @@ function article_card(array $a): void
     <?php
 }
 
+/** File name offered when a guest downloads an uploaded video, for example "Stand-up night.mp4". */
+function video_filename(array $v): string
+{
+    $ext = strtolower(pathinfo((string)$v['file'], PATHINFO_EXTENSION)) ?: 'mp4';
+    $base = trim(preg_replace('#[\\\\/:*?"<>|]+#', ' ', (string)$v['title']));
+    return mb_substr(preg_replace('/\s+/', ' ', $base), 0, 120) . '.' . $ext;
+}
 function video_embed(array $v, bool $big = false): void
 {
-    $id = youtube_id($v['url']);
-    if (!$id) { echo '<a class="btn btn-ghost" href="' . h($v['url']) . '" target="_blank" rel="noopener">Watch: ' . h($v['title']) . '</a>'; return; }
+    if (!empty($v['file'])) {
+        $src = upload_url($v['file']); $poster = !empty($v['poster']) ? upload_url($v['poster']) : '';
+        ?>
+    <figure class="video video-file<?= $big ? ' video-big' : '' ?>">
+      <video controls preload="metadata" playsinline<?= $poster ? ' poster="' . h($poster) . '"' : '' ?> aria-label="<?= h($v['title']) ?>"><source src="<?= h($src) ?>#t=0.1" type="video/mp4">Your browser cannot play this video. <a href="<?= h($src) ?>" download>Download it instead</a>.</video>
+      <figcaption><span><?= h($v['title']) ?></span><a class="video-dl" href="<?= h($src) ?>" download="<?= h(video_filename($v)) ?>" title="Download <?= h($v['title']) ?>"><span aria-hidden="true">⬇</span> Download video</a></figcaption>
+    </figure>
+    <?php
+        return;
+    }
+    $id = youtube_id((string)$v['url']);
+    if (!$id) { if (empty($v['url'])) return; echo '<a class="btn btn-ghost" href="' . h($v['url']) . '" target="_blank" rel="noopener">Watch: ' . h($v['title']) . '</a>'; return; }
     ?>
     <figure class="video<?= $big ? ' video-big' : '' ?>">
       <button type="button" class="video-play" data-yt="<?= h($id) ?>" aria-label="Play video: <?= h($v['title']) ?>">

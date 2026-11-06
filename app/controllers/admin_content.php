@@ -100,6 +100,24 @@ function admin_article_delete(array $a): void
 
 
 /* ================= Comedy videos ================= */
+/** Saves an uploaded MP4 under uploads/videos and returns the stored path (null when no file was chosen). */
+function save_video_file(string $field): ?string
+{
+    if (empty($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) return null;
+    $f = $_FILES[$field];
+    if (in_array($f['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) throw new RuntimeException('That video is too large for the server. Use a file under 300MB, or paste a YouTube link instead.');
+    if ($f['error'] !== UPLOAD_ERR_OK) throw new RuntimeException('Video upload failed. Please try again.');
+    if ($f['size'] > 300 * 1024 * 1024) throw new RuntimeException('Videos must be 300MB or smaller. For longer shows paste a YouTube link.');
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
+    $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+    $okMime = in_array($mime, ['video/mp4', 'video/x-m4v'], true) || ($mime === 'application/octet-stream' && in_array($ext, ['mp4', 'm4v'], true));
+    if (!$okMime || !in_array($ext, ['mp4', 'm4v'], true)) throw new RuntimeException('Only MP4 video files are allowed.');
+    $dir = ROOT . '/uploads/videos';
+    if (!is_dir($dir)) mkdir($dir, 0755, true);
+    $name = bin2hex(random_bytes(10)) . '.mp4';
+    if (!move_uploaded_file($f['tmp_name'], "$dir/$name")) throw new RuntimeException('Could not save the video file.');
+    return 'videos/' . $name;
+}
 function admin_comedy(): void
 {
     require_can('comedy');
@@ -108,16 +126,43 @@ function admin_comedy(): void
 function admin_comedy_save(): void
 {
     require_can('comedy');
-    if (($_POST['action'] ?? '') === 'delete') {
-        q('DELETE FROM videos WHERE id = ?', [(int)$_POST['id']]); audit('video.delete', '#' . (int)$_POST['id']); flash('Video removed.');
-    } else {
-        $url = post_str('url');
-        $kind = in_array($_POST['kind'] ?? '', ['clip', 'full_show', 'behind_scenes', 'interview', 'highlight'], true) ? $_POST['kind'] : 'clip';
-        if (post_str('title') === '' || !youtube_id($url)) flash('A title and a valid YouTube link are required.', 'err');
-        else {
-            q('INSERT INTO videos (title, url, kind, description, featured) VALUES (?,?,?,?,?)', [post_str('title', 190), $url, $kind, post_str('description', 300) ?: null, empty($_POST['featured']) ? 0 : 1]);
-            audit('video.create', post_str('title')); flash('Video added.');
+    $act = $_POST['action'] ?? '';
+    $id = (int)($_POST['id'] ?? 0);
+    $unlink = function (?string $f) { if ($f && preg_match('#^(videos)/[a-f0-9]+\.(mp4|jpg|png|webp|gif)$#', $f)) @unlink(ROOT . '/uploads/' . $f); };
+    try {
+        if ($act === 'delete') {
+            $v = row('SELECT file, poster FROM videos WHERE id = ?', [$id]);
+            q('DELETE FROM videos WHERE id = ?', [$id]);
+            if ($v) { $unlink($v['file']); $unlink($v['poster']); }
+            audit('video.delete', "#$id"); flash('Video removed.');
+        } elseif ($act === 'feature') {
+            q('UPDATE videos SET featured = 1 - featured WHERE id = ?', [$id]); flash('Updated.');
+        } elseif ($act === 'save') {
+            $existing = $id ? (row('SELECT * FROM videos WHERE id = ?', [$id]) ?? not_found()) : null;
+            $title = post_str('title', 190);
+            $url = post_str('url');
+            $kind = in_array($_POST['kind'] ?? '', ['clip', 'full_show', 'behind_scenes', 'interview', 'highlight'], true) ? $_POST['kind'] : 'clip';
+            if (mb_strlen($title) < 2) throw new RuntimeException('Please give the video a title.');
+            if ($url !== '' && !youtube_id($url)) throw new RuntimeException('The link must be a YouTube link, or upload an MP4 file instead.');
+            $file = save_video_file('video');
+            $poster = save_upload('poster', 'videos');
+            if (!$existing && !$file && $url === '') throw new RuntimeException('Upload an MP4 file or paste a YouTube link.');
+            $v = [$title, $kind, post_str('description', 300) ?: null, empty($_POST['featured']) ? 0 : 1];
+            if ($existing) {
+                q('UPDATE videos SET title=?, kind=?, description=?, featured=? WHERE id=?', [...$v, $id]);
+                if ($url !== '') q('UPDATE videos SET url = ? WHERE id = ?', [$url, $id]);
+                if ($file) { $unlink($existing['file']); q('UPDATE videos SET file = ? WHERE id = ?', [$file, $id]); }
+                if ($poster) { $unlink($existing['poster']); q('UPDATE videos SET poster = ? WHERE id = ?', [$poster, $id]); }
+                audit('video.update', "#$id $title"); flash('Video updated.');
+            } else {
+                q('INSERT INTO videos (title, kind, description, featured, url, file, poster) VALUES (?,?,?,?,?,?,?)', [...$v, $url ?: null, $file, $poster]);
+                audit('video.create', $title); flash($file ? 'Video uploaded. It is live on the website now.' : 'Video added.');
+            }
+        } else {
+            not_found();
         }
+    } catch (RuntimeException $e) {
+        flash($e->getMessage(), 'err');
     }
     redirect('admin/comedy');
 }
