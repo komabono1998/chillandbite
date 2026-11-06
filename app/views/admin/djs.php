@@ -18,7 +18,7 @@ $mixForm = function (?array $m) use ($act, $djOpts) { $v = fn($k, $d = '') => $m
       <?php field('status', 'Visibility', ['type' => 'select', 'value' => $v('status', 'published'), 'options' => ['published' => 'Published on the website', 'draft' => 'Draft (hidden)']]); ?>
     </div>
     <label class="chk"><input type="checkbox" name="featured" value="1"<?= $v('featured') ? ' checked' : '' ?>> Featured (shown first)</label>
-    <p class="small muted">Uploaded audio files always get a <b>Download mix</b> button on the website. Mixes added as links cannot be downloaded.</p>
+    <label class="chk"><input type="checkbox" name="allow_download" value="1"<?= $v('allow_download', 1) ? ' checked' : '' ?>> Make this mix available for download <span class="muted small">(shows a Download mix button on the website; only for uploaded audio files)</span></label>
     <button class="btn btn-primary"><?= $m ? 'Save changes' : 'Publish mix' ?></button>
   </form>
 <?php };
@@ -61,6 +61,7 @@ $post = fn(string $a, int $id, string $label, string $cls = 'btn btn-ghost btn-s
       <details><summary class="btn btn-ghost btn-sm" style="display:inline-block;cursor:pointer">Edit</summary><div style="margin-top:10px;min-width:min(560px,80vw)"><?php $mixForm($m); ?></div></details>
       <?= $post('mix_toggle', (int)$m['id'], $m['status'] === 'published' ? 'Hide' : 'Publish') ?>
       <?= $post('mix_feature', (int)$m['id'], $m['featured'] ? 'Unfeature' : 'Feature') ?>
+      <?php if ($m['audio']): ?><?= $post('mix_download', (int)$m['id'], $m['allow_download'] ? '⬇ Downloads on' : '⬇ Downloads off', 'btn btn-ghost btn-sm') ?><?php endif; ?>
       <?= $post('mix_delete', (int)$m['id'], 'Delete', 'btn btn-ghost btn-sm', 'Delete this mix and its audio file?') ?>
     </div></td></tr>
   <?php endforeach; ?></tbody></table></div>

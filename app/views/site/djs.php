@@ -39,7 +39,7 @@ $initial = fn(string $n) => h(mb_strtoupper(mb_substr(trim($n), 0, 1)));
           $audio = $m['audio'] ? upload_url($m['audio']) : '';
           $emb = !$audio && $m['external_url'] ? mix_embed($m['external_url']) : null;
           $cover = $m['cover'] ? upload_url($m['cover']) : ''; ?>
-        <article class="dj-mix" data-src="<?= h($m['source']) ?>"<?= $audio ? ' data-audio="' . h($audio) . '" data-dl="' . h(mix_filename($m)) . '" data-title="' . h($m['title']) . '" data-dj="' . h($m['dj_name']) . '" data-cover="' . h($cover) . '"' : '' ?>>
+        <article class="dj-mix" data-src="<?= h($m['source']) ?>"<?= $audio ? ' data-audio="' . h($audio) . '"' . ($m['allow_download'] ? ' data-dl="' . h(mix_filename($m)) . '"' : '') . ' data-title="' . h($m['title']) . '" data-dj="' . h($m['dj_name']) . '" data-cover="' . h($cover) . '"' : '' ?>>
           <div class="dj-mix-art<?= $cover ? '' : ' no-cover' ?>"<?= $cover ? ' style="background-image:url(\'' . h($cover) . '\')"' : '' ?>>
             <?php if (!$cover): ?><span class="dj-mini-vinyl" aria-hidden="true"></span><?php endif; ?>
             <?php if ($m['featured']): ?><span class="dj-feat">★ Featured</span><?php endif; ?>
@@ -52,7 +52,7 @@ $initial = fn(string $n) => h(mb_strtoupper(mb_substr(trim($n), 0, 1)));
             <h3><?= h($m['title']) ?></h3>
             <p class="dj-by">by <b><?= h($m['dj_name']) ?></b><?= $m['genre'] ? ' · ' . h($m['genre']) : '' ?></p>
             <?php if ($m['description']): ?><p class="dj-desc"><?= h($m['description']) ?></p><?php endif; ?>
-            <?php if ($audio): ?><a class="dj-dl" href="<?= h($audio) ?>" download="<?= h(mix_filename($m)) ?>" title="Download <?= h($m['title']) ?>"><span aria-hidden="true">⬇</span> Download mix</a><?php endif; ?>
+            <?php if ($audio && $m['allow_download']): ?><a class="dj-dl" href="<?= h($audio) ?>" download="<?= h(mix_filename($m)) ?>" title="Download <?= h($m['title']) ?>"><span aria-hidden="true">⬇</span> Download mix</a><?php endif; ?>
           </div>
         </article>
       <?php endforeach; ?>
@@ -201,7 +201,7 @@ $initial = fn(string $n) => h(mb_strtoupper(mb_substr(trim($n), 0, 1)));
   function mark() { $$('.dj-mix').forEach(function (m) { m.classList.toggle('is-playing', m === cur && !a.paused); }); tg.textContent = a.paused ? '▶' : '❚❚'; }
   function load(m, play) {
     cur = m; a.src = m.dataset.audio; $('#djPlTitle').textContent = m.dataset.title; $('#djPlDj').textContent = 'by ' + m.dataset.dj;
-    var dl = $('#djDl'); dl.href = m.dataset.audio; dl.setAttribute('download', m.dataset.dl || '');
+    var dl = $('#djDl'); dl.hidden = !m.dataset.dl; dl.href = m.dataset.audio; dl.setAttribute('download', m.dataset.dl || '');
     var art = $('#djPlArt'); art.style.backgroundImage = m.dataset.cover ? 'url("' + m.dataset.cover + '")' : ''; art.classList.toggle('no-cover', !m.dataset.cover);
     bar.hidden = false; document.body.classList.add('has-player');
     if (play) a.play().catch(function () {}); mark();

@@ -102,6 +102,8 @@ function admin_djs_save(): void
             audit('mix.delete', "#$id"); flash('Mix removed.');
         } elseif ($act === 'mix_toggle') {
             q("UPDATE dj_mixes SET status = IF(status='published','draft','published') WHERE id = ?", [$id]); flash('Mix visibility updated.');
+        } elseif ($act === 'mix_download') {
+            q('UPDATE dj_mixes SET allow_download = 1 - allow_download WHERE id = ?', [$id]); flash('Download setting updated.');
         } elseif ($act === 'mix_feature') {
             q('UPDATE dj_mixes SET featured = 1 - featured WHERE id = ?', [$id]); flash('Updated.');
         } elseif ($act === 'mix_save') {
@@ -119,7 +121,7 @@ function admin_djs_save(): void
             $cover = save_upload('cover', 'mixes');
             if (!$existing && !$audio && $url === '') throw new RuntimeException('Upload an audio file or paste a SoundCloud, Mixcloud or YouTube link.');
             $v = [$djId, $djName, $source, $title, post_str('genre', 80) ?: null, post_str('description', 300) ?: null, $url ?: null,
-                  1, empty($_POST['featured']) ? 0 : 1, ($_POST['status'] ?? '') === 'draft' ? 'draft' : 'published'];
+                  empty($_POST['allow_download']) ? 0 : 1, empty($_POST['featured']) ? 0 : 1, ($_POST['status'] ?? '') === 'draft' ? 'draft' : 'published'];
             if ($existing) {
                 q('UPDATE dj_mixes SET dj_id=?, dj_name=?, source=?, title=?, genre=?, description=?, external_url=?, allow_download=?, featured=?, status=? WHERE id=?', [...$v, $id]);
                 if ($audio) { $unlink($existing['audio']); q('UPDATE dj_mixes SET audio = ? WHERE id = ?', [$audio, $id]); }
