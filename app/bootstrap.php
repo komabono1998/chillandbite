@@ -27,6 +27,7 @@ define('DEBUG', env('APP_DEBUG', '0') === '1');
 error_reporting(E_ALL);
 ini_set('display_errors', DEBUG ? '1' : '0');
 ini_set('log_errors', '1');
+if (!is_dir(ROOT . '/storage/logs')) @mkdir(ROOT . '/storage/logs', 0755, true);   // Git does not keep empty folders
 ini_set('error_log', ROOT . '/storage/logs/php-error.log');
 
 $script = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
