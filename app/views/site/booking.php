@@ -24,6 +24,8 @@ if ($here) {
     $tone = 'warn';
 } elseif ($st === 'rejected') {
     $emoji = '💛'; $head = "Sorry, $first"; $msg = 'We could not take this booking this time. Please reach out to us and we will gladly help you find another way to join the fun.'; $tone = 'err';
+} elseif ($st === 'cancelled' && !empty($r['withdrawn_at'])) {
+    $emoji = '⛔'; $head = 'Ticket withdrawn'; $msg = 'This ticket has been withdrawn and is no longer valid for entry.' . ($r['withdrawn_reason'] ? ' Reason: ' . $r['withdrawn_reason'] . '.' : '') . ' If you think this is a mistake, please contact us.'; $tone = 'err';
 } else {
     $emoji = '💛'; $head = "Booking cancelled"; $msg = "This booking has been cancelled. If that was a mistake, or you would like to rebook, we would love to have you, $first."; $tone = 'err';
 }

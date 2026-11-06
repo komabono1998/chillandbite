@@ -79,6 +79,8 @@ CREATE TABLE IF NOT EXISTS reservations (
   amount_due DECIMAL(12,0) NOT NULL DEFAULT 0,
   status ENUM('pending','confirmed','rejected','cancelled') NOT NULL DEFAULT 'pending',
   checked_in_at DATETIME NULL,
+  withdrawn_at DATETIME NULL,
+  withdrawn_reason VARCHAR(255) NULL,
   admin_note VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_res_event (event_id, status),
@@ -270,6 +272,7 @@ CREATE TABLE IF NOT EXISTS partner_applications (
 CREATE TABLE IF NOT EXISTS djs (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
+  role ENUM('dj','host') NOT NULL DEFAULT 'dj',
   tagline VARCHAR(190) NULL,
   genres VARCHAR(190) NULL,
   bio TEXT NULL,

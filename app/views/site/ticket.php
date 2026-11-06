@@ -1,5 +1,13 @@
 <section class="section section-cream ticket-wrap"><div class="narrow-wrap">
-<?php if (!$valid): ?>
+<?php if (!$valid && $withdrawn): ?>
+  <div class="form-card center tk-void">
+    <p class="tk-void-ic" aria-hidden="true">⛔</p>
+    <h1 style="font-size:1.8rem">This ticket has been withdrawn</h1>
+    <p>Ticket <strong><?= h($r['reference']) ?></strong> for <strong><?= h($r['title']) ?></strong> is no longer valid and will not be accepted at the entrance.<?= $r['withdrawn_reason'] ? ' Reason: ' . h($r['withdrawn_reason']) . '.' : '' ?></p>
+    <p>If you think this is a mistake, please contact us<?= setting('contact_phone') ? ' on <a href="tel:' . h(preg_replace('/\s+/', '', setting('contact_phone'))) . '">' . h(setting('contact_phone')) . '</a>' : '' ?>. This page updates by itself if your ticket is reinstated.</p>
+    <p><a class="btn btn-primary" href="<?= url('contact') ?>">Contact us</a></p>
+  </div>
+<?php elseif (!$valid): ?>
   <div class="form-card center">
     <h1 style="font-size:1.8rem">Ticket not available</h1>
     <p>Booking <strong><?= h($r['reference']) ?></strong> is currently <strong><?= h($r['status']) ?></strong>, so no ticket is active.
@@ -111,3 +119,15 @@
   </script>
 <?php endif; ?>
 </div></section>
+<script>
+(function () {
+  // Keep an open ticket page in step with the event team: reload when the ticket is updated, withdrawn or reinstated.
+  var ver = <?= json_encode($ver) ?>, url = <?= json_encode(url('ticket/' . $r['ticket_token'] . '/status')) ?>;
+  function check() {
+    if (document.hidden || !window.fetch) return;
+    fetch(url, { cache: 'no-store' }).then(function (x) { return x.json(); }).then(function (j) { if (j && j.v && j.v !== ver) location.reload(); }).catch(function () {});
+  }
+  setInterval(check, 15000);
+  document.addEventListener('visibilitychange', check);
+})();
+</script>

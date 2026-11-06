@@ -40,7 +40,8 @@ function page_djs(): void
     render('site/djs', [
         'title' => 'Podium DJs | Book a DJ and Listen to Mixes',
         'desc' => 'Book Podium DJs for weddings, corporate events, club nights and festivals, and listen to mixes from Podium DJs and Chill & Bite MEATINGS.',
-        'djs' => rows('SELECT * FROM djs WHERE active = 1 ORDER BY sort_order, id'),
+        'djs' => rows("SELECT * FROM djs WHERE active = 1 AND role = 'dj' ORDER BY sort_order, id"),
+        'hosts' => rows("SELECT * FROM djs WHERE active = 1 AND role = 'host' ORDER BY sort_order, id"),
         'mixes' => rows("SELECT * FROM dj_mixes WHERE status = 'published' ORDER BY featured DESC, id DESC LIMIT 60"),
     ]);
 }
@@ -57,7 +58,7 @@ function post_dj_booking(): void
     if (!isset(DJ_EVENT_TYPES[$d['event_type'] ?? ''])) $err[] = 'Please choose the type of event.';
     if ($err) form_fail($err, $d, 'djs#book');
     $djName = '';
-    if (!empty($d['dj_id']) && ctype_digit((string)$d['dj_id'])) $djName = (string)val('SELECT name FROM djs WHERE id = ? AND active = 1', [(int)$d['dj_id']]);
+    if (!empty($d['dj_id']) && ctype_digit((string)$d['dj_id'])) $djName = (string)val("SELECT name FROM djs WHERE id = ? AND active = 1 AND role = 'dj'", [(int)$d['dj_id']]);
     $details = json_encode([
         'preferred_dj' => $djName ?: 'Any DJ (match me)', 'event_date' => $d['event_date'], 'event_type' => DJ_EVENT_TYPES[$d['event_type']],
         'location' => $d['location'], 'start_time' => $d['start_time'] ?? '', 'hours' => $d['hours'] ?? '', 'audience' => $d['audience'] ?? '',
@@ -135,13 +136,14 @@ function admin_djs_save(): void
             $ig = post_str('instagram', 255);
             if ($ig !== '' && !preg_match('#^https?://[^\s]+$#i', $ig)) throw new RuntimeException('The Instagram link must start with http:// or https://');
             $photo = save_upload('photo', 'djs');
-            $v = [$name, post_str('tagline', 190) ?: null, post_str('genres', 190) ?: null, trim((string)($_POST['bio'] ?? '')) ?: null, $ig ?: null, (int)($_POST['sort_order'] ?? 0), max(0, min(100, (int)($_POST['photo_pos'] ?? 15)))];
+            $role = ($_POST['role'] ?? '') === 'host' ? 'host' : 'dj';
+            $v = [$name, $role, post_str('tagline', 190) ?: null, post_str('genres', 190) ?: null, trim((string)($_POST['bio'] ?? '')) ?: null, $ig ?: null, (int)($_POST['sort_order'] ?? 0), max(0, min(100, (int)($_POST['photo_pos'] ?? 15)))];
             if ($existing) {
-                q('UPDATE djs SET name=?, tagline=?, genres=?, bio=?, instagram=?, sort_order=?, photo_pos=? WHERE id=?', [...$v, $id]);
+                q('UPDATE djs SET name=?, role=?, tagline=?, genres=?, bio=?, instagram=?, sort_order=?, photo_pos=? WHERE id=?', [...$v, $id]);
                 if ($photo) { $unlink($existing['photo']); q('UPDATE djs SET photo = ? WHERE id = ?', [$photo, $id]); }
                 audit('dj.update', "#$id $name"); flash('DJ updated.');
             } else {
-                q('INSERT INTO djs (name, tagline, genres, bio, instagram, sort_order, photo_pos, photo) VALUES (?,?,?,?,?,?,?,?)', [...$v, $photo]);
+                q('INSERT INTO djs (name, role, tagline, genres, bio, instagram, sort_order, photo_pos, photo) VALUES (?,?,?,?,?,?,?,?,?)', [...$v, $photo]);
                 audit('dj.create', $name); flash('DJ added to the roster.');
             }
         } else {

@@ -235,3 +235,16 @@ body.admin.admin-login{background:#141210}
 }
 .lg-caps[hidden]{display:none}
 .lg-input input,.lg-input input:focus{border:0!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;outline:0!important;padding:15px 0!important;width:auto}
+
+/* ---------- Tickets tab actions ---------- */
+.btn-wa{background:#1f9d57;border-color:#1f9d57;color:#fff}.btn-wa:hover{background:#25b567;color:#fff}
+.tk-actions{min-width:260px}
+.tk-more{flex-basis:100%}
+.tk-more>summary{display:inline-block;cursor:pointer;list-style:none}.tk-more>summary::-webkit-details-marker{display:none}
+.tk-more[open]>summary{background:var(--orange);color:#fff;border-color:var(--orange)}
+.tk-danger[open]>summary{background:#c0392b;border-color:#c0392b}
+.tk-form{display:grid;gap:10px;margin-top:10px;padding:14px;border:1px solid #e3d9c8;border-radius:12px;background:#fffaf1;max-width:420px}
+.tk-form label{display:grid;gap:4px;font-size:.8rem;font-weight:600}.tk-form label.chk{display:flex;gap:8px;align-items:center;font-weight:500}
+.tk-form input:not([type=checkbox]),.tk-form select{width:100%}
+.tk-form p{margin:0}
+.tk-withdraw-btn{background:#c0392b;border-color:#c0392b}.tk-withdraw-btn:hover{background:#a93226}

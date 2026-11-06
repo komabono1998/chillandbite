@@ -96,7 +96,7 @@ $pageDesc = $desc ?? setting('tagline');
     </div>
   </div>
   <div class="wrap footer-bottom"><span>© <?= date('Y') ?> Chill &amp; Bite MEATINGS · Owakabi &amp; The Geng</span><a href="<?= url('admin') ?>">Staff login</a></div>
-  <div class="wrap credit"><p>Designed &amp; maintained by <strong>Santos Junior</strong> <span class="credit-sep" aria-hidden="true">|</span> <span class="credit-org">LAF Academy</span></p></div>
+  <div class="wrap credit"><p>Designed &amp; maintained by <strong>Santos Jr</strong> <span class="credit-sep" aria-hidden="true">|</span> <span class="credit-org">BONO TECHNOLOGIES</span></p></div>
 </footer>
 
 <div id="cookie" class="cookie" hidden>

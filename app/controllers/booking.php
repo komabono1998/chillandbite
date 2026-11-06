@@ -169,6 +169,19 @@ function page_ticket(array $a): void
 {
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) not_found();
     $r = row('SELECT r.*, e.title, e.slug, e.start_at, e.end_at, e.venue, e.location, e.poster FROM reservations r JOIN events e ON e.id = r.event_id WHERE r.ticket_token = ?', [$a['token']]) ?? not_found();
-    render('site/ticket', ['title' => 'Ticket ' . $r['reference'], 'r' => $r, 'noindex' => true,
-        'valid' => $r['status'] === 'confirmed', 'checkin_url' => abs_url('admin/checkin/' . $a['token'])]);
+    render('site/ticket', ['title' => 'Ticket ' . $r['reference'], 'r' => $r, 'noindex' => true, 'withdrawn' => $r['status'] === 'cancelled' && $r['withdrawn_at'] !== null,
+        'ver' => ticket_version($r), 'valid' => $r['status'] === 'confirmed', 'checkin_url' => abs_url('admin/checkin/' . $a['token'])]);
+}
+/** Short fingerprint of everything a guest sees on the ticket, so an open ticket page can refresh itself when it changes. */
+function ticket_version(array $r): string
+{
+    return substr(md5(implode('|', [$r['status'], $r['withdrawn_at'], $r['guests'], $r['full_name'], $r['type'], $r['package'], $r['company'], $r['checked_in_at'], $r['event_id']])), 0, 12);
+}
+function page_ticket_status(array $a): void
+{
+    if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) not_found();
+    $r = row('SELECT * FROM reservations WHERE ticket_token = ?', [$a['token']]) ?? not_found();
+    header('Content-Type: application/json');
+    header('Cache-Control: no-store');
+    echo json_encode(['v' => ticket_version($r)]);
 }

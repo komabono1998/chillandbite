@@ -22,6 +22,8 @@ db()->exec("ALTER TABLE users MODIFY role ENUM('admin','event_manager','editor',
 // Upgrade older databases: contributor organisation, article review status and source credit
 db()->exec("ALTER TABLE inquiries MODIFY type ENUM('contact','performance','advertising','dj') NOT NULL");
 $hasCol = fn(string $t, string $c) => (int)val('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$t, $c]);
+if (!$hasCol('reservations', 'withdrawn_at')) db()->exec('ALTER TABLE reservations ADD COLUMN withdrawn_at DATETIME NULL AFTER checked_in_at, ADD COLUMN withdrawn_reason VARCHAR(255) NULL AFTER withdrawn_at');
+if (!$hasCol('djs', 'role')) db()->exec("ALTER TABLE djs ADD COLUMN role ENUM('dj','host') NOT NULL DEFAULT 'dj' AFTER name");
 if (!$hasCol('djs', 'photo_pos')) db()->exec('ALTER TABLE djs ADD COLUMN photo_pos TINYINT UNSIGNED NOT NULL DEFAULT 15 AFTER photo');
 if (!$hasCol('users', 'organization')) db()->exec('ALTER TABLE users ADD COLUMN organization VARCHAR(160) NULL AFTER role');
 db()->exec("ALTER TABLE articles MODIFY status ENUM('draft','pending','scheduled','published') NOT NULL DEFAULT 'draft'");

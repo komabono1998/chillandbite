@@ -64,6 +64,19 @@ $initial = fn(string $n) => h(mb_strtoupper(mb_substr(trim($n), 0, 1)));
 
 <section class="section section-cream"><div class="wrap">
   <div class="section-head center"><span class="eyebrow"><?= cth('djs.roster.eyebrow') ?></span><h2><?= cth('djs.roster.heading') ?></h2><p><?= cth('djs.roster.intro') ?></p></div>
+  <?php foreach ($hosts as $h): ?>
+    <article class="dj-host" data-reveal>
+      <div class="dj-host-photo"><?php if ($h['photo']): ?><img src="<?= h(upload_url($h['photo'])) ?>" alt="<?= h($h['name']) ?>" loading="lazy" decoding="async" style="object-position:center <?= (int)$h['photo_pos'] ?>%"><?php else: ?><span class="dj-initial" aria-hidden="true"><?= $initial($h['name']) ?></span><?php endif; ?></div>
+      <div class="dj-host-info">
+        <span class="dj-src dj-src-chillbite">Your host</span>
+        <h3><?= h($h['name']) ?></h3>
+        <?php if ($h['tagline']): ?><p class="dj-tag"><?= h($h['tagline']) ?></p><?php endif; ?>
+        <?php if ($h['bio']): ?><p><?= h($h['bio']) ?></p><?php endif; ?>
+        <?php if ($h['genres']): ?><p class="dj-genres"><?php foreach (array_filter(array_map('trim', explode(',', $h['genres']))) as $g): ?><span><?= h($g) ?></span><?php endforeach; ?></p><?php endif; ?>
+        <div class="dj-actions"><a class="btn btn-primary btn-sm" href="#book">Book for your event</a><a class="btn btn-ghost-dark btn-sm" href="<?= url('laugh') ?>">Laugh with Owakabi</a><?php if ($h['instagram']): ?><a class="btn btn-ghost-dark btn-sm" target="_blank" rel="noopener nofollow" href="<?= h($h['instagram']) ?>">Instagram ↗</a><?php endif; ?></div>
+      </div>
+    </article>
+  <?php endforeach; ?>
   <?php if ($djs): ?>
     <div class="dj-roster">
       <?php foreach ($djs as $d): ?>

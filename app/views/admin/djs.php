@@ -25,7 +25,8 @@ $mixForm = function (?array $m) use ($act, $djOpts) { $v = fn($k, $d = '') => $m
 $djForm = function (?array $d) use ($act) { $v = fn($k, $x = '') => $d[$k] ?? $x; ?>
   <form method="post" action="<?= $act ?>" enctype="multipart/form-data"><?= csrf_field() ?><input type="hidden" name="action" value="dj_save"><input type="hidden" name="id" value="<?= (int)$v('id', 0) ?>">
     <div class="form-grid">
-      <?php field('name', 'DJ name', ['required' => true, 'value' => $v('name')]);
+      <?php field('name', 'Name', ['required' => true, 'value' => $v('name')]);
+      field('role', 'Profile type', ['type' => 'select', 'value' => $v('role', 'dj'), 'options' => ['dj' => 'DJ (can be booked)', 'host' => 'Host / MC (shown as the host)']]);
       field('tagline', 'Tagline', ['value' => $v('tagline'), 'attrs' => 'placeholder="Weddings, clubs and corporate events"']);
       field('genres', 'Genres (comma separated)', ['value' => $v('genres'), 'attrs' => 'placeholder="Afrobeats, Amapiano, R&B"']);
       field('instagram', 'Instagram link', ['type' => 'url', 'value' => $v('instagram'), 'attrs' => 'placeholder="https://"']);
@@ -75,7 +76,7 @@ $post = fn(string $a, int $id, string $label, string $cls = 'btn btn-ghost btn-s
   <?php if (!$djs): ?><p class="muted">No DJs yet. Add the first one above. Visitors can still send a booking request and you will match a DJ.</p><?php endif; ?>
   <div class="tbl-wrap"><table class="tbl"><thead><tr><th>DJ</th><th>Genres</th><th>Status</th><th>Manage</th></tr></thead><tbody>
   <?php foreach ($djs as $d): ?><tr>
-    <td><div style="display:flex;align-items:center;gap:12px"><?php if ($d['photo']): ?><img src="<?= h(upload_url($d['photo'])) ?>" alt="" style="width:52px;height:64px;object-fit:cover;object-position:center <?= (int)$d['photo_pos'] ?>%;border-radius:10px"><?php endif; ?><span><b><?= h($d['name']) ?></b><br><span class="small muted"><?= h($d['tagline']) ?></span></span></div></td>
+    <td><div style="display:flex;align-items:center;gap:12px"><?php if ($d['photo']): ?><img src="<?= h(upload_url($d['photo'])) ?>" alt="" style="width:52px;height:64px;object-fit:cover;object-position:center <?= (int)$d['photo_pos'] ?>%;border-radius:10px"><?php endif; ?><span><b><?= h($d['name']) ?></b><?= $d['role'] === 'host' ? ' <span class="role-pill">host</span>' : '' ?><br><span class="small muted"><?= h($d['tagline']) ?></span></span></div></td>
     <td class="small"><?= h($d['genres']) ?></td>
     <td><?= $d['active'] ? status_badge('published') : status_badge('draft') ?></td>
     <td><div class="actions">

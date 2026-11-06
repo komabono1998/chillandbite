@@ -2,7 +2,8 @@
 $state = 'bad'; $headline = 'Ticket not recognised'; $note = 'No booking matches this code.';
 if ($r) {
     $balance = max(0, (float)$r['amount_due'] - (float)$r['paid']);
-    if ($r['status'] !== 'confirmed') { $state = 'bad'; $headline = 'NOT VALID: booking is ' . $r['status']; $note = 'Do not admit. Send the guest to the event team.'; }
+    if ($r['status'] === 'cancelled' && !empty($r['withdrawn_at'])) { $state = 'bad'; $headline = 'TICKET WITHDRAWN'; $note = 'Do not admit. This ticket was withdrawn' . ($r['withdrawn_reason'] ? ': ' . $r['withdrawn_reason'] : '') . '. Send the guest to the event team.'; }
+    elseif ($r['status'] !== 'confirmed') { $state = 'bad'; $headline = 'NOT VALID: booking is ' . $r['status']; $note = 'Do not admit. Send the guest to the event team.'; }
     elseif ($r['checked_in_at']) { $state = 'warn'; $headline = 'ALREADY CHECKED IN'; $note = 'Checked in at ' . fmt_date($r['checked_in_at'], 'j M Y H:i') . '. Do not admit again without checking with the event manager.'; }
     else { $state = 'ok'; $headline = 'VALID TICKET'; $note = 'Admit ' . (int)$r['guests'] . ' guest(s).'; }
 }
