@@ -12,6 +12,7 @@ require __DIR__ . '/app/controllers/tickets.php';
 require __DIR__ . '/app/controllers/accreditation.php';
 require __DIR__ . '/app/controllers/djs.php';
 require __DIR__ . '/app/controllers/pictures.php';
+require __DIR__ . '/app/controllers/setup.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -28,6 +29,8 @@ $routes = [
     ['GET',  'ticket/{token}',       'page_ticket'],
     ['GET',  'ticket/{token}/status', 'page_ticket_status'],
     ['GET',  'track',                'page_track'],
+    ['GET',  'setup',                'page_setup'],
+    ['POST', 'setup',                'post_setup'],
     ['POST', 'track',                'post_track'],
     ['GET',  'admin/checkin/{token}', 'admin_checkin'],
     ['GET',  'laugh',                'page_laugh'],

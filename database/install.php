@@ -2,11 +2,12 @@
 // Usage: php database/install.php [--sample]
 // Creates the database, tables, base settings, categories and the first admin account.
 declare(strict_types=1);
-if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
+if (PHP_SAPI !== 'cli' && !defined('WEB_SETUP')) { http_response_code(403); exit('CLI only.'); }   // WEB_SETUP is set only by the token-protected /setup page
+$argv = $argv ?? [];
 
 $root = dirname(__DIR__);
 if (!is_file("$root/.env")) copy("$root/.env.example", "$root/.env");
-require "$root/app/bootstrap.php";
+require_once "$root/app/bootstrap.php";
 
 $dbName = env('DB_NAME', 'chillandbite');
 $pdo = new PDO(sprintf('mysql:host=%s;port=%s;charset=utf8mb4', env('DB_HOST', '127.0.0.1'), env('DB_PORT', '3306')),
