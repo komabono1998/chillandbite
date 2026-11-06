@@ -105,6 +105,7 @@ $pageDesc = $desc ?? setting('tagline');
   <p>We use only essential cookies to keep forms secure. <a href="<?= url('privacy') ?>">Learn more</a></p>
   <button class="btn btn-primary btn-sm" type="button" id="cookie-ok">OK</button>
 </div>
+<?php if (setting('whatsapp')): ?><a class="wa-fab" target="_blank" rel="noopener" href="<?= h(wa_link(setting('whatsapp'), 'Hello Chill & Bite, I need some help.')) ?>" aria-label="Chat with support on WhatsApp"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M16 3C8.8 3 3 8.8 3 16c0 2.3.6 4.5 1.7 6.4L3 29l6.8-1.8A13 13 0 0 0 16 29c7.2 0 13-5.8 13-13S23.2 3 16 3zm0 23.7c-2 0-3.900-.5-5.500-1.500l-.4-.2-4 1.100 1.100-3.900-.3-.4A10.700 10.700 0 1 1 16 26.700zm5.900-8c-.3-.2-1.900-.9-2.200-1-.3-.1-.5-.2-.7.200-.2.300-.8 1-1 1.200-.2.200-.4.200-.7.100-.3-.2-1.400-.5-2.600-1.600-1-.9-1.600-1.900-1.800-2.200-.2-.3 0-.5.100-.7l.5-.6c.1-.2.200-.3.300-.5.100-.2.100-.4 0-.6l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.100-.9.400-.3.300-1.200 1.100-1.200 2.800s1.200 3.300 1.400 3.500c.2.200 2.400 3.700 5.800 5.100.8.400 1.500.6 2 .7.800.3 1.600.2 2.200.1.700-.1 1.900-.8 2.200-1.500.3-.8.300-1.400.2-1.500-.1-.2-.3-.3-.6-.4z"/></svg><span>Support</span></a><?php endif; ?>
 <script src="<?= asset_v('js/app.js') ?>" defer></script>
 </body>
 </html>
