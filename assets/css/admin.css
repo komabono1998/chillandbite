@@ -235,16 +235,28 @@ body.admin.admin-login{background:#141210}
 }
 .lg-caps[hidden]{display:none}
 .lg-input input,.lg-input input:focus{border:0!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;outline:0!important;padding:15px 0!important;width:auto}
-
 /* ---------- Tickets tab actions ---------- */
-.btn-wa{background:#1f9d57;border-color:#1f9d57;color:#fff}.btn-wa:hover{background:#25b567;color:#fff}
-.tk-actions{min-width:260px}
-.tk-more{flex-basis:100%}
-.tk-more>summary{display:inline-block;cursor:pointer;list-style:none}.tk-more>summary::-webkit-details-marker{display:none}
-.tk-more[open]>summary{background:var(--orange);color:#fff;border-color:var(--orange)}
-.tk-danger[open]>summary{background:#c0392b;border-color:#c0392b}
-.tk-form{display:grid;gap:10px;margin-top:10px;padding:14px;border:1px solid #e3d9c8;border-radius:12px;background:#fffaf1;max-width:420px}
-.tk-form label{display:grid;gap:4px;font-size:.8rem;font-weight:600}.tk-form label.chk{display:flex;gap:8px;align-items:center;font-weight:500}
+.tk-cell{vertical-align:top}
+.tk-actions{display:flex;flex-direction:column;gap:8px;min-width:290px}
+.tk-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tk-row form.inline{margin:0}
+.tk-row .btn{min-width:84px;justify-content:center;text-align:center}
+.tk-manage{padding-top:8px;border-top:1px dashed #e3d9c8}
+.tk-actions .btn-wa,.tk-actions .btn-wa:hover{background:#1f9d57;border-color:#1f9d57;color:#fff}
+.tk-actions .btn-wa:hover{background:#25b567}
+.btn-danger-soft{color:#b03a2e;border-color:#efc9c4;background:#fff5f4}
+.btn-danger-soft:hover,.btn-danger-soft[aria-expanded="true"]{background:#c0392b;border-color:#c0392b;color:#fff}
+.tk-manage .btn[data-tk-open][aria-expanded="true"]:not(.btn-danger-soft){background:var(--orange);border-color:var(--orange);color:#fff}
+.tk-form{display:grid;gap:10px;padding:14px;border:1px solid #e3d9c8;border-radius:12px;background:#fffaf1;width:360px;max-width:100%}
+.tk-form[hidden]{display:none}
+.tk-form-danger{border-color:#efc9c4;background:#fff7f6}
+.tk-form-title{font-size:.95rem}
+.tk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tk-grid label:nth-child(1),.tk-grid label:nth-child(3),.tk-grid label:nth-child(6){grid-column:1/-1}
+.tk-form label{display:grid;gap:4px;font-size:.78rem;font-weight:600}
+.tk-form label.chk{display:flex;gap:8px;align-items:center;font-weight:500;font-size:.82rem}
 .tk-form input:not([type=checkbox]),.tk-form select{width:100%}
 .tk-form p{margin:0}
+.tk-form-actions{display:flex;gap:8px}
 .tk-withdraw-btn{background:#c0392b;border-color:#c0392b}.tk-withdraw-btn:hover{background:#a93226}
+.tbl:has(.tk-actions) td{vertical-align:top}

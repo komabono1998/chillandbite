@@ -32,6 +32,7 @@ $manage = can('reservations_manage');
   <?php foreach ($list as $r):
       $isConfirmed = $r['status'] === 'confirmed';
       $isWithdrawn = $r['status'] === 'cancelled' && !empty($r['withdrawn_at']);
+      $canManage = $isConfirmed || $r['status'] === 'pending';
       $full = ($isConfirmed || $isWithdrawn) ? reservation_with_event((int)$r['id']) : null;
       $tUrl = $isConfirmed ? ticket_url((int)$r['id']) : null;
       $hasPhone = $r['phone'] !== 'N/A' && $r['phone'] !== '';
@@ -44,46 +45,51 @@ $manage = can('reservations_manage');
       <td><?php if ($isConfirmed): ?><?= $r['checked_in_at'] ? '<span class="badge badge-warn">Checked in ' . h(fmt_time($r['checked_in_at'])) . '</span>' : '<span class="badge badge-ok">Valid</span>' ?>
           <?php elseif ($isWithdrawn): ?><span class="badge badge-err">Withdrawn</span><br><span class="small muted"><?= h(fmt_date($r['withdrawn_at'], 'j M, H:i')) ?><?= $r['withdrawn_reason'] ? ' · ' . h($r['withdrawn_reason']) : '' ?></span>
           <?php elseif ($r['status'] === 'pending'): ?><span class="badge badge-warn">Not issued yet</span><?php else: ?><span class="badge badge-err">Void</span><?php endif; ?></td>
-      <td><div class="actions tk-actions">
+      <td class="tk-cell"><div class="tk-actions" data-tk>
         <?php if ($isConfirmed): ?>
-          <a class="btn btn-ghost btn-sm" href="<?= h($tUrl) ?>" target="_blank" rel="noopener">Open</a>
-          <a class="btn btn-ghost btn-sm" href="<?= h($tUrl . '?download=1') ?>" target="_blank" rel="noopener">Download</a>
-          <?php if ($wa): ?><a class="btn btn-wa btn-sm" href="<?= h($wa) ?>" target="_blank" rel="noopener" title="Open WhatsApp with the ticket link ready to send">💬 WhatsApp</a><?php endif; ?>
-          <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act('email') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm" title="Email the ticket to <?= h($r['email']) ?>">✉️ Email</button></form><?php endif; ?>
+          <div class="tk-row tk-share">
+            <a class="btn btn-ghost btn-sm" href="<?= h($tUrl) ?>" target="_blank" rel="noopener">Open</a>
+            <a class="btn btn-ghost btn-sm" href="<?= h($tUrl . '?download=1') ?>" target="_blank" rel="noopener">Download</a>
+            <?php if ($wa): ?><a class="btn btn-wa btn-sm" href="<?= h($wa) ?>" target="_blank" rel="noopener" title="Open WhatsApp with the ticket link ready to send">💬 WhatsApp</a><?php endif; ?>
+            <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act('email') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm" title="Email the ticket to <?= h($r['email']) ?>">✉️ Email</button></form><?php endif; ?>
+          </div>
         <?php elseif ($isWithdrawn): ?>
-          <?php if ($wa): ?><a class="btn btn-wa btn-sm" href="<?= h($wa) ?>" target="_blank" rel="noopener" title="Tell the guest on WhatsApp">💬 Notify</a><?php endif; ?>
-          <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act('email') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm">✉️ Email notice</button></form><?php endif; ?>
-          <form class="inline" method="post" action="<?= $act('reinstate') ?>" onsubmit="return confirm('Reinstate this ticket? The guest link and QR code will work again.')"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm">↩ Reinstate</button></form>
+          <div class="tk-row tk-share">
+            <?php if ($wa): ?><a class="btn btn-wa btn-sm" href="<?= h($wa) ?>" target="_blank" rel="noopener" title="Tell the guest on WhatsApp">💬 Notify</a><?php endif; ?>
+            <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act('email') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm">✉️ Email notice</button></form><?php endif; ?>
+            <form class="inline" method="post" action="<?= $act('reinstate') ?>" onsubmit="return confirm('Reinstate this ticket? The guest link and QR code will work again.')"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm">↩ Reinstate</button></form>
+          </div>
         <?php elseif ($r['status'] === 'pending' && $manage): ?>
-          <form class="inline" method="post" action="<?= url('admin/reservations/' . $r['id'] . '/action') ?>"><?= csrf_field() ?><input type="hidden" name="action" value="approve"><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm">Approve &amp; issue ticket</button></form>
+          <div class="tk-row tk-share"><form class="inline" method="post" action="<?= url('admin/reservations/' . $r['id'] . '/action') ?>"><?= csrf_field() ?><input type="hidden" name="action" value="approve"><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm">Approve &amp; issue ticket</button></form></div>
         <?php endif; ?>
-        <?php if ($isConfirmed || $r['status'] === 'pending'): ?>
-          <details class="tk-more"><summary class="btn btn-ghost btn-sm">✏️ Update</summary>
-            <form class="tk-form" method="post" action="<?= $act('update') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>">
+        <?php if ($canManage): ?>
+          <div class="tk-row tk-manage">
+            <button type="button" class="btn btn-ghost btn-sm" data-tk-open="update" aria-expanded="false">✏️ Update</button>
+            <?php if ($isConfirmed): ?><form class="inline" method="post" action="<?= $act('regenerate') ?>" onsubmit="return confirm('Create a new ticket for this guest? The old QR code and link will stop working.')"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm" title="Replaces the secret link and QR code">🔗 New link</button></form><?php endif; ?>
+            <button type="button" class="btn btn-ghost btn-sm btn-danger-soft" data-tk-open="withdraw" aria-expanded="false">⛔ Withdraw</button>
+          </div>
+          <form class="tk-form" data-tk-panel="update" hidden method="post" action="<?= $act('update') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>">
+            <b class="tk-form-title">Update ticket</b>
+            <div class="tk-grid">
               <label>Guest name <input name="full_name" value="<?= h($r['full_name']) ?>" required maxlength="140"></label>
               <label>Phone <input name="phone" type="tel" value="<?= $hasPhone ? h($r['phone']) : '' ?>"></label>
               <label>Email <input name="email" type="email" value="<?= h((string)$r['email']) ?>"></label>
               <label>Guests <input name="guests" type="number" min="1" max="100" value="<?= (int)$r['guests'] ?>" required></label>
               <label>Ticket type <select name="type"><?php foreach (RES_TYPES as $k => $l): ?><option value="<?= $k ?>"<?= $r['type'] === $k ? ' selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>
               <label>Table package <input name="package" value="<?= h((string)$r['package']) ?>" maxlength="80"></label>
-              <label class="chk"><input type="checkbox" name="notify" value="1"> Email the guest the updated ticket</label>
-              <button class="btn btn-primary btn-sm">Save changes</button>
-              <p class="small muted">The ticket link and QR code stay the same and show the new details straight away.</p>
-            </form></details>
-        <?php endif; ?>
-        <?php if ($isConfirmed): ?>
-          <form class="inline" method="post" action="<?= $act('regenerate') ?>" onsubmit="return confirm('Create a new ticket for this guest? The old QR code and link will stop working.')"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm" title="Replaces the secret link and QR code">New link</button></form>
-        <?php endif; ?>
-        <?php if ($isConfirmed || $r['status'] === 'pending'): ?>
-          <details class="tk-more tk-danger"><summary class="btn btn-ghost btn-sm">⛔ Withdraw</summary>
-            <form class="tk-form" method="post" action="<?= $act('withdraw') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>">
-              <p class="small">The ticket link and QR code will show <b>Withdrawn</b> straight away, and the door will refuse it. You can reinstate it later.</p>
-              <label>Reason (optional) <input name="reason" maxlength="200" placeholder="e.g. Payment bounced, duplicate booking"></label>
-              <?php if ($r['email']): ?><label class="chk"><input type="checkbox" name="notify" value="1" checked> Email the guest that it was withdrawn</label><?php endif; ?>
-              <button class="btn btn-primary btn-sm tk-withdraw-btn">Withdraw ticket</button>
-            </form></details>
-        <?php endif; ?>
-        <?php if (!$isConfirmed && !$isWithdrawn && $r['status'] !== 'pending'): ?><span class="small muted">—</span><?php endif; ?>
+            </div>
+            <label class="chk"><input type="checkbox" name="notify" value="1"> Email the guest the updated ticket</label>
+            <p class="small muted">The ticket link and QR code stay the same and show the new details straight away.</p>
+            <div class="tk-form-actions"><button class="btn btn-primary btn-sm">Save changes</button><button type="button" class="btn btn-ghost btn-sm" data-tk-close>Cancel</button></div>
+          </form>
+          <form class="tk-form tk-form-danger" data-tk-panel="withdraw" hidden method="post" action="<?= $act('withdraw') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>">
+            <b class="tk-form-title">Withdraw ticket</b>
+            <p class="small">The ticket link and QR code will show <b>Withdrawn</b> straight away and the door will refuse it. You can reinstate it later.</p>
+            <label>Reason (optional) <input name="reason" maxlength="200" placeholder="e.g. Payment bounced, duplicate booking"></label>
+            <?php if ($r['email']): ?><label class="chk"><input type="checkbox" name="notify" value="1" checked> Email the guest that it was withdrawn</label><?php endif; ?>
+            <div class="tk-form-actions"><button class="btn btn-primary btn-sm tk-withdraw-btn">Withdraw ticket</button><button type="button" class="btn btn-ghost btn-sm" data-tk-close>Cancel</button></div>
+          </form>
+        <?php elseif (!$isWithdrawn): ?><span class="small muted">—</span><?php endif; ?>
       </div></td>
     </tr>
   <?php endforeach; ?>
@@ -106,3 +112,16 @@ $manage = can('reservations_manage');
     <button class="btn btn-primary">Create ticket</button>
   </form>
 </div>
+
+<script>
+// Update / Withdraw panels: one opens at a time under the buttons of its own row
+document.addEventListener('click', function (e) {
+  var open = e.target.closest('[data-tk-open]'), close = e.target.closest('[data-tk-close]');
+  var box = (open || close) && (open || close).closest('[data-tk]');
+  if (!box) return;
+  var panels = box.querySelectorAll('[data-tk-panel]'), btns = box.querySelectorAll('[data-tk-open]');
+  var want = open ? open.dataset.tkOpen : null;
+  panels.forEach(function (p) { p.hidden = !(want && p.dataset.tkPanel === want && p.hidden); });
+  btns.forEach(function (b) { var on = want && b.dataset.tkOpen === want && !box.querySelector('[data-tk-panel="' + want + '"]').hidden; b.setAttribute('aria-expanded', on ? 'true' : 'false'); });
+});
+</script>
