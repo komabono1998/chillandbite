@@ -87,6 +87,9 @@
       if (min === max) guests.value = min;
       guests.readOnly = (min === max);
       var pkgBox = document.getElementById('pkg-box');
+      var gField = guests.closest('.field'), isPkg = !!pkgBox && sel.value === 'table';
+      if (gField) gField.style.display = isPkg ? 'none' : '';      // table packages are priced per table: no guest number
+      if (isPkg) guests.value = min;
       if (pkgBox) {
         var isTable = sel.value === 'table';
         pkgBox.classList.toggle('dim', !isTable);

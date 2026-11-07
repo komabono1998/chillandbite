@@ -25,7 +25,7 @@
       <?php if ($data['email']): ?><dt>Email</dt><dd><?= h($data['email']) ?></dd><?php endif; ?>
       <?php if ($data['company']): ?><dt>Company</dt><dd><?= h($data['company']) ?></dd><?php endif; ?>
       <?php if (!empty($data['package'])): ?><dt>Table package</dt><dd><?= h($data['package']) ?></dd><?php endif; ?>
-      <dt>Guests</dt><dd><?= (int)$data['guests'] ?></dd>
+      <?php if (empty($data["package"])): ?><dt>Guests</dt><dd><?= (int)$data["guests"] ?></dd><?php endif; ?>
       <?php if ($data['seating']): ?><dt>Seating</dt><dd><?= h($data['seating']) ?></dd><?php endif; ?>
       <?php if ($data['requests']): ?><dt>Requests</dt><dd><?= h($data['requests']) ?></dd><?php endif; ?>
       <dt>Amount</dt><dd><strong><?= $data['amount'] > 0 ? money($data['amount']) : 'Free' ?></strong></dd>
@@ -66,7 +66,7 @@
       <?php field('full_name', 'Full name', ['required' => true, 'value' => $dv('full_name')]); ?>
       <?php field('phone', 'Telephone number', ['required' => true, 'type' => 'tel', 'value' => $dv('phone'), 'attrs' => 'placeholder="+256 7XX XXX XXX"']); ?>
       <?php field('email', 'Email (optional)', ['type' => 'email', 'value' => $dv('email'), 'help' => 'We email your confirmation and ticket here once your booking is approved.']); ?>
-      <?php field('guests', 'Number of guests', ['type' => 'number', 'required' => true, 'value' => $dv('guests') ?: 1, 'attrs' => 'min="1" max="200"']); ?>
+      <?php field('guests', 'Number of guests', ['type' => 'number', 'required' => true, 'value' => $dv('guests') ?: 1, 'attrs' => 'min="1" max="200"', 'class' => 'guest-field']); ?>
       <?php field('company', 'Company name (corporate bookings)', ['value' => $dv('company'), 'class' => 'corp']); ?>
       <?php field('seating', 'Preferred seating / table arrangement', ['value' => $dv('seating')]); ?>
     </div>

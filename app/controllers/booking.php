@@ -41,6 +41,8 @@ function validate_booking(array $e, array $options, array $in): array
     $opt = null;
     foreach ($options as $o) if ($o['type'] === $d['type']) $opt = $o;
     if (!$opt) $err[] = 'Please choose an available reservation type.';
+    // A table package is priced per table, so the guest count is not asked: use the table's minimum (staff can change it on the ticket)
+    if ($opt && $d['type'] === 'table' && event_packages((int)$e['id'])) $d['guests'] = max(1, (int)$opt['min_guests']);
     if (mb_strlen($d['full_name']) < 2 || mb_strlen($d['full_name']) > 140) $err[] = 'Please enter your full name.';
     if (!valid_phone($d['phone'])) $err[] = 'Please enter a valid telephone number.';
     if ($d['email'] !== '' && !filter_var($d['email'], FILTER_VALIDATE_EMAIL)) $err[] = 'The email address looks invalid.';
