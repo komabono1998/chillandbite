@@ -26,7 +26,7 @@ function page_reserve(array $a): void
         'title' => 'Reserve | ' . $e['title'], 'e' => $e, 'options' => event_options((int)$e['id']),
         'open' => event_open_for_booking($e), 'remaining' => event_remaining($e), 'step' => 'form',
         // ?type=table&package=Silver from the event page pre-selects the choice
-        'data' => array_filter(['type' => is_string($_GET['type'] ?? null) ? $_GET['type'] : null, 'package' => is_string($_GET['package'] ?? null) ? $_GET['package'] : null]),
+        'data' => array_filter(['type' => is_string($_GET['type'] ?? null) ? $_GET['type'] : null, 'package' => is_string($_GET['package'] ?? null) ? $_GET['package'] : null, 'mode' => in_array($_GET['mode'] ?? '', ['ticket', 'reserve'], true) ? $_GET['mode'] : null]),
         'packages' => event_packages((int)$e['id']),
     ]);
 }
@@ -68,28 +68,18 @@ function validate_booking(array $e, array $options, array $in): array
     return [$d, $err, $opt];
 }
 
-function post_reserve(array $a): void
+/** A picked card on the reserve page ("pkg:Silver" or "type:couple") becomes the type and package fields. */
+function apply_choice(array $in): array
 {
-    $e = find_event($a['slug']) ?? not_found();
-    $back = 'events/' . $e['slug'] . '/reserve';
-    if (!event_open_for_booking($e)) { flash('Sorry, reservations are not open for this event.', 'err'); redirect($back); }
-    if (!empty($_POST['website'])) redirect($back);          // honeypot
-    if (rate_limited('reserve', 10, 3600)) { flash('Too many reservation attempts. Please try again later.', 'err'); redirect($back); }
+    $c = (string)($in['choice'] ?? '');
+    if (str_starts_with($c, 'pkg:')) { $in['type'] = 'table'; $in['package'] = substr($c, 4); }
+    elseif (str_starts_with($c, 'type:')) { $in['type'] = substr($c, 5); $in['package'] = ''; }
+    return $in;
+}
 
-    $options = event_options((int)$e['id']);
-    [$d, $err, $opt] = validate_booking($e, $options, $_POST);
-    $rem = event_remaining($e);
-    if (!$err && $rem !== null && $d['guests'] > $rem) $err[] = "Only $rem place(s) remain for this event.";
-
-    $ctx = ['e' => $e, 'options' => $options, 'open' => true, 'remaining' => $rem, 'data' => $d, 'packages' => event_packages((int)$e['id'])];
-    if ($err) { render('site/reserve', $ctx + ['title' => 'Reserve | ' . $e['title'], 'step' => 'form', 'errors' => $err]); return; }
-
-    if (($_POST['step'] ?? '') !== 'confirm') {
-        render('site/reserve', $ctx + ['title' => 'Review your booking', 'step' => 'review', 'opt' => $opt]);
-        return;
-    }
-
-    // Final confirmation: capacity is re-checked inside a transaction, on the server.
+/** Save a reservation (capacity is re-checked inside a transaction). Returns [reference, id, status]; throws RuntimeException with a guest-friendly message. */
+function reservation_create(array $e, array $d): array
+{
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -105,25 +95,89 @@ function post_reserve(array $a): void
              $d['guests'], $d['seating'] ?: null, $d['package'] ?: null, $d['requests'] ?: null, $d['amount'], $status]);
         $rid = (int)$pdo->lastInsertId();
         $pdo->commit();
-    } catch (RuntimeException $ex) {
-        $pdo->rollBack();
-        flash($ex->getMessage(), 'err');
-        redirect($back);
     } catch (Throwable $ex) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) $pdo->rollBack();
         throw $ex;
     }
+    return [$ref, $rid, $status];
+}
+/** The first email a guest gets: the ticket (free + instant) or the booking number with how to pay. */
+function reservation_notify(array $e, array $d, string $ref, int $rid, string $status, bool $payingNow = false): void
+{
+    if ($status === 'confirmed') { send_ticket($rid); return; }     // free + instant bookings get their ticket straight away
+    if ($payingNow || !$d['email']) return;                          // a paying guest gets the ticket as soon as the payment lands
+    send_mail($d['email'], "Chill & Bite booking $ref received", "Hello {$d['full_name']},\n\nYour table is reserved. Your booking number is $ref (keep it safe).\n\n" .
+        "Event: {$e['title']}\nWhen: " . fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\n" . ($d['package'] ? "Table package: {$d['package']}\n" : '') .
+        ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') .
+        "\nPay any time with MTN or Airtel and your ticket is issued straight away, or the team confirms it once your payment is recorded:\n" . abs_url('booking/' . $ref));
+}
 
-    if ($status === 'confirmed') {
-        send_ticket((int)$rid);   // free + instant bookings get their ticket straight away
-    } elseif ($d['email']) {
-        send_mail($d['email'], "Chill & Bite booking $ref received", "Hello {$d['full_name']},\n\nYour booking has been received and is awaiting approval from the event team. " .
-            "You will get your ticket as soon as it is approved.\n\nYour booking code: $ref (keep it safe)\nEvent: {$e['title']}\nWhen: " .
-            fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\nGuests: {$d['guests']}\n" . ($d['package'] ? "Table package: {$d['package']}\n" : '') .
-            ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') . "\nTrack your booking and get your ticket once approved: " . abs_url('booking/' . $ref));
+/** "Reserve a table": book now, get a booking number, pay later. */
+function post_reserve(array $a): void
+{
+    $e = find_event($a['slug']) ?? not_found();
+    $back = 'events/' . $e['slug'] . '/reserve';
+    if (!event_open_for_booking($e)) { flash('Sorry, reservations are not open for this event.', 'err'); redirect($back); }
+    if (!empty($_POST['website'])) redirect($back);          // honeypot
+    if (rate_limited('reserve', 10, 3600)) { flash('Too many reservation attempts. Please try again later.', 'err'); redirect($back); }
+
+    $options = event_options((int)$e['id']);
+    [$d, $err, $opt] = validate_booking($e, $options, apply_choice($_POST));
+    $rem = event_remaining($e);
+    if (!$err && $rem !== null && $d['guests'] > $rem) $err[] = "Only $rem place(s) remain for this event.";
+    if ($err) {
+        render('site/reserve', ['e' => $e, 'options' => $options, 'open' => true, 'remaining' => $rem, 'data' => $d + ['choice' => (string)($_POST['choice'] ?? ''), 'mode' => 'reserve'],
+            'packages' => event_packages((int)$e['id']), 'title' => 'Reserve | ' . $e['title'], 'errors' => $err]);
+        return;
     }
-    flash($status === 'confirmed' ? 'Your reservation is confirmed!' : 'Booking received. We will confirm it shortly.');
+    try { [$ref, $rid, $status] = reservation_create($e, $d); }
+    catch (RuntimeException $ex) { flash($ex->getMessage(), 'err'); redirect($back); }
+    reservation_notify($e, $d, $ref, $rid, $status);
+    flash($status === 'confirmed' ? 'Your reservation is confirmed!' : 'Table reserved. Your booking number is ' . $ref . '.');
     redirect('booking/' . $ref . '?new=1');
+}
+
+/** "Get my ticket": book and start the mobile money payment in one go. Answers JSON; the page then waits for the payment. */
+function post_ticket(array $a): void
+{
+    $e = find_event($a['slug']) ?? not_found();
+    $bad = fn(array $errors, int $code = 422) => pay_json(['ok' => false, 'errors' => $errors, 'error' => $errors[0]], $code);
+    if (!event_open_for_booking($e)) $bad(['Sorry, reservations are not open for this event.']);
+    if (!empty($_POST['website'])) pay_json(['ok' => false, 'errors' => ['Thank you!'], 'error' => 'Thank you!']);
+    if (rate_limited('reserve', 10, 3600)) $bad(['Too many attempts. Please try again later.'], 429);
+
+    $options = event_options((int)$e['id']);
+    [$d, $err, $opt] = validate_booking($e, $options, apply_choice($_POST));
+    $rem = event_remaining($e);
+    if (!$err && $rem !== null && $d['guests'] > $rem) $err[] = "Only $rem place(s) remain for this event.";
+    if ($err) $bad($err);
+
+    $free = $d['amount'] <= 0;
+    $phone = daraza_phone($d['phone']);
+    if (!$free) {
+        if (!daraza_enabled()) $bad(['Online payment is not switched on yet. Please reserve a table and pay later.'], 503);
+        if (!$phone) $bad(['Enter the mobile money number you will pay from, for example 0772 123 456.']);
+        if ($d['amount'] > DARAZA_MAX) $bad(['This is above the UGX ' . number_format(DARAZA_MAX) . ' online limit. Please reserve a table and pay later.']);
+        if ($d['amount'] < DARAZA_MIN) $bad(['The smallest online payment is ' . money(DARAZA_MIN) . '.']);
+    }
+    try { [$ref, $rid, $status] = reservation_create($e, $d); }
+    catch (RuntimeException $ex) { $bad([$ex->getMessage()], 409); }
+
+    $booking = url('booking/' . $ref);
+    if ($free) {
+        reservation_notify($e, $d, $ref, $rid, $status);
+        $out = ['ok' => true, 'free' => true, 'ref' => $ref, 'booking' => $booking, 'status' => $status];
+        if ($status === 'confirmed') { $t = ticket_url($rid); $out['ticket'] = $t; $out['download'] = $t . '?download=1'; }
+        pay_json($out);
+    }
+    $r = row('SELECT * FROM reservations WHERE id = ?', [$rid]);
+    $o = pay_begin($r, $d['phone'], (string)(int)$d['amount'], '');
+    if (isset($o['error'])) {            // the payment could not start: do not leave a half-made booking behind
+        q('DELETE FROM reservations WHERE id = ?', [$rid]);
+        $bad([$o['error']], $o['code']);
+    }
+    reservation_notify($e, $d, $ref, $rid, $status, true);
+    daraza_respond_then(['ok' => true, 'ref' => $ref, 'token' => $o['at']['token'], 'amount' => $o['amount'], 'booking' => $booking, 'email' => (bool)$d['email']], fn() => daraza_run((int)$o['at']['id']));
 }
 
 function page_booking(array $a): void

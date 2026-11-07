@@ -30,6 +30,7 @@ $routes = [
     ['GET',  'events/{slug}',        'page_event'],
     ['GET',  'events/{slug}/reserve', 'page_reserve'],
     ['POST', 'events/{slug}/reserve', 'post_reserve'],
+    ['POST', 'events/{slug}/ticket', 'post_ticket'],
     ['GET',  'booking/{ref}',        'page_booking'],
     ['GET',  'booking/{ref}/status', 'page_booking_status'],
     ['POST', 'booking/{ref}/pay',    'post_booking_pay'],

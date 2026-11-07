@@ -10,33 +10,45 @@ function pay_json(array $d, int $code = 200): never
     echo json_encode($d);
     exit;
 }
-function post_booking_pay(array $a): void
+/**
+ * Check a payment request and start it. Returns ['at' => attempt row, 'amount' => int, 'net' => 'mtn'|'airtel']
+ * or ['error' => message, 'code' => http status]. The slow Daraza call is started by the caller after it has answered the browser.
+ */
+function pay_begin(array $r, string $phoneIn, string $amountIn, string $mail): array
 {
-    if (!daraza_enabled()) pay_json(['ok' => false, 'error' => 'Online payment is not switched on yet. Please pay through WhatsApp or call us.'], 503);
-    $r = row('SELECT * FROM reservations WHERE reference = ?', [strtoupper($a['ref'])]);
-    if (!$r) pay_json(['ok' => false, 'error' => 'Booking not found.'], 404);
-    if (!in_array($r['status'], ['pending', 'confirmed'], true)) pay_json(['ok' => false, 'error' => 'This booking can no longer be paid.'], 422);
+    $err = fn(string $m, int $c = 422) => ['error' => $m, 'code' => $c];
+    if (!daraza_enabled()) return $err('Online payment is not switched on yet. Please pay through WhatsApp or call us.', 503);
+    if (!in_array($r['status'], ['pending', 'confirmed'], true)) return $err('This booking can no longer be paid.');
     $balance = (int)max(0, (float)$r['amount_due'] - res_paid((int)$r['id']));
-    if ($balance < 1) pay_json(['ok' => false, 'error' => 'This booking is already paid in full.'], 422);
-    $phone = daraza_phone((string)($_POST['phone'] ?? ''));
-    if (!$phone) pay_json(['ok' => false, 'error' => 'Enter your mobile money number, for example 0772 123 456.'], 422);
+    if ($balance < 1) return $err('This booking is already paid in full.');
+    $phone = daraza_phone($phoneIn);
+    if (!$phone) return $err('Enter your mobile money number, for example 0772 123 456.');
     $net = daraza_network($phone);
-    $mail = trim((string)($_POST['email'] ?? ''));
-    if ($mail !== '' && !filter_var($mail, FILTER_VALIDATE_EMAIL)) pay_json(['ok' => false, 'error' => 'That email address looks invalid.'], 422);
-    $amount = (int)preg_replace('/\D+/', '', (string)($_POST['amount'] ?? '')) ?: min($balance, DARAZA_MAX);
-    if ($amount > $balance) pay_json(['ok' => false, 'error' => 'That is more than the balance of ' . money($balance) . '.'], 422);
-    if ($amount > DARAZA_MAX) pay_json(['ok' => false, 'error' => 'The largest single payment is ' . money(DARAZA_MAX) . '. Pay part now and the rest after.'], 422);
-    if ($amount < DARAZA_MIN && $balance >= DARAZA_MIN) pay_json(['ok' => false, 'error' => 'The smallest payment is ' . money(DARAZA_MIN) . '.'], 422);
-    if (rate_limited('paystart', 6, 900)) pay_json(['ok' => false, 'error' => 'Too many attempts. Please wait a few minutes and try again.'], 429);
+    $mail = trim($mail);
+    if ($mail !== '' && !filter_var($mail, FILTER_VALIDATE_EMAIL)) return $err('That email address looks invalid.');
+    $amount = (int)preg_replace('/\D+/', '', $amountIn) ?: min($balance, DARAZA_MAX);
+    if ($amount > $balance) return $err('That is more than the balance of ' . money($balance) . '.');
+    if ($amount > DARAZA_MAX) return $err('The largest single payment is ' . money(DARAZA_MAX) . '. Pay part now and the rest after.');
+    if ($amount < DARAZA_MIN && $balance >= DARAZA_MIN) return $err('The smallest payment is ' . money(DARAZA_MIN) . '.');
+    if (rate_limited('paystart', 6, 900)) return $err('Too many attempts. Please wait a few minutes and try again.', 429);
     try {
-        if (daraza_has_pending((int)$r['id'], 'collect')) pay_json(['ok' => false, 'error' => 'A payment request is already waiting for approval on your phone. Please approve it or wait a few minutes.'], 409);
-        if ((int)val("SELECT COUNT(*) FROM pay_attempts WHERE phone = ? AND created_at > (NOW() - INTERVAL 1 HOUR)", [$phone]) >= 4) pay_json(['ok' => false, 'error' => 'Too many payment requests to this number. Please try again later.'], 429);
+        if (daraza_has_pending((int)$r['id'], 'collect')) return $err('A payment request is already waiting for approval on your phone. Please approve it or wait a few minutes.', 409);
+        if ((int)val("SELECT COUNT(*) FROM pay_attempts WHERE phone = ? AND created_at > (NOW() - INTERVAL 1 HOUR)", [$phone]) >= 4) return $err('Too many payment requests to this number. Please try again later.', 429);
     } catch (PDOException $e) { if ($e->getCode() === '42S02') daraza_ensure_table(); else throw $e; }
     if ($mail !== '' && empty($r['email'])) q('UPDATE reservations SET email = ? WHERE id = ?', [$mail, $r['id']]);
     $at = daraza_start((int)$r['id'], 'collect', $amount, $phone);
     audit('pay.start', $r['reference'] . ' ' . money($amount));
+    return ['at' => $at, 'amount' => $amount, 'net' => $net];
+}
+/** Pay (all or part of) an existing booking. */
+function post_booking_pay(array $a): void
+{
+    $r = row('SELECT * FROM reservations WHERE reference = ?', [strtoupper($a['ref'])]);
+    if (!$r) pay_json(['ok' => false, 'error' => 'Booking not found.'], 404);
+    $o = pay_begin($r, (string)($_POST['phone'] ?? ''), (string)($_POST['amount'] ?? ''), (string)($_POST['email'] ?? ''));
+    if (isset($o['error'])) pay_json(['ok' => false, 'error' => $o['error']], $o['code']);
     // answer the browser now; the customer approves on their phone and the result is recorded when Daraza replies
-    daraza_respond_then(['ok' => true, 'token' => $at['token'], 'amount' => $amount, 'network' => $net], fn() => daraza_run((int)$at['id']));
+    daraza_respond_then(['ok' => true, 'token' => $o['at']['token'], 'amount' => $o['amount'], 'network' => $o['net']], fn() => daraza_run((int)$o['at']['id']));
 }
 /** Polled by the booking page while the guest approves the prompt on their phone. */
 function page_pay_status(array $a): void
