@@ -25,7 +25,7 @@
       <?php if ($data['email']): ?><dt>Email</dt><dd><?= h($data['email']) ?></dd><?php endif; ?>
       <?php if ($data['company']): ?><dt>Company</dt><dd><?= h($data['company']) ?></dd><?php endif; ?>
       <?php if (!empty($data['package'])): ?><dt>Table package</dt><dd><?= h($data['package']) ?></dd><?php endif; ?>
-      <?php if (empty($data["package"])): ?><dt>Guests</dt><dd><?= (int)$data["guests"] ?></dd><?php endif; ?>
+      <?php if (empty($data["package"]) && ($opt["price_per_guest"] ?? 0) > 0): ?><dt>Guests</dt><dd><?= (int)$data["guests"] ?></dd><?php endif; ?>
       <?php if ($data['seating']): ?><dt>Seating</dt><dd><?= h($data['seating']) ?></dd><?php endif; ?>
       <?php if ($data['requests']): ?><dt>Requests</dt><dd><?= h($data['requests']) ?></dd><?php endif; ?>
       <dt>Amount</dt><dd><strong><?= $data['amount'] > 0 ? money($data['amount']) : 'Free' ?></strong></dd>

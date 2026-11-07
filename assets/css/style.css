@@ -1029,3 +1029,5 @@ body:has(.dj-player) .wa-fab{bottom:84px}
 @media print{.wa-fab{display:none}}
 .pay-btn-spin{display:none;width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,.45);border-top-color:#fff;margin-right:10px;vertical-align:-3px;animation:paySpin .8s linear infinite}
 .is-busy .pay-btn-spin{display:inline-block}.is-busy{opacity:.85;cursor:progress}
+
+.guest-field{display:none}
