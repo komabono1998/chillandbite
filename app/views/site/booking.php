@@ -115,7 +115,7 @@ $steps = [
             <div class="pay-title"><span aria-hidden="true">📲</span> Pay now with mobile money</div>
             <label>Phone number to pay from <input type="tel" name="phone" id="payPhone" value="<?= h($r['phone']) ?>" placeholder="0772 123 456" inputmode="tel" required></label>
             <label>Amount (UGX) <input type="text" name="amount" id="payAmount" value="<?= (int)$balance ?>" inputmode="numeric" required></label>
-            <p class="small muted">MTN or Airtel. You can pay the full balance or part of it. You will get a prompt on your phone: enter your PIN to approve.</p>
+            <p class="small muted">MTN Mobile Money or Airtel Money. Pay the full balance or part of it (UGX 500 to 5,000,000 at a time). You will get a prompt on your phone: enter your PIN to approve.</p>
             <button class="btn btn-primary btn-lg" id="payGo" type="submit">Pay <?= h(money($balance)) ?></button>
             <p class="pay-err small" id="payErr" role="alert" hidden></p>
           </form>

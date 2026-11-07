@@ -6,7 +6,8 @@ declare(strict_types=1);
  *   request_to_pay  takes money from a guest's phone (they approve a prompt; the answer can take up to ~3 minutes)
  *   remit           sends money to a phone (refunds)
  * The slow call runs after the page has already answered the browser, and the page polls pay_attempts for the result.
- * Settings in .env: DARAZA_API_KEY, optional DARAZA_METHOD (default 1), DARAZA_METHOD_MTN, DARAZA_METHOD_AIRTEL, DARAZA_BASE, DARAZA_ENABLED=0.
+ * Settings in .env: DARAZA_API_KEY, DARAZA_SANDBOX=1 (Daraza test endpoints, no real money), DARAZA_BASE, DARAZA_ENABLED=0.
+ * Method is chosen from the phone number: 1 = MTN Mobile Money, 2 = Airtel Money. Amount: UGX 500 to 5,000,000.
  * DARAZA_MOCK=1 simulates the gateway on localhost only, for testing without real money.
  */
 
@@ -67,12 +68,8 @@ function daraza_network(string $phone): ?string
     if (in_array($p, ['70', '75', '74', '20'], true)) return 'airtel';
     return null;
 }
-function daraza_method(string $phone): int
-{
-    $net = daraza_network($phone);
-    $m = $net ? env('DARAZA_METHOD_' . strtoupper($net), '') : '';
-    return (int)($m !== '' ? $m : env('DARAZA_METHOD', '1'));
-}
+function daraza_method(string $phone): int { return daraza_network($phone) === 'airtel' ? 2 : 1; }
+const DARAZA_MIN = 500, DARAZA_MAX = 5000000;
 
 /**
  * One call to Daraza. Returns [outcome, message, request_id] where outcome is
@@ -91,12 +88,12 @@ function daraza_call(string $endpoint, int $method, int $amount, string $phone, 
         if ($last === '2') return ['unconfirmed', 'No answer from the payment service.', null];
         return ['success', 'Payment processed successfully', $rid];
     }
-    $base = rtrim((string)env('DARAZA_BASE', 'https://daraza.net/api'), '/');
+    $base = rtrim((string)env('DARAZA_BASE', 'https://daraza.net/api'), '/') . (env('DARAZA_SANDBOX', '0') === '1' ? '/sandbox' : '');
     $c = curl_init($base . '/' . $endpoint . '/');
     curl_setopt_array($c, [
         CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 20, CURLOPT_TIMEOUT => 230,
         CURLOPT_HTTPHEADER => ['Authorization: Api-Key ' . env('DARAZA_API_KEY', ''), 'Content-Type: application/json', 'Accept: application/json'],
-        CURLOPT_POSTFIELDS => json_encode(['method' => $method, 'amount' => (string)$amount, 'phone' => $phone, 'note' => mb_substr($note, 0, 60)]),
+        CURLOPT_POSTFIELDS => json_encode(['method' => $method, 'amount' => $amount, 'phone' => $phone, 'note' => mb_substr($note, 0, 150)]),
     ]);
     $body = curl_exec($c);
     $errno = curl_errno($c);
@@ -111,7 +108,7 @@ function daraza_call(string $endpoint, int $method, int $amount, string $phone, 
     if (!is_array($j)) return ['unconfirmed', 'Unreadable answer from the payment service (HTTP ' . $http . ').', null];
     $rid = (string)($j['request_id'] ?? $j['response_details']['request_id'] ?? '') ?: null;
     if (strcasecmp((string)($j['code'] ?? ''), 'Success') === 0) return ['success', (string)($j['message'] ?? 'Payment successful'), $rid];
-    if ($http === 401 || $http === 403) { error_log('daraza: API key rejected (HTTP ' . $http . ')'); return ['failed', 'Online payments are temporarily unavailable. Please pay through WhatsApp or call us.', $rid]; }
+    if (in_array($http, [401, 403, 404, 405], true)) { error_log('daraza: request refused (HTTP ' . $http . '): ' . mb_substr((string)($j['details'] ?? ''), 0, 200)); return ['failed', 'Online payments are temporarily unavailable. Please pay through WhatsApp or call us.', $rid]; }
     if ($http >= 500) return ['unconfirmed', 'The payment service had an error (HTTP ' . $http . ').', $rid];
     return ['failed', (string)($j['details'] ?? $j['message'] ?? 'The payment was not completed.'), $rid];
 }
