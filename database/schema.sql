@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS payments (
   reservation_id INT UNSIGNED NOT NULL,
   amount DECIMAL(12,0) NOT NULL,
   method ENUM('cash','mobile_money','bank','pesapal','refund') NOT NULL DEFAULT 'cash',
-  channel VARCHAR(20) NULL COMMENT 'daraza_mtn, daraza_airtel, daraza_refund; NULL = recorded by staff',
+  channel VARCHAR(20) NULL COMMENT 'daraza_mtn, daraza_airtel, daraza_refund, or NULL when recorded by staff',
   note VARCHAR(255) NULL,
   recorded_by INT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

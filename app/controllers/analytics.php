@@ -59,6 +59,6 @@ function admin_migrate(): void
     try { include ROOT . '/database/install.php'; $out = trim((string)ob_get_clean()); $ok = true; }
     catch (Throwable $e) { $out = trim((string)ob_get_clean() . ' ' . $e->getMessage()); $ok = false; }
     audit('system.migrate', $ok ? 'ok' : 'failed');
-    flash($ok ? 'Database updated. All new tables and columns are in place.' : 'The update could not finish: ' . excerpt($out, 200), $ok ? 'ok' : 'error');
+    flash($ok ? 'Database updated. All new tables and columns are in place.' : 'The update could not finish: ' . excerpt($out, 500), $ok ? 'ok' : 'err');
     redirect('admin/settings');
 }
