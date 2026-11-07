@@ -112,6 +112,25 @@ CREATE TABLE IF NOT EXISTS payments (
   CONSTRAINT fk_pay_res FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Mobile money collections and refunds through Daraza (one row per attempt)
+CREATE TABLE IF NOT EXISTS pay_attempts (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  token CHAR(24) NOT NULL UNIQUE,
+  reservation_id INT UNSIGNED NOT NULL,
+  direction ENUM('collect','refund') NOT NULL DEFAULT 'collect',
+  amount INT UNSIGNED NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  method SMALLINT NOT NULL DEFAULT 1,
+  status ENUM('pending','success','failed','unconfirmed') NOT NULL DEFAULT 'pending',
+  request_id VARCHAR(80) NULL,
+  message VARCHAR(255) NULL,
+  started_by INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  completed_at DATETIME NULL,
+  KEY idx_pa_res (reservation_id, status), KEY idx_pa_phone (phone, created_at),
+  CONSTRAINT fk_pa_res FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS article_categories (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,

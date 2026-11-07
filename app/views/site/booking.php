@@ -110,9 +110,27 @@ $steps = [
         <div class="progress" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Payment progress"><i style="width:<?= $pct ?>%"></i></div>
         <p class="small muted"><?= h(money($paid)) ?> paid of <?= h(money($due)) ?> (<?= $pct ?>%)</p>
         <?php if ($balance > 0 && !in_array($st, ['rejected', 'cancelled'], true)): ?>
+          <?php if (daraza_enabled()): ?>
+          <form class="pay-box" id="payBox" autocomplete="off">
+            <div class="pay-title"><span aria-hidden="true">📲</span> Pay now with mobile money</div>
+            <label>Phone number to pay from <input type="tel" name="phone" id="payPhone" value="<?= h($r['phone']) ?>" placeholder="0772 123 456" inputmode="tel" required></label>
+            <label>Amount (UGX) <input type="text" name="amount" id="payAmount" value="<?= (int)$balance ?>" inputmode="numeric" required></label>
+            <p class="small muted">MTN or Airtel. You can pay the full balance or part of it. You will get a prompt on your phone: enter your PIN to approve.</p>
+            <button class="btn btn-primary btn-lg" id="payGo" type="submit">Pay <?= h(money($balance)) ?></button>
+            <p class="pay-err small" id="payErr" role="alert" hidden></p>
+          </form>
+          <div class="pay-wait" id="payWait" hidden aria-live="polite">
+            <div class="pay-spin" aria-hidden="true"></div>
+            <b id="payWaitTitle">Check your phone</b>
+            <p class="small" id="payWaitText">Approve the payment prompt and enter your PIN. This can take up to 3 minutes. Please keep this page open.</p>
+            <span class="pay-timer" id="payTimer">0:00</span>
+          </div>
+          <p class="small muted pay-alt">Prefer another way? Contact the team and quote <strong><?= h($r['reference']) ?></strong>.</p>
+          <?php else: ?>
           <p class="small">To pay, contact the team and quote your reference <strong><?= h($r['reference']) ?></strong>. We will confirm as soon as your payment is recorded.</p>
+          <?php endif; ?>
           <div class="btn-row">
-            <?php if ($payWa): ?><a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="<?= h($payWa) ?>">Pay via WhatsApp</a><?php endif; ?>
+            <?php if ($payWa): ?><a class="btn btn-<?= daraza_enabled() ? 'ghost-dark' : 'primary' ?> btn-sm" target="_blank" rel="noopener" href="<?= h($payWa) ?>">Pay via WhatsApp</a><?php endif; ?>
             <?php if ($phone): ?><a class="btn btn-ghost-dark btn-sm" href="tel:<?= h(preg_replace('/\s+/', '', $phone)) ?>">Call <?= h($phone) ?></a><?php endif; ?>
           </div>
         <?php endif; ?>
@@ -165,3 +183,40 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
 });
 </script>
 <script>try{localStorage.setItem('cb_name',<?= json_encode($r['full_name'], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>);}catch(e){}</script>
+<?php if ($balance > 0 && !in_array($st, ['rejected', 'cancelled'], true) && daraza_enabled()): ?>
+<script>
+(function () {
+  var form = document.getElementById('payBox'); if (!form || !window.fetch) return;
+  var wait = document.getElementById('payWait'), err = document.getElementById('payErr'), go = document.getElementById('payGo'), timer = document.getElementById('payTimer');
+  var title = document.getElementById('payWaitTitle'), text = document.getElementById('payWaitText');
+  var payUrl = <?= json_encode(url('booking/' . $r['reference'] . '/pay')) ?>, csrf = <?= json_encode(csrf_token()) ?>, tick = null, poll = null, t0 = 0;
+  function show(m) { err.textContent = m; err.hidden = !m; }
+  function stop() { clearInterval(tick); clearTimeout(poll); }
+  function fmt(s) { return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function end(ok, head, msg) {
+    stop(); wait.classList.toggle('pay-ok', ok); wait.classList.toggle('pay-bad', !ok); wait.querySelector('.pay-spin').hidden = true; timer.hidden = true;
+    title.textContent = head; text.textContent = msg;
+    if (ok) setTimeout(function () { location.reload(); }, 1800);
+    else { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-ghost-dark btn-sm'; b.textContent = 'Try again'; b.onclick = function () { wait.hidden = true; form.hidden = false; go.disabled = false; b.remove(); }; wait.appendChild(b); }
+  }
+  function check(token) {
+    fetch(payUrl + '/' + token, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.status === 'success') return end(true, 'Payment received', 'Thank you! Updating your booking...');
+      if (j.status === 'failed') return end(false, 'Payment not completed', j.message || 'The payment was not approved.');
+      if (j.status === 'unconfirmed') return end(false, 'Waiting for confirmation', j.message);
+      poll = setTimeout(function () { check(token); }, 3000);
+    }).catch(function () { poll = setTimeout(function () { check(token); }, 5000); });
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault(); show('');
+    var fd = new FormData(form); fd.append('_csrf', csrf); go.disabled = true;
+    fetch(payUrl, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } }).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); }).then(function (x) {
+      if (!x[0] || !x[1].ok) { go.disabled = false; return show((x[1] && x[1].error) || 'Could not start the payment. Please try again.'); }
+      form.hidden = true; wait.hidden = false; t0 = Date.now(); timer.textContent = '0:00';
+      tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000);
+      check(x[1].token);
+    }).catch(function () { go.disabled = false; show('Network problem. Please check your connection and try again.'); });
+  });
+})();
+</script>
+<?php endif; ?>

@@ -15,6 +15,8 @@ require __DIR__ . '/app/controllers/pictures.php';
 require __DIR__ . '/app/controllers/setup.php';
 require __DIR__ . '/app/analytics.php';
 require __DIR__ . '/app/seo.php';
+require __DIR__ . '/app/daraza.php';
+require __DIR__ . '/app/controllers/payments.php';
 require __DIR__ . '/app/controllers/analytics.php';
 
 header('X-Frame-Options: SAMEORIGIN');
@@ -29,6 +31,10 @@ $routes = [
     ['POST', 'events/{slug}/reserve', 'post_reserve'],
     ['GET',  'booking/{ref}',        'page_booking'],
     ['GET',  'booking/{ref}/status', 'page_booking_status'],
+    ['POST', 'booking/{ref}/pay',    'post_booking_pay'],
+    ['GET',  'booking/{ref}/pay/{token}', 'page_pay_status'],
+    ['POST', 'admin/reservations/{id}/daraza-refund', 'admin_daraza_refund'],
+    ['POST', 'admin/pay-attempts/{id}/resolve', 'admin_pay_resolve'],
     ['GET',  'ticket/{token}',       'page_ticket'],
     ['GET',  'ticket/{token}/status', 'page_ticket_status'],
     ['GET',  'track',                'page_track'],

@@ -208,7 +208,8 @@ function admin_reservation(array $a): void
         $ticket = ticket_url((int)$r['id']);
         $wa = wa_link($r['phone'], ticket_message(reservation_with_event((int)$r['id'])));
     }
-    admin_view('reservation', ['title' => 'Reservation ' . $r['reference'], 'r' => $r, 'ticket' => $ticket, 'wa' => $wa,
+    try { daraza_expire_stale(); $attempts = rows('SELECT a.*, u.name AS by_name FROM pay_attempts a LEFT JOIN users u ON u.id = a.started_by WHERE a.reservation_id = ? ORDER BY a.id DESC LIMIT 20', [$r['id']]); } catch (Throwable $e) { $attempts = []; }
+    admin_view('reservation', ['title' => 'Reservation ' . $r['reference'], 'r' => $r, 'ticket' => $ticket, 'wa' => $wa, 'attempts' => $attempts,
         'payments' => rows('SELECT p.*, u.name AS by_name FROM payments p LEFT JOIN users u ON u.id=p.recorded_by WHERE reservation_id = ? ORDER BY id', [$r['id']])]);
 }
 /** Door check-in: the ticket's QR code opens this page for logged-in staff. */

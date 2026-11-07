@@ -1,0 +1,93 @@
+<?php
+declare(strict_types=1);
+
+/* ================= Guest: pay a booking with mobile money ================= */
+function pay_json(array $d, int $code = 200): never
+{
+    http_response_code($code);
+    header('Content-Type: application/json');
+    header('Cache-Control: no-store');
+    echo json_encode($d);
+    exit;
+}
+function post_booking_pay(array $a): void
+{
+    if (!daraza_enabled()) pay_json(['ok' => false, 'error' => 'Online payment is not switched on yet. Please pay through WhatsApp or call us.'], 503);
+    $r = row('SELECT * FROM reservations WHERE reference = ?', [strtoupper($a['ref'])]);
+    if (!$r) pay_json(['ok' => false, 'error' => 'Booking not found.'], 404);
+    if (!in_array($r['status'], ['pending', 'confirmed'], true)) pay_json(['ok' => false, 'error' => 'This booking can no longer be paid.'], 422);
+    $balance = (int)max(0, (float)$r['amount_due'] - res_paid((int)$r['id']));
+    if ($balance < 1) pay_json(['ok' => false, 'error' => 'This booking is already paid in full.'], 422);
+    $phone = daraza_phone((string)($_POST['phone'] ?? ''));
+    if (!$phone) pay_json(['ok' => false, 'error' => 'Enter a valid MTN or Airtel number, for example 0772 123 456.'], 422);
+    $amount = (int)preg_replace('/\D+/', '', (string)($_POST['amount'] ?? (string)$balance));
+    if ($amount < 1000 && $balance >= 1000) pay_json(['ok' => false, 'error' => 'The smallest payment is UGX 1,000.'], 422);
+    if ($amount > $balance) pay_json(['ok' => false, 'error' => 'That is more than the balance of ' . money($balance) . '.'], 422);
+    if ($amount < 1) $amount = $balance;
+    if (rate_limited('paystart', 6, 900)) pay_json(['ok' => false, 'error' => 'Too many attempts. Please wait a few minutes and try again.'], 429);
+    try {
+        if (daraza_has_pending((int)$r['id'], 'collect')) pay_json(['ok' => false, 'error' => 'A payment request is already waiting for approval on your phone. Please approve it or wait a few minutes.'], 409);
+        if ((int)val("SELECT COUNT(*) FROM pay_attempts WHERE phone = ? AND created_at > (NOW() - INTERVAL 1 HOUR)", [$phone]) >= 4) pay_json(['ok' => false, 'error' => 'Too many payment requests to this number. Please try again later.'], 429);
+    } catch (PDOException $e) { if ($e->getCode() === '42S02') daraza_ensure_table(); else throw $e; }
+    $at = daraza_start((int)$r['id'], 'collect', $amount, $phone);
+    audit('pay.start', $r['reference'] . ' ' . money($amount));
+    // answer the browser now; the customer approves on their phone and the result is recorded when Daraza replies
+    daraza_respond_then(['ok' => true, 'token' => $at['token'], 'amount' => $amount, 'network' => daraza_network($phone)], fn() => daraza_run((int)$at['id']));
+}
+/** Polled by the booking page while the guest approves the prompt on their phone. */
+function page_pay_status(array $a): void
+{
+    if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) pay_json(['error' => 'bad token'], 404);
+    if (rate_limited('paypoll', 200, 1800)) pay_json(['error' => 'slow down'], 429);
+    try { daraza_expire_stale(); } catch (Throwable $e) {}
+    $at = row('SELECT a.status, a.message, a.amount, a.created_at, r.reference FROM pay_attempts a JOIN reservations r ON r.id = a.reservation_id WHERE a.token = ? AND r.reference = ? AND a.direction = ?',
+        [$a['token'], strtoupper($a['ref']), 'collect']);
+    if (!$at) pay_json(['error' => 'not found'], 404);
+    $msg = $at['message'];
+    if ($at['status'] === 'unconfirmed') $msg = 'We could not confirm your payment yet. If money left your phone, please do not pay again. Quote ' . $at['reference'] . ' to the team and we will confirm it.';
+    pay_json(['status' => $at['status'], 'message' => $msg, 'elapsed' => time() - strtotime((string)$at['created_at'])]);
+}
+
+/* ================= Admin: refunds and unconfirmed payments ================= */
+/** Send a refund to the guest's phone through Daraza. */
+function admin_daraza_refund(array $a): void
+{
+    require_can('payments');
+    $role = current_user()['role'] ?? '';
+    $id = (int)$a['id'];
+    $r = row('SELECT * FROM reservations WHERE id = ?', [$id]) ?? not_found();
+    $back = 'admin/reservations/' . $id;
+    $fail = function (string $m) use ($back): never { flash($m, 'err'); redirect($back); };
+    if (!in_array($role, ['admin', 'finance', 'event_manager'], true)) $fail('Only an administrator, finance officer or event manager can send refunds.');
+    if (!daraza_enabled()) $fail('Daraza is not set up on this site.');
+    $phone = daraza_phone((string)($_POST['phone'] ?? ''));
+    if (!$phone) $fail('Enter a valid MTN or Airtel number to send the refund to.');
+    $net = (int)res_paid($id);
+    $amount = (int)preg_replace('/\D+/', '', (string)($_POST['amount'] ?? '0'));
+    if ($amount < 1 || $amount > $net) $fail('The refund must be between UGX 1 and the ' . money($net) . ' currently paid on this booking.');
+    if (($_POST['confirm'] ?? '') !== $r['reference']) $fail('Type the booking reference to confirm sending money.');
+    try { if (daraza_has_pending($id, 'refund')) $fail('A refund for this booking is already being processed.'); } catch (PDOException $e) { if ($e->getCode() === '42S02') daraza_ensure_table(); else throw $e; }
+    $at = daraza_start($id, 'refund', $amount, $phone, (int)current_user()['id']);
+    audit('pay.refund_start', $r['reference'] . ' ' . money($amount) . ' to ' . $phone);
+    flash('Refund of ' . money($amount) . ' is being sent. Refresh this page in a moment to see the result.');
+    daraza_respond_then([], fn() => daraza_run((int)$at['id']), url('admin/reservations/' . $id));
+}
+/** A person decides what happened to an attempt Daraza never answered. */
+function admin_pay_resolve(array $a): void
+{
+    require_can('payments');
+    $at = row('SELECT * FROM pay_attempts WHERE id = ?', [(int)$a['id']]) ?? not_found();
+    $dest = 'admin/reservations/' . (int)$at['reservation_id'];
+    if ($at['status'] !== 'unconfirmed') { flash('That payment is no longer waiting for a decision.', 'err'); redirect($dest); }
+    $uid = (int)current_user()['id'];
+    if (($_POST['choice'] ?? '') === 'received') {
+        daraza_settle((int)$at['id'], 'success', 'Confirmed by ' . (current_user()['name'] ?? 'staff') . ' from the Daraza statement', null, $uid);
+        audit('pay.resolve_received', '#' . $at['id'] . ' ' . money($at['amount']));
+        flash('Marked as ' . ($at['direction'] === 'refund' ? 'sent' : 'received') . ' and recorded in the ledger.');
+    } else {
+        daraza_settle((int)$at['id'], 'failed', 'Dismissed by ' . (current_user()['name'] ?? 'staff') . ': no money moved', null, $uid);
+        audit('pay.resolve_dismissed', '#' . $at['id']);
+        flash('Dismissed. Nothing was recorded.');
+    }
+    redirect($dest);
+}

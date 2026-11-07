@@ -1004,3 +1004,26 @@ a.dj-pl-btn{display:grid;place-items:center;text-decoration:none;color:#fff}
 @media(max-width:960px){.way-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:640px){.way-tabs{grid-template-columns:1fr}.way-grid{grid-template-columns:1fr}.way-card{padding:20px}}
 @media(prefers-reduced-motion:reduce){.way-card,.way-tab,.way-card-ic,.is-tabs .way-pane.on{transition:none;animation:none}}
+
+/* Mobile money payment box */
+.pay-box{background:#fff8ee;border:1px solid #f0dcc0;border-radius:16px;padding:16px;margin:12px 0;color:#171717}
+.pay-box label{display:block;font-size:.82rem;font-weight:600;margin:10px 0 0;color:#444}
+.pay-box input{display:block;width:100%;margin-top:4px;padding:12px 14px;border:1px solid #d9cbb2;border-radius:10px;font:inherit;font-size:1rem;background:#fff;color:#171717}
+.pay-box .btn{width:100%;margin-top:12px}
+.pay-title{font-weight:800;font-size:1.02rem}
+.pay-err{color:#b3261e;font-weight:600;margin-top:8px}
+.pay-wait{text-align:center;background:#fff8ee;border:1px solid #f0dcc0;border-radius:16px;padding:22px 16px;margin:12px 0;color:#171717}
+.pay-wait p{margin:6px 0}
+.pay-spin{width:46px;height:46px;border-radius:50%;border:5px solid #f0dcc0;border-top-color:var(--orange);margin:0 auto 12px;animation:paySpin 1s linear infinite}
+.pay-timer{display:inline-block;font-variant-numeric:tabular-nums;font-weight:700;color:var(--orange-d);margin-top:4px}
+.pay-wait.pay-ok{background:#e8f6ec;border-color:#b7e1c2}.pay-wait.pay-bad{background:#fdecea;border-color:#f3c3be}
+.pay-alt{margin:10px 0 6px}
+@keyframes paySpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.pay-spin{animation-duration:3s}}
+
+/* Floating WhatsApp support button */
+.wa-fab{position:fixed;right:16px;bottom:18px;z-index:55;display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:99px;background:#25d366;color:#fff!important;font-weight:700;font-size:.9rem;text-decoration:none;box-shadow:0 8px 22px rgba(0,0,0,.35);transition:transform .2s}
+.wa-fab:hover{transform:translateY(-3px)}
+body:has(.dj-player) .wa-fab{bottom:84px}
+@media (max-width:480px){.wa-fab{padding:13px;right:12px}.wa-fab span{display:none}}
+@media print{.wa-fab{display:none}}

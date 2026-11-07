@@ -32,5 +32,23 @@
     <label>Amount (UGX) <input name="amount" inputmode="numeric" required></label>
     <label>Method <select name="method"><option value="cash">Cash</option><option value="mobile_money">Mobile money</option><option value="bank">Bank</option></select></label>
     <label>Note <input name="note" maxlength="255"></label><button class="btn btn-primary btn-sm">Save</button></form><?php endif; ?>
-  <p class="small muted">Card details are never stored. Online payments (Pesapal) are enabled in a later phase.</p></div>
+  <p class="small muted">Card details are never stored. Guests can also pay online with mobile money (Daraza); those payments appear above automatically.</p></div>
+<?php if ($attempts || daraza_enabled()): ?><div class="panel"><h2>Mobile money (Daraza)</h2>
+  <?php if (!daraza_enabled()): ?><p class="small muted">Daraza is not set up yet: add DARAZA_API_KEY to the .env file.</p><?php endif; ?>
+  <?php if ($attempts): ?><div class="tbl-wrap"><table class="tbl"><tr><th>When</th><th>Type</th><th>Phone</th><th>Amount</th><th>Status</th><th></th></tr>
+  <?php foreach ($attempts as $at): $tone = ['success' => '✅ Paid', 'failed' => '❌ Failed', 'pending' => '⏳ Waiting for approval', 'unconfirmed' => '⚠️ Needs checking'][$at['status']]; ?>
+    <tr><td><?= fmt_date($at['created_at'], 'j M H:i') ?></td><td><?= $at['direction'] === 'refund' ? 'Refund sent' : 'Guest payment' ?></td><td><?= h($at['phone']) ?></td><td><?= money($at['amount']) ?></td>
+      <td><b><?= $tone ?></b><br><span class="small muted"><?= h($at['message']) ?><?= $at['request_id'] ? ' · ref ' . h($at['request_id']) : '' ?></span></td>
+      <td><?php if ($at['status'] === 'unconfirmed' && can('payments')): ?><form class="inline" method="post" action="<?= url('admin/pay-attempts/' . (int)$at['id'] . '/resolve') ?>"><?= csrf_field() ?>
+        <button class="btn btn-primary btn-sm" name="choice" value="received" onclick="return confirm('Only choose this if the money really appears in your Daraza statement. Record it?')">Money moved</button>
+        <button class="btn btn-ghost btn-sm" name="choice" value="dismiss">Nothing moved</button></form><?php endif; ?></td></tr>
+  <?php endforeach; ?></table></div><?php endif; ?>
+  <?php if (daraza_enabled() && in_array(current_user()['role'] ?? '', ['admin', 'finance', 'event_manager'], true) && (float)$r['paid'] > 0): ?>
+  <form method="post" action="<?= url('admin/reservations/' . (int)$r['id'] . '/daraza-refund') ?>" class="filters" onsubmit="return confirm('This sends real money to the phone number. Continue?')"><?= csrf_field() ?>
+    <strong>Send a refund</strong>
+    <label>Phone <input name="phone" value="<?= h($r['phone']) ?>" required></label>
+    <label>Amount (UGX) <input name="amount" inputmode="numeric" value="<?= (int)$r['paid'] ?>" required></label>
+    <label>Type <b><?= h($r['reference']) ?></b> to confirm <input name="confirm" autocomplete="off" required></label>
+    <button class="btn btn-ghost btn-sm">Send refund</button></form>
+  <p class="small muted">A refund is sent from your Daraza balance and recorded in the ledger once Daraza confirms it. Cancelling a booking does not refund automatically.</p><?php endif; ?></div><?php endif; ?>
 <?php if (can('reservations_manage')): ?><div class="panel"><h2>Internal note</h2><form method="post" action="<?= $act ?>"><?= csrf_field() ?><input type="hidden" name="action" value="note"><input name="admin_note" value="<?= h($r['admin_note']) ?>" maxlength="255"><p><button class="btn btn-ghost btn-sm">Save note</button></p></form></div><?php endif; ?>
