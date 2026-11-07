@@ -1058,3 +1058,39 @@ body:has(.dj-player) .wa-fab{bottom:84px}
 .rs-ref{display:inline-block;margin:12px 0 4px;padding:8px 16px;border-radius:12px;background:#fff;border:1px dashed #cdbd9f}.rs-ref b{letter-spacing:.12em;margin-left:6px}
 .rs-actions{justify-content:center;margin-top:14px}
 @media(max-width:640px){.rs-modes{grid-template-columns:1fr}.rs-cards{grid-template-columns:repeat(2,1fr)}}
+
+/* Payments on phones: big targets, clear steps, a pay button that stays in view */
+.pay-steps{list-style:none;counter-reset:s;text-align:left;margin:14px auto 4px;padding:0;max-width:420px}
+.pay-steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:8px 0;font-size:.95rem;line-height:1.4}
+.pay-steps li::before{content:counter(s);flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--orange);color:#fff;font-weight:800;font-size:.85rem}
+.pay-steps b{white-space:nowrap}
+#payWait,#rsState,#payBox{scroll-margin-top:90px}
+.pay-timer{font-size:1.5rem}
+.rs-card input,.rs-card select,.rs-card textarea,.pay-box input{font-size:16px}
+@media(max-width:760px){
+  .bk-grid:has(.bk-pay) .bk-side{order:-1}
+  .rs-modes{grid-template-columns:1fr 1fr;gap:10px}
+  .rs-mode{flex-direction:column;text-align:center;padding:14px 8px;gap:8px}
+  .rs-mode small{font-size:.72rem}.rs-mode b{font-size:1rem}.rs-mode-ic{width:44px;height:44px}
+  .rs-card{padding:16px 14px}
+  .rs-card .field input,.rs-card .field select,.rs-card .field textarea,.pay-box input{min-height:50px;padding:12px 14px;border-radius:12px}
+  .rs-cards{gap:8px}.rs-pick{padding:12px 6px}
+  .rs-bottom{position:sticky;bottom:0;z-index:20;margin:16px -14px -16px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eadfcb;box-shadow:0 -10px 24px rgba(0,0,0,.12);border-radius:0 0 var(--radius) var(--radius)}
+  .rs-total{font-size:1.1rem;margin-bottom:8px}.rs-note{font-size:.74rem}
+  .rs-go,.pay-box .btn,.rs-actions .btn,.pay-wait .btn{width:100%;min-height:52px;font-size:1.02rem}
+  .rs-actions{flex-direction:column}
+  .rs-state,.pay-wait{padding:22px 16px}
+  .pay-timer{font-size:1.8rem}
+  body:has(#rsForm) .wa-fab,body:has(#payBox) .wa-fab{display:none}
+  .pay-amount b{font-size:1.7rem}
+}
+@media(max-width:380px){.rs-modes{grid-template-columns:1fr}.rs-mode{flex-direction:row;text-align:left}.rs-cards{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.hide-m{display:none}.rs-note{display:none}}
+.pay-timer[hidden],.pay-spin[hidden],.pay-steps[hidden]{display:none!important}
+.bk-paybar{display:none}
+@media(max-width:760px){
+  .bk-paybar{display:flex;align-items:center;justify-content:center;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:56;min-height:54px;border-radius:14px;background:var(--orange);color:#fff!important;font-weight:800;font-size:1.05rem;text-decoration:none;box-shadow:0 10px 28px rgba(0,0,0,.4);transition:transform .25s,opacity .25s}
+  .bk-paybar.off{transform:translateY(120%);opacity:0;pointer-events:none}
+  .pay-amount{flex-direction:column;align-items:flex-start;gap:2px}
+  .bk-section{padding-bottom:90px}
+}

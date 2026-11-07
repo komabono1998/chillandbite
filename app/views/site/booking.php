@@ -104,7 +104,7 @@ $steps = [
 
     <div class="bk-side">
       <?php if ($due > 0): ?>
-      <article class="bk-card">
+      <article class="bk-card bk-pay" id="pay">
         <h2>Payment</h2>
         <div class="pay-amount"><span><?= $balance > 0 ? 'Balance to pay' : 'Paid in full' ?></span><b><?= $balance > 0 ? h(money($balance)) : '✓ ' . h(money($due)) ?></b></div>
         <div class="progress" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Payment progress"><i style="width:<?= $pct ?>%"></i></div>
@@ -125,6 +125,7 @@ $steps = [
             <b id="payWaitTitle">Check your phone</b>
             <p class="small" id="payWaitText">Approve the payment prompt and enter your PIN. This can take up to 3 minutes. Please keep this page open.</p>
             <span class="pay-timer" id="payTimer">0:00</span>
+            <ol class="pay-steps" id="paySteps"><li><span>Look for the payment prompt on <b id="payShow"></b></span></li><li>Enter your Mobile Money PIN to approve</li><li>Stay on this page. Your ticket appears here automatically.</li></ol>
           </div>
           <p class="small muted pay-alt">Prefer another way? Contact the team and quote <strong><?= h($r['reference']) ?></strong>.</p>
           <?php else: ?>
@@ -161,6 +162,10 @@ $steps = [
   </div>
   <p class="bk-thanks">Thank you for choosing <strong>Chill &amp; Bite MEATINGS</strong>. Where connections are made and good vibes never end. 🧡</p>
 </div></section>
+<?php if ($balance > 0 && !in_array($st, ['rejected', 'cancelled'], true) && daraza_enabled()): ?>
+<a class="bk-paybar" id="bkPayBar" href="#pay">💳 Pay <?= h(money($balance)) ?> now</a>
+<script>(function(){var b=document.getElementById('bkPayBar'),p=document.getElementById('payBox')||document.getElementById('pay');if(!b||!p||!window.IntersectionObserver)return;new IntersectionObserver(function(e){b.classList.toggle('off',e[0].isIntersecting);},{threshold:.2}).observe(p);})();</script>
+<?php endif; ?>
 <script>
 (function () {
   if (location.search.indexOf('new=') > -1 && history.replaceState) history.replaceState(null, '', location.pathname);
@@ -195,7 +200,7 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
   function stop() { clearInterval(tick); clearTimeout(poll); }
   function fmt(s) { return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
   function end(ok, head, msg, stay) {
-    stop(); wait.classList.toggle('pay-ok', ok); wait.classList.toggle('pay-bad', !ok); wait.querySelector('.pay-spin').hidden = true; timer.hidden = true;
+    stop(); wait.classList.toggle('pay-ok', ok); wait.classList.toggle('pay-bad', !ok); wait.querySelector('.pay-spin').hidden = true; timer.hidden = true; var ps = document.getElementById('paySteps'); if (ps) ps.hidden = true;
     title.textContent = head; text.textContent = msg;
     if (ok && !stay) setTimeout(function () { location.reload(); }, 1800);
     else if (ok) return;
@@ -220,7 +225,7 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
     var fd = new FormData(form); fd.append('_csrf', csrf); go.disabled = true;
     fetch(payUrl, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } }).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); }).then(function (x) {
       if (!x[0] || !x[1].ok) { go.disabled = false; go.classList.remove('is-busy'); return show((x[1] && x[1].error) || 'Could not start the payment. Please try again.'); }
-      form.hidden = true; wait.hidden = false; t0 = Date.now(); timer.textContent = '0:00';
+      form.hidden = true; wait.hidden = false; wait.scrollIntoView({ block: 'center', behavior: 'smooth' }); document.getElementById('payShow').textContent = form.querySelector('[name=phone]').value; t0 = Date.now(); timer.textContent = '0:00';
       tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000);
       check(x[1].token);
     }).catch(function () { go.disabled = false; go.classList.remove('is-busy'); show('Network problem. Please check your connection and try again.'); });

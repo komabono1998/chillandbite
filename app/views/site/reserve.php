@@ -79,6 +79,7 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
     <h2 id="rsStateTitle">Check your phone</h2>
     <p id="rsStateText">Approve the payment prompt and enter your PIN. This can take up to 3 minutes. Please keep this page open.</p>
     <span class="pay-timer" id="rsTimer">0:00</span>
+    <ol class="pay-steps" id="rsSteps" hidden><li><span>Look for the payment prompt on <b id="rsShow"></b></span></li><li>Enter your Mobile Money PIN to approve</li><li>Stay on this page. Your ticket appears here automatically.</li></ol>
     <div class="rs-ref" id="rsRef" hidden>Your booking number <b id="rsRefNo"></b></div>
     <div class="btn-row rs-actions" id="rsActions"></div>
   </div>
@@ -118,7 +119,7 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
     phoneLabel.textContent = ticket && paid ? 'Mobile money number (MTN or Airtel)' : 'Phone number';
     phoneHelp.textContent = ticket && paid ? 'A payment prompt is sent to this phone. Enter your PIN to approve.' : '';
     total.textContent = a === null ? 'Choose an option above' : (paid ? 'Total ' + money(a) : 'Free');
-    goText.textContent = a === null ? 'Choose an option' : (ticket ? (paid ? 'Pay ' + money(a) + ' & get my ticket' : 'Get my free ticket') : 'Reserve & get my booking number');
+    goText.innerHTML = a === null ? 'Choose an option' : (ticket ? (paid ? 'Pay ' + money(a) + '<span class="hide-m"> &amp; get my ticket</span>' : 'Get my free ticket') : 'Reserve<span class="hide-m"> &amp; get my booking number</span>');
     note.textContent = ticket ? (paid ? 'You get your ticket the moment the payment is received.' : '') :
       (paid ? 'No payment now. You can pay any time with MTN or Airtel, or the team confirms it when they record your payment.' : '');
   }
@@ -131,8 +132,8 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
   function fmt(s) { return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
   function btn(label, href, cls, fn) { var e = document.createElement(href ? 'a' : 'button'); e.className = 'btn ' + cls; e.textContent = label; if (href) e.href = href; else { e.type = 'button'; e.onclick = fn; } acts.appendChild(e); return e; }
   function showState(ok, title, text, extra) {
-    form.hidden = true; st.hidden = false; st.className = 'form-card rs-state' + (ok === true ? ' pay-ok' : ok === false ? ' pay-bad' : ''); stTitle.textContent = title; stText.textContent = text; acts.innerHTML = '';
-    spin.hidden = ok !== null; timer.hidden = ok !== null; if (curRef) { refBox.hidden = false; refNo.textContent = curRef; }
+    form.hidden = true; var tr = document.querySelector('.rs-track'); if (tr) tr.hidden = true; st.hidden = false; st.className = 'form-card rs-state' + (ok === true ? ' pay-ok' : ok === false ? ' pay-bad' : ''); stTitle.textContent = title; stText.textContent = text; acts.innerHTML = '';
+    spin.hidden = ok !== null; timer.hidden = ok !== null; document.getElementById('rsSteps').hidden = !(ok === null && title === 'Check your phone'); document.getElementById('rsShow').textContent = form.querySelector('[name=phone]').value; if (curRef) { refBox.hidden = false; refNo.textContent = curRef; }
     st.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
   function waiting(ref, token) {
