@@ -103,7 +103,8 @@ CREATE TABLE IF NOT EXISTS event_packages (
 -- Administrator-recorded payments (no card data is ever stored)
 CREATE TABLE IF NOT EXISTS payments (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  reservation_id INT UNSIGNED NOT NULL,
+  reservation_id INT UNSIGNED NULL,
+  tab_id INT UNSIGNED NULL,
   amount DECIMAL(12,0) NOT NULL,
   method ENUM('cash','mobile_money','bank','pesapal','refund') NOT NULL DEFAULT 'cash',
   channel VARCHAR(20) NULL COMMENT 'daraza_mtn, daraza_airtel, daraza_refund, or NULL when recorded by staff',
@@ -117,7 +118,11 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE TABLE IF NOT EXISTS pay_attempts (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   token CHAR(24) NOT NULL UNIQUE,
-  reservation_id INT UNSIGNED NOT NULL,
+  reservation_id INT UNSIGNED NULL,
+  tab_id INT UNSIGNED NULL,
+  payer_name VARCHAR(140) NULL,
+  payer_email VARCHAR(190) NULL,
+  payer_note VARCHAR(255) NULL,
   direction ENUM('collect','refund') NOT NULL DEFAULT 'collect',
   amount INT UNSIGNED NOT NULL,
   phone VARCHAR(20) NOT NULL,
@@ -131,6 +136,23 @@ CREATE TABLE IF NOT EXISTS pay_attempts (
   KEY idx_pa_res (reservation_id, status), KEY idx_pa_phone (phone, created_at),
   CONSTRAINT fk_pa_res FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Payment tabs: a fixed-amount Pay box the admin switches on for pages such as Advertise, DJs and MCs
+CREATE TABLE IF NOT EXISTS payment_tabs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(60) NOT NULL UNIQUE,
+  title VARCHAR(120) NOT NULL,
+  blurb VARCHAR(255) NOT NULL DEFAULT '',
+  amount INT UNSIGNED NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 0,
+  pages VARCHAR(255) NOT NULL DEFAULT '',
+  sort SMALLINT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_pt_active (active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT IGNORE INTO payment_tabs (slug, title, blurb, pages, sort) VALUES ('advertising', 'Advertising payment', 'Pay for your advertising or sponsorship package.', 'advertise', 1);
+INSERT IGNORE INTO payment_tabs (slug, title, blurb, pages, sort) VALUES ('dj-booking', 'DJ booking payment', 'Pay your DJ booking fee or deposit.', 'djs', 2);
+INSERT IGNORE INTO payment_tabs (slug, title, blurb, pages, sort) VALUES ('mc-booking', 'MC and comedy booking payment', 'Pay your MC or comedy show booking fee or deposit.', 'laugh', 3);
 
 -- Money withdrawn from the Daraza wallet to a mobile money number (admin only)
 CREATE TABLE IF NOT EXISTS daraza_withdrawals (

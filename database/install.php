@@ -29,7 +29,7 @@ db()->exec("ALTER TABLE inquiries MODIFY type ENUM('contact','performance','adve
 $hasCol = fn(string $t, string $c) => (int)val('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$t, $c]);
 if (!$hasCol('users', 'must_change')) db()->exec('ALTER TABLE users ADD COLUMN must_change TINYINT(1) NOT NULL DEFAULT 0 AFTER active');
 if (!$hasCol('reservations', 'withdrawn_at')) db()->exec('ALTER TABLE reservations ADD COLUMN withdrawn_at DATETIME NULL AFTER checked_in_at, ADD COLUMN withdrawn_reason VARCHAR(255) NULL AFTER withdrawn_at');
-if (!$hasCol('payments', 'channel')) { db()->exec("ALTER TABLE payments ADD COLUMN channel VARCHAR(20) NULL AFTER method"); pay_backfill_channels(); }
+pay_ensure_schema();      // payment channels, payment tabs and payments that are not tied to a reservation
 if (!$hasCol('videos', 'file')) db()->exec('ALTER TABLE videos ADD COLUMN file VARCHAR(255) NULL AFTER url, ADD COLUMN poster VARCHAR(255) NULL AFTER file');
 db()->exec('ALTER TABLE videos MODIFY url VARCHAR(255) NULL');
 if (!$hasCol('djs', 'role')) db()->exec("ALTER TABLE djs ADD COLUMN role ENUM('dj','host') NOT NULL DEFAULT 'dj' AFTER name");

@@ -7,7 +7,8 @@ function collections_report(string $from, string $to, int $event = 0, int $limit
     pay_ensure_schema();
     $w = 'p.created_at >= ? AND p.created_at < DATE_ADD(?, INTERVAL 1 DAY)'; $p = [$from, $to];
     if ($event) { $w .= ' AND r.event_id = ?'; $p[] = $event; }
-    $j = 'FROM payments p JOIN reservations r ON r.id = p.reservation_id JOIN events e ON e.id = r.event_id';
+    $j = 'FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id LEFT JOIN events e ON e.id = r.event_id LEFT JOIN payment_tabs t ON t.id = p.tab_id';
+    $jEv = 'FROM payments p JOIN reservations r ON r.id = p.reservation_id JOIN events e ON e.id = r.event_id';
     $ch = 'COALESCE(p.channel, p.method)';
     $by = [];
     foreach (rows("SELECT $ch ch, COUNT(*) n, SUM(p.amount) amt $j WHERE $w GROUP BY $ch", $p) as $x) $by[$x['ch']] = ['n' => (int)$x['n'], 'amt' => (int)$x['amt']];
@@ -17,14 +18,16 @@ function collections_report(string $from, string $to, int $event = 0, int $limit
     for ($d = strtotime($from), $n = 0; $d <= strtotime($to) && $n < 400; $d = strtotime('+1 day', $d), $n++) $daily[date('Y-m-d', $d)] = [];
     foreach (rows("SELECT DATE(p.created_at) d, $ch ch, SUM(p.amount) amt $j WHERE $w AND p.amount > 0 GROUP BY DATE(p.created_at), $ch", $p) as $x)
         if (isset($daily[$x['d']])) $daily[$x['d']][$x['ch']] = (int)$x['amt'];
-    $events = rows("SELECT e.id, e.title, e.start_at, $ch ch, SUM(p.amount) amt $j WHERE $w GROUP BY e.id, e.title, e.start_at, $ch ORDER BY e.start_at DESC", $p);
-    $recent = rows("SELECT p.*, $ch ch, r.reference, r.full_name, r.id rid, e.title, u.name by_name $j LEFT JOIN users u ON u.id = p.recorded_by WHERE $w ORDER BY p.id DESC LIMIT $limit", $p);
+    $events = rows("SELECT e.id, e.title, e.start_at, $ch ch, SUM(p.amount) amt $jEv WHERE $w GROUP BY e.id, e.title, e.start_at, $ch ORDER BY e.start_at DESC", $p);
+    $tabs = $event ? [] : rows("SELECT t.id, t.title, $ch ch, COUNT(*) n, SUM(p.amount) amt $j WHERE $w AND p.tab_id IS NOT NULL GROUP BY t.id, t.title, $ch ORDER BY t.title", $p);
+    $recent = rows("SELECT p.*, $ch ch, r.reference, r.full_name, r.id rid, e.title, t.title tab_title, u.name by_name $j LEFT JOIN users u ON u.id = p.recorded_by WHERE $w ORDER BY p.id DESC LIMIT $limit", $p);
+    try { daraza_expire_stale(); $attention = rows("SELECT a.*, t.title tab_title FROM pay_attempts a JOIN payment_tabs t ON t.id = a.tab_id WHERE a.status = 'unconfirmed' ORDER BY a.id DESC LIMIT 10"); } catch (Throwable $e) { $attention = []; }
     try {
         dw_expire_stale();
         $withdrawn = (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status='success' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)", [$from, $to]);
         $wds = rows('SELECT w.*, u.name by_name FROM daraza_withdrawals w LEFT JOIN users u ON u.id = w.user_id ORDER BY w.id DESC LIMIT 15');
     } catch (Throwable $e) { $withdrawn = 0; $wds = []; }
-    return ['by' => $by, 'in' => $in, 'out' => $out, 'net' => $in - $out, 'daily' => $daily, 'events' => $events, 'recent' => $recent, 'withdrawn' => $withdrawn, 'withdrawals' => $wds, 'from' => $from, 'to' => $to];
+    return ['by' => $by, 'in' => $in, 'out' => $out, 'net' => $in - $out, 'daily' => $daily, 'events' => $events, 'tabs' => $tabs, 'attention' => $attention, 'recent' => $recent, 'withdrawn' => $withdrawn, 'withdrawals' => $wds, 'from' => $from, 'to' => $to];
 }
 function admin_collections(): void
 {
@@ -91,7 +94,7 @@ function collections_export_dataset(): ?array
     [$from, $to] = analytics_range();
     $rep = collections_report($from, $to, (int)($_GET['event'] ?? 0), 10000);
     $rows = [];
-    foreach ($rep['recent'] as $x) $rows[] = [$x['created_at'], $x['reference'], $x['full_name'], $x['title'], PAY_CHANNELS[$x['ch']][0] ?? $x['ch'], (int)$x['amount'], (string)$x['by_name'] ?: (str_contains((string)$x['ch'], 'daraza') ? 'Online' : ''), (string)$x['note']];
+    foreach ($rep['recent'] as $x) $rows[] = [$x['created_at'], $x['reference'] ?? 'PAGE', $x['full_name'] ?? '', $x['title'] ?? ($x['tab_title'] ?? ''), PAY_CHANNELS[$x['ch']][0] ?? $x['ch'], (int)$x['amount'], (string)$x['by_name'] ?: (str_contains((string)$x['ch'], 'daraza') ? 'Online' : ''), (string)$x['note']];
     $sum = [];
     foreach ($rep['by'] as $c => $v) $sum[] = (PAY_CHANNELS[$c][0] ?? $c) . ': ' . number_format($v['amt']) . ' (' . $v['n'] . ')';
     return ['Collections by channel', 'Period ' . $from . ' to ' . $to . ' | Net ' . number_format($rep['net']) . ' UGX | ' . implode('; ', $sum),

@@ -95,7 +95,7 @@ function admin_pay_resolve(array $a): void
 {
     require_can('payments');
     $at = row('SELECT * FROM pay_attempts WHERE id = ?', [(int)$a['id']]) ?? not_found();
-    $dest = 'admin/reservations/' . (int)$at['reservation_id'];
+    $dest = $at['reservation_id'] ? 'admin/reservations/' . (int)$at['reservation_id'] : 'admin/collections';
     if ($at['status'] !== 'unconfirmed') { flash('That payment is no longer waiting for a decision.', 'err'); redirect($dest); }
     $uid = (int)current_user()['id'];
     if (($_POST['choice'] ?? '') === 'received') {

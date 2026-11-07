@@ -18,6 +18,8 @@ require __DIR__ . '/app/seo.php';
 require __DIR__ . '/app/daraza.php';
 require __DIR__ . '/app/controllers/payments.php';
 require __DIR__ . '/app/controllers/collections.php';
+require __DIR__ . '/app/controllers/paytabs.php';
+require __DIR__ . '/app/controllers/rates.php';
 require __DIR__ . '/app/controllers/analytics.php';
 
 header('X-Frame-Options: SAMEORIGIN');
@@ -31,6 +33,8 @@ $routes = [
     ['GET',  'events/{slug}/reserve', 'page_reserve'],
     ['POST', 'events/{slug}/reserve', 'post_reserve'],
     ['POST', 'events/{slug}/ticket', 'post_ticket'],
+    ['POST', 'paytab/{slug}', 'post_paytab'],
+    ['GET',  'paytab/{slug}/status/{token}', 'page_paytab_status'],
     ['GET',  'booking/{ref}',        'page_booking'],
     ['GET',  'booking/{ref}/status', 'page_booking_status'],
     ['POST', 'booking/{ref}/pay',    'post_booking_pay'],
@@ -70,6 +74,13 @@ $routes = [
     ['GET',  'admin/export/{dataset}', 'admin_export'],
     ['GET',  'admin/analytics',      'admin_analytics'],
     ['GET',  'admin/collections',    'admin_collections'],
+    ['GET',  'admin/pay-tabs',       'admin_paytabs'],
+    ['POST', 'admin/pay-tabs',       'admin_paytabs_save'],
+    ['POST', 'admin/pay-tabs/new',   'admin_paytab_new'],
+    ['POST', 'admin/pay-tabs/{id}/delete', 'admin_paytab_delete'],
+    ['GET',  'admin/rates',          'admin_rates'],
+    ['POST', 'admin/rates/{id}',     'admin_rates_save'],
+    ['POST', 'admin/rates/{id}/copy', 'admin_rates_copy'],
     ['GET',  'admin/collections/fees', 'admin_collections_fees'],
     ['POST', 'admin/collections/withdraw', 'admin_withdraw'],
     ['POST', 'admin/withdrawals/{id}/resolve', 'admin_withdraw_resolve'],

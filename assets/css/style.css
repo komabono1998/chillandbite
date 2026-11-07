@@ -1094,3 +1094,21 @@ body:has(.dj-player) .wa-fab{bottom:84px}
   .pay-amount{flex-direction:column;align-items:flex-start;gap:2px}
   .bk-section{padding-bottom:90px}
 }
+
+/* Payment tabs (Pay box on pages) */
+.paytabs .pt-head{text-align:center;margin-bottom:16px}
+.pt-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px}
+.pt-tab{border:2px solid #eadfcb;background:#fff;color:#171717;border-radius:99px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer}
+.pt-tab.on{border-color:var(--orange);background:#fff3e8}
+.pt-card{display:none;background:#fff;color:#171717;border-radius:20px;padding:clamp(18px,4vw,28px);box-shadow:0 12px 36px rgba(0,0,0,.12);border:1px solid #efe5d3}
+.pt-card.on{display:block}.pt-top{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:14px}
+.pt-top h3{margin:0 0 2px;font-size:1.15rem}.pt-top p{margin:0;color:#5a5249;font-size:.9rem}
+.pt-ic{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:#fdeee0;font-size:1.5rem;flex:none}
+.pt-amt{margin-left:auto;text-align:right}.pt-amt small{display:block;color:#777;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em}.pt-amt b{font-size:1.5rem;color:var(--orange-d)}
+.pt-form label{display:block;font-weight:600;font-size:.85rem;margin-top:12px}
+.pt-form input{display:block;width:100%;margin-top:4px;padding:12px 14px;border:1px solid #d9cbb2;border-radius:12px;font:inherit;font-size:16px;min-height:48px;background:#fff;color:#171717}
+.pt-form .btn{width:100%;margin-top:16px;min-height:52px}.pt-form .small{text-align:center;margin:10px 0 0}
+.pt-state{text-align:center;padding:10px 0}.pt-state.pay-ok{background:#e8f6ec;border-radius:16px;padding:20px 12px}.pt-state.pay-bad{background:#fdecea;border-radius:16px;padding:20px 12px}
+.pt-state h3{margin:6px 0}
+.is-busy .pay-btn-spin,.pt-go.is-busy .pay-btn-spin{display:inline-block}
+@media(max-width:640px){.pt-amt{margin-left:0;text-align:left;flex-basis:100%}.pt-state .btn{width:100%}}

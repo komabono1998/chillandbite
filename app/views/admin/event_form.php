@@ -24,7 +24,7 @@ $dtv = fn($k) => isset($old[$k]) ? $old[$k] : dt_out($e[$k] ?? null);
   <label class="chk"><input type="checkbox" name="featured" value="1"<?= $v('featured') ? ' checked' : '' ?>> Featured</label>
   <h2>Reservation options</h2>
   <div class="tbl-wrap"><table class="tbl"><tr><th>Enable</th><th>Type</th><th>Price / guest (UGX, 0 = free)</th><th>Min guests</th><th>Max guests</th></tr>
-  <?php foreach (RES_TYPES as $t => $lab): $o = $opts[$t] ?? null; $on = $old ? !empty($old['opt'][$t]['on']) : ($e ? (bool)$o : in_array($t, ['individual', 'couple', 'group', 'corporate'])); ?>
+  <?php foreach (RES_TYPES as $t => $lab): $o = $opts[$t] ?? null; $on = $old ? !empty($old['opt'][$t]['on']) : ($e ? (bool)$o : ($tplOn !== null ? isset($tplOn[$t]) : in_array($t, ['individual', 'couple', 'group', 'corporate']))); ?>
     <tr><td><input type="checkbox" name="opt[<?= $t ?>][on]" value="1"<?= $on ? ' checked' : '' ?> aria-label="Enable <?= h($lab) ?>"></td><td><?= h($lab) ?></td>
     <td><input type="number" min="0" name="opt[<?= $t ?>][price]" value="<?= (int)($o['price_per_guest'] ?? $old['opt'][$t]['price'] ?? 0) ?>"></td>
     <td><input type="number" min="1" name="opt[<?= $t ?>][min]" value="<?= (int)($o['min_guests'] ?? $old['opt'][$t]['min'] ?? ($t === 'couple' ? 2 : ($t === 'group' || $t === 'corporate' ? 3 : 1))) ?>"></td>

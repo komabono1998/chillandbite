@@ -78,6 +78,7 @@ $pageDesc = $desc ?? setting('tagline');
 <main id="main">
 <?php foreach (flash() as [$t, $m]): ?><div class="wrap"><div class="alert alert-<?= $t === 'err' ? 'err' : 'ok' ?>" role="<?= $t === 'err' ? 'alert' : 'status' ?>"><?= h($m) ?></div></div><?php endforeach; ?>
 <?= $content ?>
+<?= paytabs_render($seg) ?>
 <?php if ($cur !== '' && !in_array($seg, ['gallery', 'ticket'], true) && http_response_code() === 200): ?>
 <?php photo_strip(strip_nums($stripSets[$seg] ?? ['crowd', 'people'], crc32($seg), 14), 'Moments from Chill & Bite', 'strip-dark'); ?>
 <?php endif; ?>

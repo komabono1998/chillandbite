@@ -135,11 +135,31 @@ $chip = fn($c) => '<span class="ch-chip" style="--c:' . (PAY_CHANNELS[$c][1] ?? 
     <?php endforeach; ?></tbody></table></div><?php else: ?><div class="empty">No payments in this period.</div><?php endif; ?>
 </div>
 
+<?php if (!empty($r['tabs'])): $tb = []; foreach ($r['tabs'] as $x) { $tb[$x['id']]['title'] = $x['title']; $tb[$x['id']]['ch'][$x['ch']] = [(int)$x['amt'], (int)$x['n']]; } ?>
+<div class="panel">
+  <div class="panel-head"><h2>Page payments (payment tabs)</h2><a class="small" href="<?= url('admin/pay-tabs') ?>">Manage tabs</a></div>
+  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tab</th><th>MTN</th><th>Airtel</th><th>Payments</th><th>Total</th></tr></thead><tbody>
+  <?php foreach ($tb as $x): $mtn = $x['ch']['daraza_mtn'][0] ?? 0; $air = $x['ch']['daraza_airtel'][0] ?? 0; $cnt = array_sum(array_column($x['ch'], 1)); ?>
+    <tr><td><b><?= h($x['title']) ?></b></td><td><?= h(money($mtn)) ?></td><td><?= h(money($air)) ?></td><td><?= $cnt ?></td><td><b><?= h(money($mtn + $air)) ?></b></td></tr>
+  <?php endforeach; ?></tbody></table></div>
+</div>
+<?php endif; ?>
+<?php if (!empty($r['attention'])): ?>
+<div class="panel">
+  <div class="panel-head"><h2>⚠️ Page payments that need checking</h2></div>
+  <p class="small muted">Daraza never answered these. Check your Daraza statement, then choose what happened.</p>
+  <div class="tbl-wrap"><table class="tbl"><tr><th>When</th><th>Tab</th><th>Payer</th><th>Amount</th><th></th></tr>
+  <?php foreach ($r['attention'] as $x): ?><tr><td><?= fmt_date($x['created_at'], 'j M H:i') ?></td><td><?= h($x['tab_title']) ?></td><td><?= h($x['payer_name']) ?><br><span class="muted small"><?= h($x['phone']) ?></span></td><td><b><?= h(money($x['amount'])) ?></b></td>
+    <td><form class="inline" method="post" action="<?= url('admin/pay-attempts/' . (int)$x['id'] . '/resolve') ?>"><?= csrf_field() ?>
+      <button class="btn btn-primary btn-sm" name="choice" value="received" onclick="return confirm('Only choose this if the money really appears in your Daraza statement.')">Money moved</button> <button class="btn btn-ghost btn-sm" name="choice" value="dismiss">Nothing moved</button></form></td></tr><?php endforeach; ?></table></div>
+</div>
+<?php endif; ?>
 <div class="panel">
   <div class="panel-head"><h2>Latest payments</h2><span class="muted small">newest first (the export has them all)</span></div>
   <?php if ($r['recent']): ?><div class="tbl-wrap"><table class="tbl"><thead><tr><th>When</th><th>Channel</th><th>Guest</th><th>Event</th><th>Amount</th></tr></thead><tbody>
     <?php foreach ($r['recent'] as $x): ?><tr><td><?= fmt_date($x['created_at'], 'j M H:i') ?></td><td><?= $chip($x['ch']) ?></td>
-      <td><a href="<?= url('admin/reservations/' . (int)$x['rid']) ?>"><?= h($x['full_name']) ?></a><br><span class="muted small"><?= h($x['reference']) ?></span></td><td><?= h(excerpt($x['title'], 38)) ?></td>
+      <?php if ($x['rid']): ?><td><a href="<?= url('admin/reservations/' . (int)$x['rid']) ?>"><?= h($x['full_name']) ?></a><br><span class="muted small"><?= h($x['reference']) ?></span></td><td><?= h(excerpt((string)$x['title'], 38)) ?></td>
+      <?php else: ?><td><b>Page payment</b><br><span class="muted small"><?= h(excerpt(preg_replace('/^[^:]*:\s*/', '', (string)$x['note']), 60)) ?></span></td><td><?= h((string)$x['tab_title']) ?></td><?php endif; ?>
       <td><b style="<?= $x['amount'] < 0 ? 'color:#b3261e' : '' ?>"><?= h(money($x['amount'])) ?></b></td></tr><?php endforeach; ?>
   </tbody></table></div><?php else: ?><div class="empty">No payments in this period.</div><?php endif; ?>
 </div>

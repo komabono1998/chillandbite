@@ -65,9 +65,12 @@ function admin_event_form(array $a = []): void
         $e = row('SELECT * FROM events WHERE id = ?', [(int)$a['id']]) ?? not_found();
         foreach (event_options((int)$e['id']) as $o) $opts[$o['type']] = $o;
     }
-    admin_view('event_form', ['title' => $e ? 'Edit event' : 'New event', 'e' => $e, 'opts' => $opts, 'cats' => rows('SELECT * FROM event_categories ORDER BY id'),
+    // a new event starts with the default rates saved under Ticket rates
+    $tpl = !$e ? rates_template() : null; $tplOn = null; $tplPk = '';
+    if ($tpl) { $tplOn = []; foreach ($tpl['opt'] as $t => $o) { $tplOn[$t] = 1; $opts[$t] = ['price_per_guest' => $o['price'], 'min_guests' => $o['min'], 'max_guests' => $o['max']]; } $tplPk = (string)$tpl['packages']; }
+    admin_view('event_form', ['title' => $e ? 'Edit event' : 'New event', 'e' => $e, 'opts' => $opts, 'tplOn' => $tplOn, 'cats' => rows('SELECT * FROM event_categories ORDER BY id'),
         'old' => $_SESSION['old'] ?? [],
-        'pkgText' => $e ? implode("\n", array_map(fn($p) => $p['name'] . ' | ' . (int)$p['price'], event_packages((int)$e['id']))) : '']);
+        'pkgText' => $e ? implode("\n", array_map(fn($p) => $p['name'] . ' | ' . (int)$p['price'], event_packages((int)$e['id']))) : $tplPk]);
     clear_old();
 }
 function admin_event_save(): void

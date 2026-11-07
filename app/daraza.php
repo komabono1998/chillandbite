@@ -26,7 +26,11 @@ function daraza_ensure_table(): void
     db()->exec("CREATE TABLE IF NOT EXISTS pay_attempts (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         token CHAR(24) NOT NULL UNIQUE,
-        reservation_id INT UNSIGNED NOT NULL,
+        reservation_id INT UNSIGNED NULL,
+        tab_id INT UNSIGNED NULL,
+        payer_name VARCHAR(140) NULL,
+        payer_email VARCHAR(190) NULL,
+        payer_note VARCHAR(255) NULL,
         direction ENUM('collect','refund') NOT NULL DEFAULT 'collect',
         amount INT UNSIGNED NOT NULL,
         phone VARCHAR(20) NOT NULL,
@@ -118,11 +122,33 @@ function pay_ensure_schema(): void
     static $done = false;
     if ($done) return;
     $done = true;
-    if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'channel'")) {
-        db()->exec("ALTER TABLE payments ADD COLUMN channel VARCHAR(20) NULL AFTER method");
-        pay_backfill_channels();
-    }
+    $has = fn(string $t, string $c) => (int)val('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$t, $c]);
+    $nullable = fn(string $t, string $c) => val("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?", [$t, $c]) === 'YES';
+    if (!$has('payments', 'channel')) { db()->exec('ALTER TABLE payments ADD COLUMN channel VARCHAR(20) NULL AFTER method'); pay_backfill_channels(); }
+    if (!$has('payments', 'tab_id')) db()->exec('ALTER TABLE payments ADD COLUMN tab_id INT UNSIGNED NULL AFTER reservation_id, ADD KEY idx_pay_tab (tab_id)');
+    if (!$nullable('payments', 'reservation_id')) db()->exec('ALTER TABLE payments MODIFY reservation_id INT UNSIGNED NULL');
+    daraza_ensure_table();
+    if (!$has('pay_attempts', 'tab_id'))
+        db()->exec('ALTER TABLE pay_attempts ADD COLUMN tab_id INT UNSIGNED NULL AFTER reservation_id, ADD COLUMN payer_name VARCHAR(140) NULL AFTER tab_id, ADD COLUMN payer_email VARCHAR(190) NULL AFTER payer_name, ADD COLUMN payer_note VARCHAR(255) NULL AFTER payer_email');
+    if (!$nullable('pay_attempts', 'reservation_id')) db()->exec('ALTER TABLE pay_attempts MODIFY reservation_id INT UNSIGNED NULL');
+    paytabs_ensure_table();
 }
+/** The payment_tabs table and the three starter tabs (all switched off until the admin turns them on). */
+function paytabs_ensure_table(): void
+{
+    db()->exec("CREATE TABLE IF NOT EXISTS payment_tabs (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(60) NOT NULL UNIQUE, title VARCHAR(120) NOT NULL, blurb VARCHAR(255) NOT NULL DEFAULT '',
+        amount INT UNSIGNED NOT NULL DEFAULT 0, active TINYINT(1) NOT NULL DEFAULT 0, pages VARCHAR(255) NOT NULL DEFAULT '', sort SMALLINT NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_pt_active (active)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    foreach ([['advertising', 'Advertising payment', 'Pay for your advertising or sponsorship package.', 'advertise', 1],
+              ['dj-booking', 'DJ booking payment', 'Pay your DJ booking fee or deposit.', 'djs', 2],
+              ['mc-booking', 'MC and comedy booking payment', 'Pay your MC or comedy show booking fee or deposit.', 'laugh', 3]] as $t)
+        q('INSERT IGNORE INTO payment_tabs (slug, title, blurb, pages, sort) VALUES (?,?,?,?,?)', $t);
+}
+/** Short receipt number shown to someone who paid through a payment tab. */
+function pay_receipt_code(string $token): string { return 'RC' . strtoupper(substr($token, 0, 8)); }
+
 /** Label payments made through Daraza before the channel column existed, using the note that was saved with them. */
 function pay_backfill_channels(): void
 {
@@ -156,14 +182,23 @@ function daraza_has_pending(int $reservationId, string $direction): bool
     return (bool)val("SELECT id FROM pay_attempts WHERE reservation_id = ? AND direction = ? AND status IN ('pending') LIMIT 1", [$reservationId, $direction]);
 }
 
+/** Start a payment made through a payment tab (not tied to a reservation). */
+function daraza_start_tab(array $tab, int $amount, string $phone, string $name, string $email, string $note): array
+{
+    $token = bin2hex(random_bytes(12));
+    pa_q('INSERT INTO pay_attempts (token, tab_id, payer_name, payer_email, payer_note, direction, amount, phone, method) VALUES (?,?,?,?,?,?,?,?,?)',
+        [$token, $tab['id'], mb_substr($name, 0, 140), $email ?: null, mb_substr($note, 0, 255) ?: null, 'collect', $amount, $phone, daraza_method($phone)]);
+    return row('SELECT * FROM pay_attempts WHERE token = ?', [$token]);
+}
+
 /** Do the call for an attempt and record the outcome. Safe to run once per attempt. */
 function daraza_run(int $attemptId): void
 {
-    $a = row('SELECT a.*, r.reference FROM pay_attempts a JOIN reservations r ON r.id = a.reservation_id WHERE a.id = ?', [$attemptId]);
+    $a = row('SELECT a.*, r.reference, t.title AS tab_title FROM pay_attempts a LEFT JOIN reservations r ON r.id = a.reservation_id LEFT JOIN payment_tabs t ON t.id = a.tab_id WHERE a.id = ?', [$attemptId]);
     if (!$a || $a['status'] !== 'pending') return;
+    $note = $a['direction'] === 'refund' ? 'Refund ' . $a['reference'] : ($a['reference'] ? 'Chill & Bite ' . $a['reference'] : 'Chill & Bite ' . ($a['tab_title'] ?? 'payment') . ' ' . pay_receipt_code((string)$a['token']));
     try {
-        [$outcome, $msg, $rid] = daraza_call($a['direction'] === 'refund' ? 'remit' : 'request_to_pay', (int)$a['method'], (int)$a['amount'], (string)$a['phone'],
-            ($a['direction'] === 'refund' ? 'Refund ' : 'Chill & Bite ') . $a['reference']);
+        [$outcome, $msg, $rid] = daraza_call($a['direction'] === 'refund' ? 'remit' : 'request_to_pay', (int)$a['method'], (int)$a['amount'], (string)$a['phone'], $note);
     } catch (Throwable $e) {
         error_log('daraza: ' . $e->getMessage());
         [$outcome, $msg, $rid] = ['unconfirmed', 'Unexpected error while contacting the payment service.', null];
@@ -183,21 +218,31 @@ function daraza_settle(int $attemptId, string $outcome, string $msg, ?string $re
         $confirmNow = false;
         if ($done === 1 && $outcome === 'success' && $a) {
             $refund = $a['direction'] === 'refund';
-            q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by) VALUES (?,?,?,?,?,?)',
-                [$a['reservation_id'], $refund ? -(int)$a['amount'] : (int)$a['amount'], $refund ? 'refund' : 'mobile_money', $refund ? 'daraza_refund' : 'daraza_' . daraza_network((string)$a['phone']),
-                 mb_substr(($refund ? 'Refund sent via Daraza to ' : 'Paid online via Daraza from ') . $a['phone'] . ($a['request_id'] ? ' (ref ' . $a['request_id'] . ')' : ''), 0, 255), $userId ?? $a['started_by']]);
-            if (!$refund) {
-                $r = row('SELECT status, amount_due FROM reservations WHERE id = ?', [$a['reservation_id']]);
-                $confirmNow = $r && $r['status'] === 'pending' && res_paid((int)$a['reservation_id']) >= (float)$r['amount_due'];
-                if ($confirmNow) q("UPDATE reservations SET status='confirmed' WHERE id = ? AND status='pending'", [$a['reservation_id']]);
+            $ref = $a['request_id'] ? ' (ref ' . $a['request_id'] . ')' : '';
+            if ($a['tab_id']) {        // a payment made through a page's payment tab
+                $tab = row('SELECT title FROM payment_tabs WHERE id = ?', [$a['tab_id']]);
+                q('INSERT INTO payments (reservation_id, tab_id, amount, method, channel, note, recorded_by) VALUES (NULL,?,?,?,?,?,NULL)',
+                    [$a['tab_id'], (int)$a['amount'], 'mobile_money', 'daraza_' . daraza_network((string)$a['phone']),
+                     mb_substr(($tab['title'] ?? 'Payment tab') . ': ' . $a['payer_name'] . ', ' . $a['phone'] . ($a['payer_note'] ? ', ' . $a['payer_note'] : '') . $ref, 0, 255)]);
+            } else {
+                q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by) VALUES (?,?,?,?,?,?)',
+                    [$a['reservation_id'], $refund ? -(int)$a['amount'] : (int)$a['amount'], $refund ? 'refund' : 'mobile_money', $refund ? 'daraza_refund' : 'daraza_' . daraza_network((string)$a['phone']),
+                     mb_substr(($refund ? 'Refund sent via Daraza to ' : 'Paid online via Daraza from ') . $a['phone'] . $ref, 0, 255), $userId ?? $a['started_by']]);
+                if (!$refund) {
+                    $r = row('SELECT status, amount_due FROM reservations WHERE id = ?', [$a['reservation_id']]);
+                    $confirmNow = $r && $r['status'] === 'pending' && res_paid((int)$a['reservation_id']) >= (float)$r['amount_due'];
+                    if ($confirmNow) q("UPDATE reservations SET status='confirmed' WHERE id = ? AND status='pending'", [$a['reservation_id']]);
+                }
             }
         }
         $pdo->commit();
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
     if ($done === 1 && $outcome === 'success' && $a && $a['direction'] === 'collect') {
-        // booked and paid: email the ticket (full payment) or a receipt (part payment)
-        try { $confirmNow ? send_ticket((int)$a['reservation_id']) : daraza_receipt((int)$a['reservation_id'], (int)$a['amount']); }
-        catch (Throwable $e) { error_log('daraza mail: ' . $e->getMessage()); }
+        try {
+            if ($a['tab_id']) paytab_notify($a);
+            elseif ($confirmNow) send_ticket((int)$a['reservation_id']);          // booked and paid in full: email the ticket
+            else daraza_receipt((int)$a['reservation_id'], (int)$a['amount']);    // part payment: email a receipt
+        } catch (Throwable $e) { error_log('daraza mail: ' . $e->getMessage()); }
     }
     return $done === 1;
 }

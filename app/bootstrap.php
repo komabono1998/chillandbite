@@ -200,6 +200,7 @@ const PERMS = [
     'reports'        => ['event_manager', 'finance'],
     'analytics'      => ['event_manager', 'marketing', 'editor'],                 // visitor statistics
     'collections'    => ['event_manager', 'finance'],                              // money collected, by channel
+    'paytabs'        => ['event_manager', 'finance', 'marketing'],                  // fixed-amount payment tabs on pages
     'withdraw'       => [],                                                       // move wallet money to a phone (administrator only)
     'news'           => ['editor'],                                               // (section hidden) articles
     'comedy'         => ['editor'],
@@ -214,7 +215,7 @@ const PERMS = [
 const MODULE_LABELS = [
     'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
     'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)',
-    'reports' => 'Reports & exports', 'analytics' => 'Visitor statistics', 'collections' => 'Collections dashboard', 'withdraw' => 'Withdraw wallet money', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
+    'reports' => 'Reports & exports', 'analytics' => 'Visitor statistics', 'collections' => 'Collections dashboard', 'withdraw' => 'Withdraw wallet money', 'paytabs' => 'Payment tabs', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
     'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];
 function current_user(): ?array

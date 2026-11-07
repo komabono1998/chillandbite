@@ -14,12 +14,13 @@ $groups = [
     ],
     'Operations' => [
         ['Events', 'admin/events', 'events', '📅'],
+        ['Ticket rates', 'admin/rates', 'events', '🏷️'],
         ['Reservations', 'admin/reservations', 'reservations', '🎟️'],
         ['Tickets', 'admin/tickets', 'tickets', '🎫'],
         ['Check-in desk', 'admin/checkin', 'checkin', '✅'],
         ['Inquiries', 'admin/inquiries', 'inquiries', '📬'],
     ],
-    'Insights' => [['Collections', 'admin/collections', 'collections', '💰'], ['Visitors', 'admin/analytics', 'analytics', '📈'], ['Reports & exports', 'admin/reports', 'reports', '📊']],
+    'Insights' => [['Collections', 'admin/collections', 'collections', '💰'], ['Payment tabs', 'admin/pay-tabs', 'paytabs', '🧩'], ['Visitors', 'admin/analytics', 'analytics', '📈'], ['Reports & exports', 'admin/reports', 'reports', '📊']],
     'Administration' => [
         ['Users & roles', 'admin/users', 'users', '👥'],
         ['Settings', 'admin/settings', 'settings', '⚙️'],
