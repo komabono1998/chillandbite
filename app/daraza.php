@@ -52,21 +52,19 @@ function pa_q(string $sql, array $p = []): PDOStatement
     }
 }
 
-/** +256XXXXXXXXX from what a guest typed, or null when it is not a Ugandan mobile number. */
+/** +256XXXXXXXXX from what a guest typed, or null when it is not 9 digits after the country code. Daraza decides whether the number can be charged. */
 function daraza_phone(string $in): ?string
 {
     $d = preg_replace('/\D+/', '', $in);
     if (str_starts_with($d, '0')) $d = '256' . substr($d, 1);
     elseif (strlen($d) === 9) $d = '256' . $d;
-    return preg_match('/^256[37]\d{8}$/', $d) ? '+' . $d : null;
+    return preg_match('/^256\d{9}$/', $d) ? '+' . $d : null;
 }
-/** 'mtn', 'airtel' or null from the number's prefix. */
-function daraza_network(string $phone): ?string
+/** 'airtel' for Airtel prefixes, otherwise 'mtn'. Unusual numbers are sent as MTN and Daraza answers if they cannot be charged. */
+function daraza_network(string $phone): string
 {
     $p = substr(preg_replace('/\D+/', '', $phone), 3, 2);
-    if (in_array($p, ['77', '78', '76', '39'], true)) return 'mtn';
-    if (in_array($p, ['70', '75', '74', '20'], true)) return 'airtel';
-    return null;
+    return in_array($p, ['70', '74', '75', '20'], true) ? 'airtel' : 'mtn';
 }
 function daraza_method(string $phone): int { return daraza_network($phone) === 'airtel' ? 2 : 1; }
 const DARAZA_MIN = 500, DARAZA_MAX = 5000000;

@@ -116,7 +116,7 @@ $steps = [
             <label>Phone number to pay from <input type="tel" name="phone" id="payPhone" value="<?= h($r['phone']) ?>" placeholder="0772 123 456" inputmode="tel" required></label>
             <label>Amount (UGX) <input type="text" name="amount" id="payAmount" value="<?= (int)$balance ?>" inputmode="numeric" required></label>
             <p class="small muted">MTN Mobile Money or Airtel Money. Pay the full balance or part of it (UGX 500 to 5,000,000 at a time). You will get a prompt on your phone: enter your PIN to approve.</p>
-            <button class="btn btn-primary btn-lg" id="payGo" type="submit">Pay <?= h(money($balance)) ?></button>
+            <button class="btn btn-primary btn-lg" id="payGo" type="submit"><span class="pay-btn-spin" aria-hidden="true"></span><span id="payGoText">Pay <?= h(money($balance)) ?></span></button>
             <p class="pay-err small" id="payErr" role="alert" hidden></p>
           </form>
           <div class="pay-wait" id="payWait" hidden aria-live="polite">
@@ -197,7 +197,7 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
     stop(); wait.classList.toggle('pay-ok', ok); wait.classList.toggle('pay-bad', !ok); wait.querySelector('.pay-spin').hidden = true; timer.hidden = true;
     title.textContent = head; text.textContent = msg;
     if (ok) setTimeout(function () { location.reload(); }, 1800);
-    else { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-ghost-dark btn-sm'; b.textContent = 'Try again'; b.onclick = function () { wait.hidden = true; form.hidden = false; go.disabled = false; b.remove(); }; wait.appendChild(b); }
+    else { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-ghost-dark btn-sm'; b.textContent = 'Try again'; b.onclick = function () { wait.hidden = true; form.hidden = false; go.disabled = false; go.classList.remove('is-busy'); b.remove(); }; wait.appendChild(b); }
   }
   function check(token) {
     fetch(payUrl + '/' + token, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
@@ -208,14 +208,14 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
     }).catch(function () { poll = setTimeout(function () { check(token); }, 5000); });
   }
   form.addEventListener('submit', function (e) {
-    e.preventDefault(); show('');
+    e.preventDefault(); show(''); go.classList.add('is-busy');
     var fd = new FormData(form); fd.append('_csrf', csrf); go.disabled = true;
     fetch(payUrl, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } }).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); }).then(function (x) {
-      if (!x[0] || !x[1].ok) { go.disabled = false; return show((x[1] && x[1].error) || 'Could not start the payment. Please try again.'); }
+      if (!x[0] || !x[1].ok) { go.disabled = false; go.classList.remove('is-busy'); return show((x[1] && x[1].error) || 'Could not start the payment. Please try again.'); }
       form.hidden = true; wait.hidden = false; t0 = Date.now(); timer.textContent = '0:00';
       tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000);
       check(x[1].token);
-    }).catch(function () { go.disabled = false; show('Network problem. Please check your connection and try again.'); });
+    }).catch(function () { go.disabled = false; go.classList.remove('is-busy'); show('Network problem. Please check your connection and try again.'); });
   });
 })();
 </script>

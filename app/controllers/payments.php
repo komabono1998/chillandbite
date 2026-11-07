@@ -19,9 +19,8 @@ function post_booking_pay(array $a): void
     $balance = (int)max(0, (float)$r['amount_due'] - res_paid((int)$r['id']));
     if ($balance < 1) pay_json(['ok' => false, 'error' => 'This booking is already paid in full.'], 422);
     $phone = daraza_phone((string)($_POST['phone'] ?? ''));
-    if (!$phone) pay_json(['ok' => false, 'error' => 'Enter a valid MTN or Airtel number, for example 0772 123 456.'], 422);
+    if (!$phone) pay_json(['ok' => false, 'error' => 'Enter your mobile money number, for example 0772 123 456.'], 422);
     $net = daraza_network($phone);
-    if (!$net) pay_json(['ok' => false, 'error' => 'That number is not an MTN or Airtel number we can charge. Please use an MTN (077, 078, 076, 039) or Airtel (070, 075, 074) number.'], 422);
     $amount = (int)preg_replace('/\D+/', '', (string)($_POST['amount'] ?? '')) ?: min($balance, DARAZA_MAX);
     if ($amount > $balance) pay_json(['ok' => false, 'error' => 'That is more than the balance of ' . money($balance) . '.'], 422);
     if ($amount > DARAZA_MAX) pay_json(['ok' => false, 'error' => 'The largest single payment is ' . money(DARAZA_MAX) . '. Pay part now and the rest after.'], 422);
@@ -63,7 +62,7 @@ function admin_daraza_refund(array $a): void
     if (!in_array($role, ['admin', 'finance', 'event_manager'], true)) $fail('Only an administrator, finance officer or event manager can send refunds.');
     if (!daraza_enabled()) $fail('Daraza is not set up on this site.');
     $phone = daraza_phone((string)($_POST['phone'] ?? ''));
-    if (!$phone || !daraza_network($phone)) $fail('Enter a valid MTN or Airtel number to send the refund to.');
+    if (!$phone) $fail('Enter the mobile money number to send the refund to.');
     $net = (int)res_paid($id);
     $amount = (int)preg_replace('/\D+/', '', (string)($_POST['amount'] ?? '0'));
     if ($amount < DARAZA_MIN || $amount > min($net, DARAZA_MAX)) $fail('The refund must be between ' . money(DARAZA_MIN) . ' and ' . money(min($net, DARAZA_MAX)) . ' (what is currently paid, up to the Daraza limit). Send larger refunds in parts.');
