@@ -114,6 +114,7 @@ $steps = [
           <form class="pay-box" id="payBox" autocomplete="off">
             <div class="pay-title"><span aria-hidden="true">📲</span> Pay now with mobile money</div>
             <label>Phone number to pay from <input type="tel" name="phone" id="payPhone" value="<?= h($r['phone']) ?>" placeholder="0772 123 456" inputmode="tel" required></label>
+            <?php if (empty($r['email'])): ?><label>Email for your ticket (optional) <input type="email" name="email" placeholder="you@example.com"></label><?php endif; ?>
             <label>Amount (UGX) <input type="text" name="amount" id="payAmount" value="<?= (int)$balance ?>" inputmode="numeric" required></label>
             <p class="small muted">MTN Mobile Money or Airtel Money. Pay the full balance or part of it (UGX 500 to 5,000,000 at a time). You will get a prompt on your phone: enter your PIN to approve.</p>
             <button class="btn btn-primary btn-lg" id="payGo" type="submit"><span class="pay-btn-spin" aria-hidden="true"></span><span id="payGoText">Pay <?= h(money($balance)) ?></span></button>
@@ -193,14 +194,21 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
   function show(m) { err.textContent = m; err.hidden = !m; }
   function stop() { clearInterval(tick); clearTimeout(poll); }
   function fmt(s) { return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
-  function end(ok, head, msg) {
+  function end(ok, head, msg, stay) {
     stop(); wait.classList.toggle('pay-ok', ok); wait.classList.toggle('pay-bad', !ok); wait.querySelector('.pay-spin').hidden = true; timer.hidden = true;
     title.textContent = head; text.textContent = msg;
-    if (ok) setTimeout(function () { location.reload(); }, 1800);
+    if (ok && !stay) setTimeout(function () { location.reload(); }, 1800);
+    else if (ok) return;
     else { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-ghost-dark btn-sm'; b.textContent = 'Try again'; b.onclick = function () { wait.hidden = true; form.hidden = false; go.disabled = false; go.classList.remove('is-busy'); b.remove(); }; wait.appendChild(b); }
   }
   function check(token) {
     fetch(payUrl + '/' + token, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.status === 'success' && j.ticket) {
+        end(true, 'Payment received. You are booked!', 'Your reservation is confirmed and your ticket is ready. We also emailed it if you gave us an email.', true);
+        var row = document.createElement('div'); row.className = 'btn-row'; row.style.justifyContent = 'center'; row.style.marginTop = '12px';
+        row.innerHTML = '<a class="btn btn-primary" href="' + j.ticket + '">Open my ticket</a><a class="btn btn-ghost-dark" href="' + j.download + '">Download ticket</a>'; wait.appendChild(row);
+        return;
+      }
       if (j.status === 'success') return end(true, 'Payment received', 'Thank you! Updating your booking...');
       if (j.status === 'failed') return end(false, 'Payment not completed', j.message || 'The payment was not approved.');
       if (j.status === 'unconfirmed') return end(false, 'Waiting for confirmation', j.message);

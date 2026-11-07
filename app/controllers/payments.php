@@ -21,6 +21,8 @@ function post_booking_pay(array $a): void
     $phone = daraza_phone((string)($_POST['phone'] ?? ''));
     if (!$phone) pay_json(['ok' => false, 'error' => 'Enter your mobile money number, for example 0772 123 456.'], 422);
     $net = daraza_network($phone);
+    $mail = trim((string)($_POST['email'] ?? ''));
+    if ($mail !== '' && !filter_var($mail, FILTER_VALIDATE_EMAIL)) pay_json(['ok' => false, 'error' => 'That email address looks invalid.'], 422);
     $amount = (int)preg_replace('/\D+/', '', (string)($_POST['amount'] ?? '')) ?: min($balance, DARAZA_MAX);
     if ($amount > $balance) pay_json(['ok' => false, 'error' => 'That is more than the balance of ' . money($balance) . '.'], 422);
     if ($amount > DARAZA_MAX) pay_json(['ok' => false, 'error' => 'The largest single payment is ' . money(DARAZA_MAX) . '. Pay part now and the rest after.'], 422);
@@ -30,6 +32,7 @@ function post_booking_pay(array $a): void
         if (daraza_has_pending((int)$r['id'], 'collect')) pay_json(['ok' => false, 'error' => 'A payment request is already waiting for approval on your phone. Please approve it or wait a few minutes.'], 409);
         if ((int)val("SELECT COUNT(*) FROM pay_attempts WHERE phone = ? AND created_at > (NOW() - INTERVAL 1 HOUR)", [$phone]) >= 4) pay_json(['ok' => false, 'error' => 'Too many payment requests to this number. Please try again later.'], 429);
     } catch (PDOException $e) { if ($e->getCode() === '42S02') daraza_ensure_table(); else throw $e; }
+    if ($mail !== '' && empty($r['email'])) q('UPDATE reservations SET email = ? WHERE id = ?', [$mail, $r['id']]);
     $at = daraza_start((int)$r['id'], 'collect', $amount, $phone);
     audit('pay.start', $r['reference'] . ' ' . money($amount));
     // answer the browser now; the customer approves on their phone and the result is recorded when Daraza replies
@@ -41,12 +44,14 @@ function page_pay_status(array $a): void
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) pay_json(['error' => 'bad token'], 404);
     if (rate_limited('paypoll', 200, 1800)) pay_json(['error' => 'slow down'], 429);
     try { daraza_expire_stale(); } catch (Throwable $e) {}
-    $at = row('SELECT a.status, a.message, a.amount, a.created_at, r.reference FROM pay_attempts a JOIN reservations r ON r.id = a.reservation_id WHERE a.token = ? AND r.reference = ? AND a.direction = ?',
+    $at = row('SELECT a.status, a.message, a.amount, a.created_at, r.reference, r.id AS rid, r.status AS rstatus FROM pay_attempts a JOIN reservations r ON r.id = a.reservation_id WHERE a.token = ? AND r.reference = ? AND a.direction = ?',
         [$a['token'], strtoupper($a['ref']), 'collect']);
     if (!$at) pay_json(['error' => 'not found'], 404);
     $msg = $at['message'];
     if ($at['status'] === 'unconfirmed') $msg = 'We could not confirm your payment yet. If money left your phone, please do not pay again. Quote ' . $at['reference'] . ' to the team and we will confirm it.';
-    pay_json(['status' => $at['status'], 'message' => $msg, 'elapsed' => time() - strtotime((string)$at['created_at'])]);
+    $out = ['status' => $at['status'], 'message' => $msg, 'elapsed' => time() - strtotime((string)$at['created_at'])];
+    if ($at['status'] === 'success' && $at['rstatus'] === 'confirmed') { $t = ticket_url((int)$at['rid']); $out['ticket'] = $t; $out['download'] = $t . '?download=1'; }
+    pay_json($out);
 }
 
 /* ================= Admin: refunds and unconfirmed payments ================= */

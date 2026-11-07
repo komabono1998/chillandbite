@@ -371,6 +371,7 @@ function dataset_meta(): array
         'events'       => ['perm' => ['events', 'reports'], 'label' => 'Event summary'],
         'inquiries'    => ['perm' => ['inquiries'], 'label' => 'Inquiries'],
         'partners'     => ['perm' => ['advertising'], 'label' => 'Partner applications'],
+        'collections'       => ['perm' => ['collections'], 'label' => 'Collections by channel'],
         'visitors'          => ['perm' => ['analytics'], 'label' => 'Visitor statistics report'],
         'visitor_pages'     => ['perm' => ['analytics'], 'label' => 'Most visited pages'],
         'visitor_countries' => ['perm' => ['analytics'], 'label' => 'Visitors by country'],
@@ -387,6 +388,7 @@ function report_range(): array
 function export_dataset(string $name): ?array
 {
     if (str_starts_with($name, 'visitor')) return analytics_export_dataset($name);
+    if ($name === 'collections') return collections_export_dataset();
     switch ($name) {
         case 'reservations': {
             [$w, $p] = reservation_filters();

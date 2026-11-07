@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS payments (
   reservation_id INT UNSIGNED NOT NULL,
   amount DECIMAL(12,0) NOT NULL,
   method ENUM('cash','mobile_money','bank','pesapal','refund') NOT NULL DEFAULT 'cash',
+  channel VARCHAR(20) NULL COMMENT 'daraza_mtn, daraza_airtel, daraza_refund; NULL = recorded by staff',
   note VARCHAR(255) NULL,
   recorded_by INT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -129,6 +130,21 @@ CREATE TABLE IF NOT EXISTS pay_attempts (
   completed_at DATETIME NULL,
   KEY idx_pa_res (reservation_id, status), KEY idx_pa_phone (phone, created_at),
   CONSTRAINT fk_pa_res FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Money withdrawn from the Daraza wallet to a mobile money number (admin only)
+CREATE TABLE IF NOT EXISTS daraza_withdrawals (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  amount INT UNSIGNED NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  method SMALLINT NOT NULL DEFAULT 1,
+  status ENUM('pending','success','failed','unconfirmed') NOT NULL DEFAULT 'pending',
+  request_id VARCHAR(80) NULL,
+  message VARCHAR(255) NULL,
+  user_id INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  completed_at DATETIME NULL,
+  KEY idx_dw_time (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS article_categories (

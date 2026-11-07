@@ -17,6 +17,7 @@ require __DIR__ . '/app/analytics.php';
 require __DIR__ . '/app/seo.php';
 require __DIR__ . '/app/daraza.php';
 require __DIR__ . '/app/controllers/payments.php';
+require __DIR__ . '/app/controllers/collections.php';
 require __DIR__ . '/app/controllers/analytics.php';
 
 header('X-Frame-Options: SAMEORIGIN');
@@ -67,6 +68,10 @@ $routes = [
     ['GET',  'admin/reports',        'admin_reports'],
     ['GET',  'admin/export/{dataset}', 'admin_export'],
     ['GET',  'admin/analytics',      'admin_analytics'],
+    ['GET',  'admin/collections',    'admin_collections'],
+    ['GET',  'admin/collections/fees', 'admin_collections_fees'],
+    ['POST', 'admin/collections/withdraw', 'admin_withdraw'],
+    ['POST', 'admin/withdrawals/{id}/resolve', 'admin_withdraw_resolve'],
     ['POST', 'admin/system/migrate', 'admin_migrate'],
     ['GET',  'admin/checkin',        'admin_checkin_desk'],
     ['GET',  'admin/accreditation',  'admin_accreditation'],

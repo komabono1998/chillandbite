@@ -19,7 +19,7 @@ $groups = [
         ['Check-in desk', 'admin/checkin', 'checkin', '✅'],
         ['Inquiries', 'admin/inquiries', 'inquiries', '📬'],
     ],
-    'Insights' => [['Visitors', 'admin/analytics', 'analytics', '📈'], ['Reports & exports', 'admin/reports', 'reports', '📊']],
+    'Insights' => [['Collections', 'admin/collections', 'collections', '💰'], ['Visitors', 'admin/analytics', 'analytics', '📈'], ['Reports & exports', 'admin/reports', 'reports', '📊']],
     'Administration' => [
         ['Users & roles', 'admin/users', 'users', '👥'],
         ['Settings', 'admin/settings', 'settings', '⚙️'],

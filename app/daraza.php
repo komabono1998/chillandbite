@@ -111,6 +111,31 @@ function daraza_call(string $endpoint, int $method, int $amount, string $phone, 
     return ['failed', (string)($j['details'] ?? $j['message'] ?? 'The payment was not completed.'), $rid];
 }
 
+/* ---------- Payment channels (which route a payment came through) ---------- */
+/** Make sure payments.channel exists on a database that was set up before it was added. */
+function pay_ensure_schema(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'channel'")) {
+        db()->exec("ALTER TABLE payments ADD COLUMN channel VARCHAR(20) NULL AFTER method");
+        pay_backfill_channels();
+    }
+}
+/** Label payments made through Daraza before the channel column existed, using the note that was saved with them. */
+function pay_backfill_channels(): void
+{
+    q("UPDATE payments SET channel = 'daraza_refund' WHERE channel IS NULL AND note LIKE 'Refund sent via Daraza%'");
+    q("UPDATE payments SET channel = 'daraza_airtel' WHERE channel IS NULL AND (note LIKE 'Paid online via Daraza from +25670%' OR note LIKE 'Paid online via Daraza from +25674%' OR note LIKE 'Paid online via Daraza from +25675%' OR note LIKE 'Paid online via Daraza from +25620%')");
+    q("UPDATE payments SET channel = 'daraza_mtn' WHERE channel IS NULL AND note LIKE 'Paid online via Daraza from%'");
+}
+const PAY_CHANNELS = [
+    'daraza_mtn' => ['MTN MoMo (online)', '#f5b800'], 'daraza_airtel' => ['Airtel Money (online)', '#e4002b'],
+    'mobile_money' => ['Mobile money (staff recorded)', '#7b4fc4'], 'cash' => ['Cash', '#2e9d57'], 'bank' => ['Bank', '#2f6fd6'],
+    'pesapal' => ['Card / Pesapal', '#0e8f8f'], 'refund' => ['Refunds (staff recorded)', '#8a8174'], 'daraza_refund' => ['Refunds (sent via Daraza)', '#b3261e'],
+];
+
 /* ---------- Attempts ---------- */
 function daraza_start(int $reservationId, string $direction, int $amount, string $phone, ?int $userId = null): array
 {
@@ -148,6 +173,7 @@ function daraza_run(int $attemptId): void
 /** Record an outcome once. Late answers may still turn an "unconfirmed" attempt into success or failure. */
 function daraza_settle(int $attemptId, string $outcome, string $msg, ?string $requestId = null, ?int $userId = null): bool
 {
+    pay_ensure_schema();
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -157,8 +183,8 @@ function daraza_settle(int $attemptId, string $outcome, string $msg, ?string $re
         $confirmNow = false;
         if ($done === 1 && $outcome === 'success' && $a) {
             $refund = $a['direction'] === 'refund';
-            q('INSERT INTO payments (reservation_id, amount, method, note, recorded_by) VALUES (?,?,?,?,?)',
-                [$a['reservation_id'], $refund ? -(int)$a['amount'] : (int)$a['amount'], $refund ? 'refund' : 'mobile_money',
+            q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by) VALUES (?,?,?,?,?,?)',
+                [$a['reservation_id'], $refund ? -(int)$a['amount'] : (int)$a['amount'], $refund ? 'refund' : 'mobile_money', $refund ? 'daraza_refund' : 'daraza_' . daraza_network((string)$a['phone']),
                  mb_substr(($refund ? 'Refund sent via Daraza to ' : 'Paid online via Daraza from ') . $a['phone'] . ($a['request_id'] ? ' (ref ' . $a['request_id'] . ')' : ''), 0, 255), $userId ?? $a['started_by']]);
             if (!$refund) {
                 $r = row('SELECT status, amount_due FROM reservations WHERE id = ?', [$a['reservation_id']]);
@@ -168,7 +194,11 @@ function daraza_settle(int $attemptId, string $outcome, string $msg, ?string $re
         }
         $pdo->commit();
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
-    if ($confirmNow && $a) { try { send_ticket((int)$a['reservation_id']); } catch (Throwable $e) { error_log('daraza ticket: ' . $e->getMessage()); } }
+    if ($done === 1 && $outcome === 'success' && $a && $a['direction'] === 'collect') {
+        // booked and paid: email the ticket (full payment) or a receipt (part payment)
+        try { $confirmNow ? send_ticket((int)$a['reservation_id']) : daraza_receipt((int)$a['reservation_id'], (int)$a['amount']); }
+        catch (Throwable $e) { error_log('daraza mail: ' . $e->getMessage()); }
+    }
     return $done === 1;
 }
 
@@ -188,4 +218,90 @@ function daraza_respond_then(array $json, callable $work, ?string $redirect = nu
     if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
     elseif (function_exists('litespeed_finish_request')) @litespeed_finish_request();
     $work();
+}
+
+/* ---------- Receipt for part payments ---------- */
+function daraza_receipt(int $reservationId, int $amount): void
+{
+    $r = reservation_with_event($reservationId);
+    if (!$r || empty($r['email'])) return;
+    $left = max(0, (float)$r['amount_due'] - res_paid($reservationId));
+    send_mail($r['email'], 'Payment received for ' . $r['reference'], "Hello {$r['full_name']},\n\nWe received your payment of " . money($amount) . " for {$r['title']}.\n"
+        . ($left > 0 ? 'Balance still to pay: ' . money($left) . ". Your ticket is issued as soon as the booking is paid in full.\n" : '')
+        . "\nTrack your booking any time: " . abs_url('booking/' . $r['reference']) . "\n");
+}
+
+/* ---------- Wallet balance and fees ---------- */
+function daraza_get(string $path, ?array $post = null): ?array
+{
+    $c = curl_init(rtrim((string)env('DARAZA_BASE', 'https://daraza.net/api'), '/') . '/' . ltrim($path, '/'));
+    $opt = [CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 10, CURLOPT_TIMEOUT => 25,
+        CURLOPT_HTTPHEADER => ['Authorization: Api-Key ' . env('DARAZA_API_KEY', ''), 'Content-Type: application/json', 'Accept: application/json']];
+    if ($post !== null) { $opt[CURLOPT_POST] = true; $opt[CURLOPT_POSTFIELDS] = json_encode($post); }
+    curl_setopt_array($c, $opt);
+    $body = curl_exec($c); curl_close($c);
+    $j = is_string($body) ? json_decode($body, true) : null;
+    return is_array($j) ? $j : null;
+}
+/** Money available in the Daraza wallet: ['balance' => int|null, 'error' => string|null]. Cached for a minute. */
+function daraza_wallet(bool $fresh = false): array
+{
+    if (daraza_mock()) return ['balance' => max(0, 2000000 - (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status = 'success'")), 'error' => null];
+    if (!daraza_enabled()) return ['balance' => null, 'error' => 'Daraza is not set up.'];
+    if (!$fresh && !empty($_SESSION['dz_wallet']) && $_SESSION['dz_wallet']['t'] > time() - 60) return $_SESSION['dz_wallet']['v'];
+    $j = daraza_get('app_wallet/balance/');
+    if (is_array($j) && strcasecmp((string)($j['code'] ?? ''), 'Success') === 0) {
+        $v = ['balance' => (int)preg_replace('/\D+/', '', explode('.', (string)($j['details']['balance'] ?? '0'))[0]), 'error' => null];
+    } else {
+        $v = ['balance' => null, 'error' => is_array($j) ? (string)($j['details'] ?? $j['message'] ?? 'Could not read the wallet balance.') : 'Daraza could not be reached.'];
+    }
+    $_SESSION['dz_wallet'] = ['t' => time(), 'v' => $v];
+    return $v;
+}
+/** Withdrawal fee for an amount: ['fees' => int, 'tax' => int, 'total' => int] or null. */
+function daraza_fees(int $amount): ?array
+{
+    if (daraza_mock()) { $f = (int)round($amount * 0.07); $t = (int)round($amount * 0.005); return ['fees' => $f, 'tax' => $t, 'total' => $amount + $f + $t]; }
+    $j = daraza_get('calculate_fees/', ['amount' => (string)$amount]);
+    $d = is_array($j) ? ($j['data'] ?? null) : null;
+    if (!is_array($d) || !isset($d['total_amount'])) return null;
+    return ['fees' => (int)$d['withdrawal_fees'], 'tax' => (int)$d['tax_amount'], 'total' => (int)$d['total_amount']];
+}
+
+/* ---------- Withdrawals from the wallet to a mobile money number ---------- */
+function daraza_ensure_withdrawals(): void
+{
+    db()->exec("CREATE TABLE IF NOT EXISTS daraza_withdrawals (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, amount INT UNSIGNED NOT NULL, phone VARCHAR(20) NOT NULL, method SMALLINT NOT NULL DEFAULT 1,
+        status ENUM('pending','success','failed','unconfirmed') NOT NULL DEFAULT 'pending', request_id VARCHAR(80) NULL, message VARCHAR(255) NULL,
+        user_id INT UNSIGNED NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, completed_at DATETIME NULL, KEY idx_dw_time (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+function dw_q(string $sql, array $p = []): PDOStatement
+{
+    try { return q($sql, $p); }
+    catch (PDOException $e) { if ($e->getCode() !== '42S02') throw $e; daraza_ensure_withdrawals(); return q($sql, $p); }
+}
+function dw_expire_stale(): void
+{
+    dw_q("UPDATE daraza_withdrawals SET status='unconfirmed', message='No answer from Daraza. Check your Daraza statement before trying again.', completed_at=NOW() WHERE status='pending' AND created_at < (NOW() - INTERVAL 6 MINUTE)");
+}
+function dw_start(int $amount, string $phone, int $userId): int
+{
+    dw_q('INSERT INTO daraza_withdrawals (amount, phone, method, user_id) VALUES (?,?,?,?)', [$amount, $phone, daraza_method($phone), $userId]);
+    return (int)db()->lastInsertId();
+}
+function dw_run(int $id): void
+{
+    $w = row('SELECT * FROM daraza_withdrawals WHERE id = ?', [$id]);
+    if (!$w || $w['status'] !== 'pending') return;
+    try { [$outcome, $msg, $rid] = daraza_call('remit', (int)$w['method'], (int)$w['amount'], (string)$w['phone'], 'Chill & Bite wallet withdrawal'); }
+    catch (Throwable $e) { error_log('daraza withdraw: ' . $e->getMessage()); [$outcome, $msg, $rid] = ['unconfirmed', 'Unexpected error while contacting Daraza.', null]; }
+    dw_settle($id, $outcome, $msg, $rid);
+}
+function dw_settle(int $id, string $outcome, string $msg, ?string $rid = null): bool
+{
+    unset($_SESSION['dz_wallet']);
+    return q("UPDATE daraza_withdrawals SET status = ?, message = ?, request_id = COALESCE(?, request_id), completed_at = NOW() WHERE id = ? AND status IN ('pending','unconfirmed')",
+        [$outcome, mb_substr($msg, 0, 255), $rid, $id])->rowCount() === 1;
 }
