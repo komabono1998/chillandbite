@@ -4,3 +4,5 @@ storage/logs/*
 uploads/*
 !uploads/.htaccess
 storage/app.key
+storage/purged/*
+!storage/purged/.gitkeep

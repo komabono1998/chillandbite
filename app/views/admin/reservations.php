@@ -17,7 +17,18 @@
       <button class="btn btn-danger-soft btn-sm" name="which" value="rejected"<?= $purge['rejected']['deletable'] ? '' : ' disabled' ?>>Delete <?= (int)$purge['rejected']['deletable'] ?> rejected</button>
       <button class="btn btn-danger-soft btn-sm" name="which" value="cancelled"<?= $purge['cancelled']['deletable'] ? '' : ' disabled' ?>>Delete <?= (int)$purge['cancelled']['deletable'] ?> cancelled</button>
       <button class="btn btn-danger-soft btn-sm" name="which" value="both"<?= ($purge['rejected']['deletable'] + $purge['cancelled']['deletable']) ? '' : ' disabled' ?>>Delete both (<?= (int)($purge['rejected']['deletable'] + $purge['cancelled']['deletable']) ?>)</button></div>
-  </form></details>
+  </form>
+  <?php if (!empty($force) && $force['bookings'] > 0): ?>
+  <form method="post" action="<?= url('admin/reservations/force-purge') ?>" style="margin-top:16px;border:2px solid #d9534f;border-radius:14px;padding:14px 16px;background:#fff5f4" onsubmit="return confirm('FORCE DELETE <?= (int)$force['bookings'] ?> bookings and <?= (int)$force['payments'] ?> payment records? This cannot be undone.')"><?= csrf_field() ?><input type="hidden" name="event" value="<?= $pq ?>">
+    <b style="color:#a11">⚠ Force delete everything rejected and cancelled</b>
+    <p class="small" style="margin:6px 0 10px">Removes <b><?= (int)$force['bookings'] ?></b> booking<?= $force['bookings'] === 1 ? '' : 's' ?> <?= $ev ? 'of this event' : 'from all events' ?> <b>even if they have payment records</b>
+      (<?= (int)$force['payments'] ?> payment record<?= $force['payments'] === 1 ? '' : 's' ?>, UGX <?= number_format($force['gross']) ?> received, net UGX <?= number_format($force['net']) ?> that will disappear from Collections and the finance reports)<?= $force['withdrawn'] ? ', and ' . (int)$force['withdrawn'] . ' withdrawn ticket' . ($force['withdrawn'] === 1 ? '' : 's') : '' ?>.
+      A copy of everything removed is saved first in <code>storage/purged</code>. <a href="<?= url('admin/export/reservations?format=xlsx&status=rejected') ?>">Download the rejected list</a> or <a href="<?= url('admin/export/reservations?format=xlsx&status=cancelled') ?>">the cancelled list</a> first if you want a copy you can open.</p>
+    <div class="filters"><label>Type FORCE DELETE to confirm <input name="confirm" autocomplete="off" placeholder="FORCE DELETE" style="width:170px"></label>
+      <button class="btn btn-sm" style="background:#d9534f;color:#fff" name="which" value="both">Force delete all <?= (int)$force['bookings'] ?></button></div>
+  </form>
+  <?php endif; ?>
+  </details>
 <?php endif; ?>
 <div class="panel"><div class="tbl-wrap"><table class="tbl"><tr><th>Ref</th><th>Guest</th><th>Event</th><th>Type</th><th>Guests</th><th>Balance</th><th>Status</th><th>Actions</th></tr>
 <?php foreach ($list as $r): $bal = max(0, $r['amount_due'] - $r['paid']); ?><tr>

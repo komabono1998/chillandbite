@@ -195,7 +195,7 @@ function admin_reservations(): void
         'checked' => $ev ? (int)val("SELECT COALESCE(SUM(guests),0) FROM reservations WHERE event_id = ? AND checked_in_at IS NOT NULL AND status='confirmed'", [$ev['id']]) : null,
         'list' => rows(RES_SELECT . " WHERE $w ORDER BY r.id DESC LIMIT 300", $p),
         'events' => rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 100'),
-        'purge' => can('purge') ? res_purge_counts($eventId) : null,
+        'purge' => can('purge') ? res_purge_counts($eventId) : null, 'force' => can('purge') ? res_force_counts($eventId) : null,
     ]);
 }
 function admin_reservation(array $a): void
@@ -465,5 +465,44 @@ function admin_reservations_purge(): void
     audit('reservation.purge', count($ids) . " $which record(s) deleted" . ($eventId ? " for event #$eventId" : ' for all events') . '; refs: ' . implode(' ', array_slice($refs, 0, 12)));
     flash(count($ids) ? 'Deleted ' . count($ids) . ' ' . ($which === 'both' ? 'rejected and cancelled' : $which) . ' record' . (count($ids) === 1 ? '' : 's') . '. The dashboard and reports no longer count them.' . ($skipped ? " $skipped " . ($skipped === 1 ? 'booking' : 'bookings') . ' with an online payment to check ' . ($skipped === 1 ? 'was' : 'were') . ' kept.' : '')
         : 'Nothing to delete. Records with payments, and withdrawn tickets, are always kept.', count($ids) ? 'ok' : 'err');
+    redirect($dest);
+}
+/** What a forced delete would remove: every rejected/cancelled booking (also withdrawn ones and ones with payments), and the payment records on them. */
+function res_force_counts(int $eventId = 0): array
+{
+    $w = "r.status IN ('rejected','cancelled')" . ($eventId ? ' AND r.event_id = ?' : ''); $a = $eventId ? [$eventId] : [];
+    $n = (int)val("SELECT COUNT(*) FROM reservations r WHERE $w", $a);
+    $p = row("SELECT COUNT(*) n, COALESCE(SUM(p.amount),0) net, COALESCE(SUM(CASE WHEN p.amount > 0 THEN p.amount ELSE 0 END),0) gross FROM payments p JOIN reservations r ON r.id = p.reservation_id WHERE $w", $a) ?: ['n' => 0, 'net' => 0, 'gross' => 0];
+    $withdrawn = (int)val("SELECT COUNT(*) FROM reservations r WHERE r.status = 'cancelled' AND r.withdrawn_at IS NOT NULL" . ($eventId ? ' AND r.event_id = ?' : ''), $a);
+    return ['bookings' => $n, 'payments' => (int)$p['n'], 'net' => (int)$p['net'], 'gross' => (int)$p['gross'], 'withdrawn' => $withdrawn];
+}
+/**
+ * Forced delete: removes every rejected and cancelled booking no matter what is attached to it (payment records, withdrawn tickets, online
+ * payments being checked). A copy of everything removed is first saved to storage/purged/ so it can be restored from if ever needed.
+ */
+function admin_reservations_force_purge(): void
+{
+    require_can('purge');
+    $which = in_array($_POST['which'] ?? '', ['rejected', 'cancelled', 'both'], true) ? $_POST['which'] : 'both';
+    $eventId = (int)($_POST['event'] ?? 0);
+    $dest = 'admin/reservations' . ($eventId ? '?event=' . $eventId : '');
+    if (strtoupper(trim((string)($_POST['confirm'] ?? ''))) !== 'FORCE DELETE') { flash('Type FORCE DELETE in the box to confirm. Nothing was deleted.', 'err'); redirect($dest); }
+    $st = $which === 'both' ? ['rejected', 'cancelled'] : [$which];
+    $w = 'r.status IN (' . implode(',', array_fill(0, count($st), '?')) . ')'; $args = $st;
+    if ($eventId) { $w .= ' AND r.event_id = ?'; $args[] = $eventId; }
+    $res = rows("SELECT r.* FROM reservations r WHERE $w", $args);
+    if (!$res) { flash('Nothing to delete: there are no ' . ($which === 'both' ? 'rejected or cancelled' : $which) . ' bookings.', 'err'); redirect($dest); }
+    $ids = array_map('intval', array_column($res, 'id'));
+    $in = implode(',', $ids);
+    $pay = rows("SELECT * FROM payments WHERE reservation_id IN ($in)");
+    $net = (int)array_sum(array_column($pay, 'amount'));
+    // safety copy first
+    $dir = ROOT . '/storage/purged'; @mkdir($dir, 0775, true);
+    $file = $dir . '/purge-' . date('Ymd-His') . '.json';
+    $ok = @file_put_contents($file, json_encode(['deleted_at' => date('c'), 'by' => current_user()['email'] ?? '', 'which' => $which, 'event' => $eventId, 'reservations' => $res, 'payments' => $pay], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_PARTIAL_OUTPUT_ON_ERROR));
+    if ($ok === false) { flash('Could not save the safety copy in storage/purged, so nothing was deleted.', 'err'); redirect($dest); }
+    foreach (array_chunk($ids, 200) as $chunk) q('DELETE FROM reservations WHERE id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ')', $chunk);
+    audit('reservation.force_purge', count($ids) . " $which record(s) force-deleted incl. " . count($pay) . " payment record(s) (net UGX $net)" . ($eventId ? " for event #$eventId" : ' for all events') . '; copy: ' . basename($file));
+    flash('Force deleted ' . count($ids) . ' ' . ($which === 'both' ? 'rejected and cancelled' : $which) . ' booking' . (count($ids) === 1 ? '' : 's') . ', with ' . count($pay) . ' payment record' . (count($pay) === 1 ? '' : 's') . '. The dashboard, collections and reports no longer count them. A safety copy was saved as storage/purged/' . basename($file) . '.');
     redirect($dest);
 }
