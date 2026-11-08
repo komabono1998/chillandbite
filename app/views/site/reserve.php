@@ -8,7 +8,7 @@ $cards = [];
 $tableOpt = null; foreach ($options as $o) if ($o['type'] === 'table') $tableOpt = $o;
 if ($tableOpt && !empty($packages)) {
     foreach ($packages as $p) $cards[] = ['v' => 'pkg:' . $p['name'], 'title' => $p['name'], 'price' => (int)$p['price'], 'flat' => 1, 'min' => (int)$tableOpt['min_guests'], 'max' => (int)$tableOpt['max_guests'],
-        'sub' => 'per table', 'icon' => '🪑'];
+        'sub' => 'per table' . ((int)($p['admits'] ?? 0) > 0 ? ' · admits ' . (int)$p['admits'] . ' people' : ''), 'icon' => '🪑'];
 }
 foreach ($options as $o) {
     if ($o['type'] === 'table' && !empty($packages)) continue;

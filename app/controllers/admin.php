@@ -70,7 +70,7 @@ function admin_event_form(array $a = []): void
     if ($tpl) { $tplOn = []; foreach ($tpl['opt'] as $t => $o) { $tplOn[$t] = 1; $opts[$t] = ['price_per_guest' => $o['price'], 'min_guests' => $o['min'], 'max_guests' => $o['max']]; } $tplPk = (string)$tpl['packages']; }
     admin_view('event_form', ['title' => $e ? 'Edit event' : 'New event', 'e' => $e, 'opts' => $opts, 'tplOn' => $tplOn, 'cats' => rows('SELECT * FROM event_categories ORDER BY id'),
         'old' => $_SESSION['old'] ?? [],
-        'pkgText' => $e ? implode("\n", array_map(fn($p) => $p['name'] . ' | ' . (int)$p['price'], event_packages((int)$e['id']))) : $tplPk]);
+        'pkgText' => $e ? rates_packages_text(event_packages((int)$e['id'])) : $tplPk]);
     clear_old();
 }
 function admin_event_save(): void
@@ -123,14 +123,9 @@ function admin_event_save(): void
     }
     // Table packages: one per line as "Name | price"
     q('DELETE FROM event_packages WHERE event_id = ?', [$id]);
-    $sort = 0;
-    foreach (preg_split('/\R/', (string)($_POST['packages'] ?? '')) as $line) {
-        if (!str_contains($line, '|')) continue;
-        [$pn, $pp] = array_map('trim', explode('|', $line, 2));
-        $pn = mb_substr($pn, 0, 80); $pp = (int)preg_replace('/\D+/', '', $pp);
-        if ($pn === '' || $pp < 0) continue;
-        q('INSERT IGNORE INTO event_packages (event_id, name, price, sort) VALUES (?,?,?,?)', [$id, $pn, $pp, $sort++]);
-    }
+    rates_ensure_cols();
+    foreach (rates_parse_packages((string)($_POST['packages'] ?? '')) as $i => [$pn, $pp, $ad])
+        q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, sort) VALUES (?,?,?,?,?)', [$id, $pn, $pp, $ad, $i]);
     flash('Event saved.');
     redirect("admin/events/$id");
 }

@@ -28,9 +28,25 @@ $pastQ = $past ? '?past=1' : '';
   <a class="btn btn-ghost btn-sm" href="<?= url('admin/rates' . ($past ? '' : '?past=1')) ?>"><?= $past ? 'Show upcoming events' : 'Show past events' ?></a>
 </div>
 
+<form class="panel" id="size" method="post" action="<?= url('admin/rates/package-size') ?>" onsubmit="return confirm('Update how many people this package admits?')"><?= csrf_field() ?>
+  <h2 style="margin:0 0 6px;font-size:1.05rem">👥 People per table (package size)</h2>
+  <p class="small muted" style="margin:0 0 10px">Say how many people one table of a package admits, for example <b>Silver admits 4</b>. New bookings use it, it shows on the reserve page and on the ticket, and you can update the tickets that were already booked.</p>
+  <div class="form-grid">
+    <div class="field"><label for="ps_pkg">Package</label><select id="ps_pkg" name="package" required><option value="">Choose a package</option><?php foreach ($pkg_names as $pn): ?><option value="<?= h($pn) ?>"><?= h($pn) ?></option><?php endforeach; ?></select></div>
+    <div class="field"><label for="ps_n">People it admits</label><input id="ps_n" type="number" name="admits" min="1" max="50" value="4" required></div>
+    <div class="field"><label for="ps_ev">Events</label><select id="ps_ev" name="events"><option value="all">All events</option><option value="upcoming">Upcoming events only</option><?php foreach ($others as $o): ?><option value="<?= (int)$o['id'] ?>"><?= h(excerpt($o['title'], 46)) ?> · <?= fmt_date($o['start_at'], 'j M Y') ?></option><?php endforeach; ?></select></div>
+  </div>
+  <fieldset style="border:0;padding:0;margin:10px 0 0"><legend class="small" style="font-weight:700;margin-bottom:4px">Tickets already booked on this package</legend>
+    <label class="chk"><input type="radio" name="scope" value="package"> Leave them as they are (only the package changes)</label>
+    <label class="chk"><input type="radio" name="scope" value="approved" checked> Update all <b>approved</b> tickets</label>
+    <label class="chk"><input type="radio" name="scope" value="all"> Update <b>all</b> tickets: approved ones and bookings still awaiting approval</label>
+  </fieldset>
+  <p style="margin-top:12px"><button class="btn btn-primary btn-sm">Update package and tickets</button> <span class="small muted">You can run this again at any time.</span></p>
+</form>
+
 <form class="panel" method="post" action="<?= url('admin/rates/apply-all') ?>" onsubmit="return confirm('Replace the table packages on all <?= (int)$up_n ?> upcoming events with these?')"><?= csrf_field() ?>
   <h2 style="margin:0 0 6px;font-size:1.05rem">⚡ Set table packages on all upcoming events</h2>
-  <p class="small muted" style="margin:0 0 10px">One package per line as <b>Name | price in UGX</b>. This replaces the table packages on all <b><?= (int)$up_n ?></b> upcoming events and saves them as the default for new events. Other ticket types are not touched.</p>
+  <p class="small muted" style="margin:0 0 10px">One package per line as <b>Name | price in UGX | people it admits</b> (the last part is optional, for example <b>Silver | 200000 | 4</b>). This replaces the table packages on all <b><?= (int)$up_n ?></b> upcoming events and saves them as the default for new events. Other ticket types are not touched.</p>
   <textarea name="packages" rows="6" style="width:100%" placeholder="Silver | 200000&#10;Gold Pro | 300000"><?= h($cur_packages) ?></textarea>
   <p style="margin-top:10px"><button class="btn btn-primary btn-sm">Apply to all upcoming events</button></p>
 </form>

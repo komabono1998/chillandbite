@@ -115,7 +115,7 @@ $manage = can('reservations_manage');
     <button class="btn btn-primary">Create ticket</button>
   </form>
 </div>
-<?php $pkgMap = []; foreach ($events as $x) $pkgMap[(int)$x['id']] = array_map(fn($p) => ['name' => $p['name'], 'price' => (int)$p['price']], event_packages((int)$x['id'])); ?>
+<?php $pkgMap = []; foreach ($events as $x) $pkgMap[(int)$x['id']] = array_map(fn($p) => ['name' => $p['name'], 'price' => (int)$p['price'], 'admits' => (int)($p['admits'] ?? 0)], event_packages((int)$x['id'])); ?>
 <script>
 (function () {
   var map = <?= json_encode((object)$pkgMap) ?>, ev = document.getElementById('i_event'), pk = document.getElementById('i_pkg'), ty = document.getElementById('i_type'), pw = document.getElementById('i_paywrap'), help = document.getElementById('i_pkghelp');
@@ -123,12 +123,16 @@ $manage = can('reservations_manage');
   function fill() {
     var list = map[ev.value] || []; pk.innerHTML = '';
     var none = document.createElement('option'); none.value = ''; none.textContent = list.length ? 'No package' : 'No packages set for this event'; pk.appendChild(none);
-    list.forEach(function (p) { var o = document.createElement('option'); o.value = p.name; o.textContent = p.name + ' · UGX ' + p.price.toLocaleString(); pk.appendChild(o); });
+    list.forEach(function (p) { var o = document.createElement('option'); o.value = p.name; o.textContent = p.name + ' · UGX ' + p.price.toLocaleString() + (p.admits ? ' · admits ' + p.admits : ''); o.dataset.admits = p.admits || 0; pk.appendChild(o); });
     pk.disabled = !list.length; sync();
   }
   function sync() {
     var on = pk.value !== ''; pw.hidden = !on;
-    if (on) { ty.value = 'table'; help.textContent = 'The ticket shows this package. Choose how it was paid, or leave it complimentary.'; } else help.textContent = '';
+    if (on) {
+      ty.value = 'table'; var ad = +pk.options[pk.selectedIndex].dataset.admits || 0, g = document.getElementById('i_guests');
+      if (ad && g) g.value = ad;
+      help.textContent = 'The ticket shows this package' + (ad ? ' and admits ' + ad + ' people' : '') + '. Choose how it was paid, or leave it complimentary.';
+    } else help.textContent = '';
   }
   ev.addEventListener('change', fill); pk.addEventListener('change', sync); fill();
 })();

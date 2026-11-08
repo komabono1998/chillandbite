@@ -67,6 +67,7 @@ function admin_ticket_issue(): void
     // an optional table package (must be one of this event's packages); it can be complimentary or recorded as paid
     $pkgName = post_str('package', 80); $pkgPrice = null; $pay = in_array($_POST['pay'] ?? '', ['cash', 'mobile_money', 'bank'], true) ? $_POST['pay'] : 'free';
     if ($pkgName !== '') { foreach (event_packages($eid) as $pk) if ($pk['name'] === $pkgName) $pkgPrice = (int)$pk['price']; if ($pkgPrice === null) $pkgName = ''; else $type = 'table'; }
+    if ($pkgName !== '') foreach (event_packages($eid) as $pk) if ($pk['name'] === $pkgName && (int)($pk['admits'] ?? 0) > 0) $guests = (int)$pk['admits'];
     $back = 'admin/tickets?event=' . $eid;
     $err = [];
     $ev = row('SELECT * FROM events WHERE id = ?', [$eid]);

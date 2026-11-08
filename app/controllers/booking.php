@@ -60,7 +60,8 @@ function validate_booking(array $e, array $options, array $in): array
     if ($d['type'] === 'table' && ($packages = event_packages((int)$e['id']))) {
         $found = null;
         foreach ($packages as $p) if ($p['name'] === $d['package']) $found = $p;
-        if ($found) $flat = (float)$found['price']; else $err[] = 'Please choose a table package.';
+        if ($found) { $flat = (float)$found['price']; if ((int)($found['admits'] ?? 0) > 0) $d['guests'] = (int)$found['admits']; }     // one table admits its set number of people
+        else $err[] = 'Please choose a table package.';
     } else {
         $d['package'] = '';
     }
