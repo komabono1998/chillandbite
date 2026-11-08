@@ -48,6 +48,12 @@ final class MiniPdf
         $H = $this->pages[$this->i]['h'];
         $this->add('q ' . self::rgb($stroke) . ' RG ' . self::f($lw) . ' w ' . ($dash ? '[' . $dash . '] 0 d ' : '') . self::f($x1) . ' ' . self::f($H - $y1) . ' m ' . self::f($x2) . ' ' . self::f($H - $y2) . ' l S Q');
     }
+    /** Text turned 90 degrees (reads upwards), centred on (x, y) measured from the top. */
+    public function vtext(float $x, float $y, string $s, float $size, bool $bold, string $color): void
+    {
+        $s = pdf_cp($s); $w = pdf_w($s, $size, $bold); $H = $this->pages[$this->i]['h'];
+        $this->add('BT /' . ($bold ? 'F2' : 'F1') . ' ' . self::f($size) . ' Tf ' . self::rgb($color) . ' rg 0 1 -1 0 ' . self::f($x + 0.36 * $size) . ' ' . self::f(($H - $y) - $w / 2) . ' Tm (' . pdf_esc($s) . ') Tj ET');
+    }
     /** A line through several points (used for check marks). */
     public function poly(array $pts, string $stroke, float $lw): void
     {
@@ -126,56 +132,63 @@ function gen_ticket_data(array $g, array $e, array $c): array
 
 /**
  * The ticket design as a list of drawing steps on the 538.6 x 249.4 pt canvas. The PDF and the on-screen/print version both draw from this list,
- * so they always look the same. Steps: rect, frame, pill, line, text, poly, qr.
+ * so they always look the same. Steps: rect, frame, pill, line, text, vtext (upright text turned 90 degrees), poly, qr.
+ * Every element has its own band of the ticket, so long names or many perks can never run into each other.
  */
 function ticket_ops(array $t): array
 {
-    $W = TICKET_W; $H = TICKET_H; $mw = 0.735 * $W; $sw = $W - $mw; $hb = 44;
+    $W = TICKET_W; $H = TICKET_H; $mw = 0.725 * $W; $sw = $W - $mw; $strip = 26; $hb = 42;
     $dark = '#171717'; $gold = '#E6B65C'; $orange = '#B9561B'; $c = $t['color']; $cat = strtoupper($t['cat']);
+    $x0 = $strip + 14; $right = $mw - 16; $cw = $right - $x0;                 // content area of the main part
     $o = [['rect', 0, 0, $W, $H, '#ffffff']];
-    // header: brand band, gold rule, category colour over the stub
-    $o[] = ['rect', 0, 0, $mw, $hb, $dark]; $o[] = ['rect', 0, $hb, $mw, 2.4, $gold]; $o[] = ['rect', $mw, 0, $sw, $hb + 2.4, $c];
-    $o[] = ['text', 16, $hb * 0.66, $t['brand'], 16, true, $gold, 'l'];
-    $o[] = ['text', $mw - 14, $hb * 0.64, 'GULU CITY - UGANDA', 7.5, true, '#ffffff', 'r'];
-    $cs = 12; while (pdf_w($cat, $cs, true) > $sw - 16 && $cs > 6) $cs -= 0.5;
-    $o[] = ['text', $mw + $sw / 2, $hb * 0.64, $cat, $cs, true, '#ffffff', 'c'];
+    // left colour strip with the category and admits written upwards
+    $o[] = ['rect', 0, 0, $strip, $H, $c];
+    $vt = $cat . '  |  ' . $t['admits']; $vs = 10;
+    while (pdf_w($vt, $vs, true) > $H - 34 && $vs > 8) $vs -= 0.5;
+    if (pdf_w($vt, $vs, true) > $H - 34) { $vt = $cat; $vs = 10; while (pdf_w($vt, $vs, true) > $H - 34 && $vs > 6) $vs -= 0.5; }      // very long name: write only the name
+    $o[] = ['vtext', $strip / 2, $H / 2, $vt, $vs, true, '#ffffff'];
+    // header: brand band and gold rule; stub header in the category colour
+    $o[] = ['rect', $strip, 0, $mw - $strip, $hb, $dark]; $o[] = ['rect', $strip, $hb, $mw - $strip, 2.4, $gold]; $o[] = ['rect', $mw, 0, $sw, $hb + 2.4, $c];
+    $o[] = ['text', $x0, $hb * 0.66, $t['brand'], 15.5, true, $gold, 'l'];
+    $o[] = ['text', $right, $hb * 0.64, 'GULU CITY - UGANDA', 7.5, true, '#ffffff', 'r'];
+    $ss = 11; $sl = pdf_wrap($cat, $sw - 14, $ss, 3, true);
+    while ((count($sl) > 2 || str_ends_with((string)end($sl), '...')) && $ss > 8) { $ss -= 0.5; $sl = pdf_wrap($cat, $sw - 14, $ss, 3, true); }       // the category name shrinks to fit the stub header
+    $n = count($sl); $lh = $ss + 2; $top = ($hb + 2.4) / 2 - ($n - 1) * $lh / 2 + $ss * 0.34;
+    foreach ($sl as $i => $ln) $o[] = ['text', $mw + $sw / 2, $top + $i * $lh, $ln, $ss, true, '#ffffff', 'c'];
     // date block
-    $bx = 16; $by = 54; $bw = 62; $bh = 58;
-    $o[] = ['rect', $bx, $by, $bw, 16, $dark]; $o[] = ['text', $bx + $bw / 2, $by + 11.5, $t['mon'], 9, true, $gold, 'c'];
-    $o[] = ['frame', $bx, $by, $bw, $bh, $dark, 1.2];
-    $o[] = ['text', $bx + $bw / 2, $by + 16 + 27, $t['day'], 27, true, $dark, 'c'];
-    $o[] = ['text', $bx + $bw / 2, $by + $bh - 5, trim($t['dow'] . ' ' . $t['time']), 7.5, true, '#555555', 'c'];
+    $by = 54; $bw = 60; $bh = 56;
+    $o[] = ['rect', $x0, $by, $bw, 15, $dark]; $o[] = ['text', $x0 + $bw / 2, $by + 11, $t['mon'], 8.5, true, $gold, 'c'];
+    $o[] = ['frame', $x0, $by, $bw, $bh, $dark, 1.2];
+    $o[] = ['text', $x0 + $bw / 2, $by + 15 + 27, $t['day'], 26, true, $dark, 'c'];
+    $o[] = ['text', $x0 + $bw / 2, $by + $bh - 5, trim($t['dow'] . ' ' . $t['time']), 7, true, '#555555', 'c'];
     // event name (shrinks to fit two lines) and venue
-    $tx = $bx + $bw + 14; $tw = $mw - $tx - 16; $ts = 18;
+    $tx = $x0 + $bw + 14; $tw = $right - $tx; $ts = 18;
     do { $lines = pdf_wrap($t['event'], $tw, $ts, 3, true); $ok = count($lines) <= 2 && !str_ends_with((string)end($lines), '...'); } while (!$ok && --$ts >= 12);
     if (count($lines) > 2) $lines = pdf_wrap($t['event'], $tw, 12, 2, true);
     $last = $by + $ts * 0.95;
     foreach ($lines as $i => $ln) { $last = $by + $ts * 0.95 + $i * ($ts + 3); $o[] = ['text', $tx, $last, $ln, $ts, true, $dark, 'l']; }
     $o[] = ['text', $tx, $last + 15, pdf_wrap($t['venue'], $tw, 9.5, 1)[0], 9.5, false, '#444444', 'l'];
-    // category label, admits, rate
-    $bare = !$t['perks'];                                  // no perks: a bigger label, placed in the middle of the space
-    $py = $bare ? 132 : 122; $ph = $bare ? 30 : 22; $psz = $bare ? 15 : 12; $pw = pdf_w($cat, $psz, true) + 30;
-    if ($pw > $mw * 0.55) { $psz = 10; $pw = $mw * 0.55; }
-    $base = $py + $ph * 0.68;
-    $o[] = ['pill', 16, $py, $pw, $ph, 7, $c]; $o[] = ['text', 16 + $pw / 2, $base, $cat, $psz, true, '#ffffff', 'c'];
-    $asz = $bare ? 13 : 11; $prs = $bare ? 20 : 18; $priceW = $t['price'] !== '' ? pdf_w($t['price'], $prs, true) : 0;
-    $inline = 16 + $pw + 12 + pdf_w($t['admits'], $asz, true) + 16 <= $mw - 16 - $priceW;        // "ADMIT ONE" fits beside the label, otherwise it goes underneath
-    $o[] = $inline ? ['text', 16 + $pw + 12, $base, $t['admits'], $asz, true, $dark, 'l'] : ['text', 16, $py + $ph + 14, $t['admits'], 9.5, true, $dark, 'l'];
-    if ($t['price'] !== '') { $o[] = ['text', $mw - 16, $base + 1, $t['price'], $prs, true, $orange, 'r']; $o[] = ['text', $mw - 16, $py + $ph + 5, 'per ticket', 6.5, false, '#777777', 'r']; }
-    if ($bare) $o[] = ['text', 16, $py + $ph + ($inline ? 24 : 28), 'Present this ticket at the gate with the QR code facing up. One entry per ticket.', 8.5, false, '#555555', 'l'];
-    // what the ticket includes
-    if ($t['perks']) {
-        $o[] = ['text', 16, 160, 'THIS TICKET INCLUDES', 7, true, $orange, 'l'];
-        $colw = ($mw - 32) / 2;
+    // admits chip on the left, rate on the right (their own row, so they never touch anything else)
+    $bare = !$t['perks'];
+    $ry = $bare ? 134 : 122; $rh = $bare ? 30 : 24; $rb = $ry + $rh * 0.68; $asz = $bare ? 13 : 11.5;
+    $aw = pdf_w($t['admits'], $asz, true) + 24;
+    $o[] = ['pill', $x0, $ry, $aw, $rh, 6, $dark]; $o[] = ['text', $x0 + $aw / 2, $rb, $t['admits'], $asz, true, '#ffffff', 'c'];
+    if ($t['price'] !== '') { $o[] = ['text', $right, $rb + 1, $t['price'], $bare ? 22 : 20, true, $orange, 'r']; $o[] = ['text', $right, $ry + $rh + 7, 'per ticket', 6.5, false, '#777777', 'r']; }
+    // what the ticket comes with
+    if (!$bare) {
+        $o[] = ['text', $x0, 166, 'THIS TICKET COMES WITH', 7, true, $orange, 'l']; $o[] = ['line', $x0 + 108, 163.5, $right, 163.5, '#e3d9c6', 0.6, null];
+        $colw = $cw / 2;
         foreach ($t['perks'] as $i => $pk) {
-            $px = 16 + ($i % 2) * $colw; $pb = 173 + intdiv($i, 2) * 12.5;
+            $px = $x0 + ($i % 2) * $colw; $pb = 178 + intdiv($i, 2) * 12.5;
             $o[] = ['poly', [[$px, $pb - 3.2], [$px + 2.6, $pb - 0.6], [$px + 7, $pb - 6.4]], '#2E9D57', 1.3];
             $o[] = ['text', $px + 11, $pb, pdf_wrap($pk, $colw - 16, 8.5, 1)[0], 8.5, false, '#222222', 'l'];
         }
+    } else {
+        $o[] = ['text', $x0, $ry + $rh + 26, 'Present this ticket at the gate with the QR code facing up. One entry per ticket.', 8.5, false, '#555555', 'l'];
     }
     // small print
-    $o[] = ['line', 16, $H - 42, $mw - 16, $H - 42, '#cccccc', 0.6, null];
-    foreach (pdf_wrap($t['terms'], $mw - 32, 6.8, 2) as $i => $ln) $o[] = ['text', 16, $H - 31 + $i * 9, $ln, 6.8, false, '#666666', 'l'];
+    $o[] = ['line', $x0, $H - 38, $right, $H - 38, '#cccccc', 0.6, null];
+    foreach (pdf_wrap($t['terms'], $cw, 6.6, 2) as $i => $ln) $o[] = ['text', $x0, $H - 28 + $i * 8.6, $ln, 6.6, false, '#666666', 'l'];
     // stub with QR code
     $o[] = ['line', $mw, 0, $mw, $H, '#999999', 0.8, '4 3'];
     $qs = min($sw - 24, 112); $qy = $hb + 14;
@@ -185,7 +198,7 @@ function ticket_ops(array $t): array
     $o[] = ['text', $mw + $sw / 2, $H - 14, 'SCAN AT THE GATE', 6.5, true, '#888888', 'c'];
     $o[] = ['rect', $mw, $H - 6, $sw, 6, $c];
     // frames and punched notches
-    $o[] = ['frame', 3.5, 3.5, $W - 7, $H - 7, $gold, 0.5]; $o[] = ['frame', 0, 0, $W, $H, $dark, 1.4];
+    $o[] = ['frame', $strip + 3.5, 3.5, $W - $strip - 7, $H - 7, $gold, 0.5]; $o[] = ['frame', 0, 0, $W, $H, $dark, 1.4];
     $o[] = ['pill', $mw - 6, -6, 12, 12, 6, '#ffffff']; $o[] = ['pill', $mw - 6, $H - 6, 12, 12, 6, '#ffffff'];
     return $o;
 }
@@ -200,6 +213,7 @@ function ticket_pdf_draw(MiniPdf $p, float $x, float $y, float $w, array $t): vo
             case 'pill': $p->pill($x + $op[1] * $s, $y + $op[2] * $s, $op[3] * $s, $op[4] * $s, $op[5] * $s, $op[6]); break;
             case 'line': $p->line($x + $op[1] * $s, $y + $op[2] * $s, $x + $op[3] * $s, $y + $op[4] * $s, $op[5], $op[6] * $s, $op[7]); break;
             case 'text': $p->text($x + $op[1] * $s, $y + $op[2] * $s, $op[3], $op[4] * $s, $op[5], $op[6], $op[7]); break;
+            case 'vtext': $p->vtext($x + $op[1] * $s, $y + $op[2] * $s, $op[3], $op[4] * $s, $op[5], $op[6]); break;
             case 'poly': $p->poly(array_map(fn($pt) => [$x + $pt[0] * $s, $y + $pt[1] * $s], $op[1]), $op[2], $op[3] * $s); break;
             case 'qr': $p->qr($op[1], $x + $op[2] * $s, $y + $op[3] * $s, $op[4] * $s); break;
         }
@@ -242,6 +256,7 @@ function ticket_svg(array $t): string
             case 'pill': $s .= '<rect x="' . $n($op[1]) . '" y="' . $n($op[2]) . '" width="' . $n($op[3]) . '" height="' . $n($op[4]) . '" rx="' . $n($op[5]) . '" fill="' . $e($op[6]) . '"/>'; break;
             case 'line': $s .= '<line x1="' . $n($op[1]) . '" y1="' . $n($op[2]) . '" x2="' . $n($op[3]) . '" y2="' . $n($op[4]) . '" stroke="' . $e($op[5]) . '" stroke-width="' . $n($op[6]) . '"' . ($op[7] ? ' stroke-dasharray="' . $e($op[7]) . '"' : '') . '/>'; break;
             case 'text': $s .= '<text x="' . $n($op[1]) . '" y="' . $n($op[2]) . '" font-size="' . $n($op[4]) . '" font-weight="' . ($op[5] ? 700 : 400) . '" fill="' . $e($op[6]) . '" text-anchor="' . ['l' => 'start', 'c' => 'middle', 'r' => 'end'][$op[7]] . '">' . $e($op[3]) . '</text>'; break;
+            case 'vtext': $s .= '<text transform="translate(' . $n($op[1]) . ' ' . $n($op[2]) . ') rotate(-90)" dy="0.35em" font-size="' . $n($op[4]) . '" font-weight="' . ($op[5] ? 700 : 400) . '" fill="' . $e($op[6]) . '" text-anchor="middle">' . $e($op[3]) . '</text>'; break;
             case 'poly': $s .= '<polyline points="' . implode(' ', array_map(fn($pt) => $n($pt[0]) . ',' . $n($pt[1]), $op[1])) . '" fill="none" stroke="' . $e($op[2]) . '" stroke-width="' . $n($op[3]) . '" stroke-linecap="round" stroke-linejoin="round"/>'; break;
             case 'qr':
                 $m = qr_matrix($op[1]); $cnt = count($m); $d = '';
