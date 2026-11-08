@@ -108,7 +108,7 @@ function post_paytab(array $a): void
     if (!$phone) pay_json(['ok' => false, 'error' => 'Enter your mobile money number, for example 0772 123 456.'], 422);
     $mail = trim((string)($_POST['email'] ?? ''));
     if ($mail !== '' && !filter_var($mail, FILTER_VALIDATE_EMAIL)) pay_json(['ok' => false, 'error' => 'That email address looks invalid.'], 422);
-    if (rate_limited('paytab', 6, 900)) pay_json(['ok' => false, 'error' => 'Too many attempts. Please wait a few minutes and try again.'], 429);
+    if (rate_limited('paytab', 300, 900)) pay_json(['ok' => false, 'error' => 'Too many attempts. Please wait a few minutes and try again.'], 429);
     try {
         daraza_expire_stale();
         if (val("SELECT id FROM pay_attempts WHERE phone = ? AND status = 'pending' LIMIT 1", [$phone])) pay_json(['ok' => false, 'error' => 'A payment request is already waiting for approval on that phone. Please approve it or wait a few minutes.'], 409);
@@ -122,7 +122,7 @@ function post_paytab(array $a): void
 function page_paytab_status(array $a): void
 {
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) pay_json(['error' => 'bad token'], 404);
-    if (rate_limited('paypoll', 200, 1800)) pay_json(['error' => 'slow down'], 429);
+    if (rate_limited('paypoll', 20000, 1800)) pay_json(['error' => 'slow down'], 429);
     try { daraza_expire_stale(); } catch (Throwable $e) {}
     $at = row('SELECT a.status, a.message, a.amount, a.token FROM pay_attempts a JOIN payment_tabs t ON t.id = a.tab_id WHERE a.token = ? AND t.slug = ?', [$a['token'], $a['slug']]);
     if (!$at) pay_json(['error' => 'not found'], 404);

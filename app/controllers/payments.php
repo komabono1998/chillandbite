@@ -30,7 +30,7 @@ function pay_begin(array $r, string $phoneIn, string $amountIn, string $mail): a
     if ($amount > $balance) return $err('That is more than the balance of ' . money($balance) . '.');
     if ($amount > DARAZA_MAX) return $err('The largest single payment is ' . money(DARAZA_MAX) . '. Pay part now and the rest after.');
     if ($amount < DARAZA_MIN && $balance >= DARAZA_MIN) return $err('The smallest payment is ' . money(DARAZA_MIN) . '.');
-    if (rate_limited('paystart', 6, 900)) return $err('Too many attempts. Please wait a few minutes and try again.', 429);
+    if (rate_limited('paystart', 500, 900)) return $err('Too many attempts. Please wait a few minutes and try again.', 429);
     try {
         if (daraza_has_pending((int)$r['id'], 'collect')) return $err('A payment request is already waiting for approval on your phone. Please approve it or wait a few minutes.', 409);
         if ((int)val("SELECT COUNT(*) FROM pay_attempts WHERE phone = ? AND created_at > (NOW() - INTERVAL 1 HOUR)", [$phone]) >= 4) return $err('Too many payment requests to this number. Please try again later.', 429);
@@ -54,7 +54,7 @@ function post_booking_pay(array $a): void
 function page_pay_status(array $a): void
 {
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) pay_json(['error' => 'bad token'], 404);
-    if (rate_limited('paypoll', 200, 1800)) pay_json(['error' => 'slow down'], 429);
+    if (rate_limited('paypoll', 20000, 1800)) pay_json(['error' => 'slow down'], 429);
     try { daraza_expire_stale(); } catch (Throwable $e) {}
     $at = row('SELECT a.status, a.message, a.amount, a.created_at, r.reference, r.id AS rid, r.status AS rstatus FROM pay_attempts a JOIN reservations r ON r.id = a.reservation_id WHERE a.token = ? AND r.reference = ? AND a.direction = ?',
         [$a['token'], strtoupper($a['ref']), 'collect']);

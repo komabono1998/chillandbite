@@ -119,7 +119,6 @@ function post_reserve(array $a): void
     $back = 'events/' . $e['slug'] . '/reserve';
     if (!event_open_for_booking($e)) { flash('Sorry, reservations are not open for this event.', 'err'); redirect($back); }
     if (!empty($_POST['website'])) redirect($back);          // honeypot
-    if (rate_limited('reserve', 10, 3600)) { flash('Too many reservation attempts. Please try again later.', 'err'); redirect($back); }
 
     $options = event_options((int)$e['id']);
     [$d, $err, $opt] = validate_booking($e, $options, apply_choice($_POST));
@@ -144,7 +143,6 @@ function post_ticket(array $a): void
     $bad = fn(array $errors, int $code = 422) => pay_json(['ok' => false, 'errors' => $errors, 'error' => $errors[0]], $code);
     if (!event_open_for_booking($e)) $bad(['Sorry, reservations are not open for this event.']);
     if (!empty($_POST['website'])) pay_json(['ok' => false, 'errors' => ['Thank you!'], 'error' => 'Thank you!']);
-    if (rate_limited('reserve', 10, 3600)) $bad(['Too many attempts. Please try again later.'], 429);
 
     $options = event_options((int)$e['id']);
     [$d, $err, $opt] = validate_booking($e, $options, apply_choice($_POST));
@@ -192,7 +190,7 @@ function page_booking_status(array $a): void
 {
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
-    if (rate_limited('bkstatus', 240, 3600)) { http_response_code(429); echo json_encode(['error' => 'slow down']); return; }
+    if (rate_limited('bkstatus', 20000, 3600)) { http_response_code(429); echo json_encode(['error' => 'slow down']); return; }
     $r = row('SELECT id, status, withdrawn_at FROM reservations WHERE reference = ?', [strtoupper($a['ref'])]);
     if (!$r) { http_response_code(404); echo json_encode(['error' => 'not found']); return; }
     echo json_encode(['status' => $r['status'], 'withdrawn' => $r['withdrawn_at'] !== null, 'ticket' => $r['status'] === 'confirmed' ? ticket_url((int)$r['id']) : null]);
