@@ -59,4 +59,8 @@
     <label>Type <b><?= h($r['reference']) ?></b> to confirm <input name="confirm" autocomplete="off" required></label>
     <button class="btn btn-ghost btn-sm">Send refund</button></form>
   <p class="small muted">A refund is sent from your Daraza balance and recorded in the ledger once Daraza confirms it. Cancelling a booking does not refund automatically.</p><?php endif; ?></div><?php endif; ?>
+<?php if (can('purge') && in_array($r['status'], ['rejected', 'cancelled'], true) && res_delete_block($r) === null): ?>
+<div class="panel"><h2>Delete this record</h2><p class="small muted">This booking is <b><?= h($r['status']) ?></b>. Deleting it removes it for good, so the dashboard and reports stop counting it. It cannot be undone.</p>
+  <form method="post" action="<?= url('admin/reservations/' . (int)$r['id'] . '/delete') ?>" onsubmit="return confirm('Delete this record permanently?')"><?= csrf_field() ?><button class="btn btn-ghost btn-danger-soft">🗑 Delete this record</button></form></div>
+<?php endif; ?>
 <?php if (can('reservations_manage')): ?><div class="panel"><h2>Internal note</h2><form method="post" action="<?= $act ?>"><?= csrf_field() ?><input type="hidden" name="action" value="note"><input name="admin_note" value="<?= h($r['admin_note']) ?>" maxlength="255"><p><button class="btn btn-ghost btn-sm">Save note</button></p></form></div><?php endif; ?>

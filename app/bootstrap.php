@@ -209,13 +209,14 @@ const PERMS = [
     'advertising'    => ['marketing'],
     'inquiries'      => ['event_manager', 'editor', 'marketing', 'dj_manager'],
     'users'          => [],
+    'purge'          => [],                                                       // permanently delete rejected / cancelled records (administrator only)
     'settings'       => [],
     'audit'          => [],
 ];
 const MODULE_LABELS = [
     'dashboard' => 'Dashboard', 'pages' => 'Website pages', 'events' => 'Events', 'reservations' => 'View reservations',
     'reservations_manage' => 'Approve / cancel bookings', 'payments' => 'Record payments', 'checkin' => 'Door check-in', 'tickets' => 'Tickets (issue & print)',
-    'reports' => 'Reports & exports', 'analytics' => 'Visitor statistics', 'collections' => 'Collections dashboard', 'withdraw' => 'Withdraw wallet money', 'paytabs' => 'Payment tabs', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
+    'reports' => 'Reports & exports', 'analytics' => 'Visitor statistics', 'collections' => 'Collections dashboard', 'withdraw' => 'Withdraw wallet money', 'purge' => 'Delete rejected and cancelled records', 'paytabs' => 'Payment tabs', 'news' => 'News', 'comedy' => 'Comedy videos', 'djs' => 'DJs & mixes', 'gallery' => 'Gallery',
     'advertising' => 'Sponsors & partners', 'inquiries' => 'Inquiries', 'users' => 'Users & roles', 'settings' => 'Settings', 'audit' => 'Audit log',
 ];
 function current_user(): ?array

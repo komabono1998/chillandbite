@@ -104,6 +104,7 @@ $maxRev = isset($rev_events) && $rev_events ? max(1, max(array_column($rev_event
   </div></div>
   <div class="col-5"><div class="panel">
     <div class="panel-head"><h2>Booking status</h2><a class="small" href="<?= url('admin/reservations') ?>">All bookings</a></div>
+    <?php if (can('purge') && ((int)($by_status['rejected'] ?? 0) + (int)($by_status['cancelled'] ?? 0)) > 0): ?><p class="small" style="margin:0 0 8px"><a href="<?= url('admin/reservations?status=' . ((int)($by_status['rejected'] ?? 0) ? 'rejected' : 'cancelled') . '#cleanup') ?>">🧹 Clean up <?= (int)($by_status['rejected'] ?? 0) ?> rejected and <?= (int)($by_status['cancelled'] ?? 0) ?> cancelled records</a></p><?php endif; ?>
     <?php if ($totalRes): ?>
       <div class="donut-wrap">
         <div class="donut" style="background:<?= h($donut) ?>"><div class="donut-center"><div><b><?= $totalRes ?></b><br><small>bookings</small></div></div></div>

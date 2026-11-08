@@ -123,6 +123,8 @@ $routes = [
     ['POST', 'admin/events/recurring', 'admin_event_recurring'],
     ['GET',  'admin/reservations',   'admin_reservations'],
     ['GET',  'admin/reservations/{id}', 'admin_reservation'],
+    ['POST', 'admin/reservations/purge', 'admin_reservations_purge'],
+    ['POST', 'admin/reservations/{id}/delete', 'admin_reservation_delete'],
     ['POST', 'admin/reservations/{id}/action', 'admin_reservation_action'],
     ['GET',  'admin/news',           'admin_news'],
     ['GET',  'admin/news/new',       'admin_article_form'],

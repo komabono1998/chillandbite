@@ -195,6 +195,7 @@ function admin_reservations(): void
         'checked' => $ev ? (int)val("SELECT COALESCE(SUM(guests),0) FROM reservations WHERE event_id = ? AND checked_in_at IS NOT NULL AND status='confirmed'", [$ev['id']]) : null,
         'list' => rows(RES_SELECT . " WHERE $w ORDER BY r.id DESC LIMIT 300", $p),
         'events' => rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 100'),
+        'purge' => can('purge') ? res_purge_counts($eventId) : null,
     ]);
 }
 function admin_reservation(array $a): void
@@ -394,4 +395,75 @@ function admin_audit(): void
 {
     require_can('audit');
     admin_view('audit', ['title' => 'Audit log', 'log' => rows('SELECT l.*, u.name FROM audit_log l LEFT JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT 300')]);
+}
+
+/* ================= Delete rejected and cancelled records (administrator only) ================= */
+/** Why a booking cannot be deleted, or null when it can. Money records are never deleted from under the finance reports. */
+function res_delete_block(array $r): ?string
+{
+    if (!in_array($r['status'], ['rejected', 'cancelled'], true)) return 'Only rejected or cancelled records can be deleted.';
+    if ($r['status'] === 'cancelled' && !empty($r['withdrawn_at'])) return 'Withdrawn tickets are kept so the gate can still recognise them.';
+    if ((int)val('SELECT COUNT(*) FROM payments WHERE reservation_id = ?', [$r['id']]) > 0) return 'It has payment records, and deleting it would change the finance reports. Keep it (a refund can be recorded on it).';
+    try { if ((int)val("SELECT COUNT(*) FROM pay_attempts WHERE reservation_id = ? AND status IN ('success','unconfirmed','pending')", [$r['id']]) > 0) return 'It has an online payment that still needs checking.'; }
+    catch (PDOException $e) { /* no online payments table yet */ }
+    return null;
+}
+/** SQL that selects deletable rejected/cancelled bookings (without payments), optionally for one event. */
+function res_purge_sql(string $which, int $eventId): array
+{
+    $st = $which === 'rejected' ? "('rejected')" : ($which === 'cancelled' ? "('cancelled')" : "('rejected','cancelled')");
+    $w = "r.status IN $st AND NOT (r.status = 'cancelled' AND r.withdrawn_at IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.reservation_id = r.id)"; $a = [];
+    if ($eventId) { $w .= ' AND r.event_id = ?'; $a[] = $eventId; }
+    return [$w, $a];
+}
+/** How many rejected / cancelled bookings there are, and how many of them can be deleted. */
+function res_purge_counts(int $eventId = 0): array
+{
+    $out = [];
+    foreach (['rejected', 'cancelled'] as $s) {
+        $all = (int)val('SELECT COUNT(*) FROM reservations r WHERE r.status = ? AND NOT (r.status = \'cancelled\' AND r.withdrawn_at IS NOT NULL)' . ($eventId ? ' AND r.event_id = ?' : ''), $eventId ? [$s, $eventId] : [$s]);
+        [$w, $a] = res_purge_sql($s, $eventId);
+        $del = (int)val("SELECT COUNT(*) FROM reservations r WHERE $w", $a);
+        try {
+            $att = (int)val("SELECT COUNT(*) FROM reservations r WHERE $w AND EXISTS (SELECT 1 FROM pay_attempts x WHERE x.reservation_id = r.id AND x.status IN ('success','unconfirmed','pending'))", $a);
+            $del -= $att;
+        } catch (PDOException $e) {}
+        $out[$s] = ['all' => $all, 'deletable' => max(0, $del)];
+    }
+    return $out;
+}
+function admin_reservation_delete(array $a): void
+{
+    require_can('purge');
+    $r = row('SELECT * FROM reservations WHERE id = ?', [(int)$a['id']]) ?? not_found();
+    $why = res_delete_block($r);
+    $back = (string)($_POST['back'] ?? '');
+    $dest = preg_match('#^admin/reservations(\?[A-Za-z0-9=&_%.+-]*)?$#', $back) ? $back : 'admin/reservations';
+    if ($why) { flash('Not deleted: ' . $why, 'err'); redirect($dest); }
+    q('DELETE FROM reservations WHERE id = ?', [$r['id']]);
+    audit('reservation.delete', "{$r['reference']} {$r['full_name']} ({$r['status']}) deleted");
+    flash("Record {$r['reference']} for {$r['full_name']} was deleted. The dashboard and reports no longer count it.");
+    redirect($dest);
+}
+function admin_reservations_purge(): void
+{
+    require_can('purge');
+    $which = in_array($_POST['which'] ?? '', ['rejected', 'cancelled', 'both'], true) ? $_POST['which'] : 'rejected';
+    $eventId = (int)($_POST['event'] ?? 0);
+    $dest = 'admin/reservations' . ($eventId ? '?event=' . $eventId : '');
+    if (strtoupper(trim((string)($_POST['confirm'] ?? ''))) !== 'DELETE') { flash('Type DELETE in the box to confirm. Nothing was deleted.', 'err'); redirect($dest); }
+    [$w, $args] = res_purge_sql($which, $eventId);
+    $list = rows("SELECT r.id, r.reference FROM reservations r WHERE $w", $args);
+    $skipped = 0;
+    $ids = []; $refs = [];
+    foreach ($list as $x) {
+        try { if ((int)val("SELECT COUNT(*) FROM pay_attempts WHERE reservation_id = ? AND status IN ('success','unconfirmed','pending')", [$x['id']]) > 0) { $skipped++; continue; } }
+        catch (PDOException $e) {}
+        $ids[] = (int)$x['id']; $refs[] = $x['reference'];
+    }
+    foreach (array_chunk($ids, 200) as $chunk) q('DELETE FROM reservations WHERE id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ')', $chunk);
+    audit('reservation.purge', count($ids) . " $which record(s) deleted" . ($eventId ? " for event #$eventId" : ' for all events') . '; refs: ' . implode(' ', array_slice($refs, 0, 12)));
+    flash(count($ids) ? 'Deleted ' . count($ids) . ' ' . ($which === 'both' ? 'rejected and cancelled' : $which) . ' record' . (count($ids) === 1 ? '' : 's') . '. The dashboard and reports no longer count them.' . ($skipped ? " $skipped " . ($skipped === 1 ? 'booking' : 'bookings') . ' with an online payment to check ' . ($skipped === 1 ? 'was' : 'were') . ' kept.' : '')
+        : 'Nothing to delete. Records with payments, and withdrawn tickets, are always kept.', count($ids) ? 'ok' : 'err');
+    redirect($dest);
 }
