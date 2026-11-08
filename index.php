@@ -108,6 +108,8 @@ $routes = [
     ['GET',  'admin/tickets',        'admin_tickets'],
     ['GET',  'admin/tickets/print',  'admin_tickets_print'],
     ['POST', 'admin/tickets/issue',  'admin_ticket_issue'],
+    ['POST', 'admin/tickets/mark-all', 'admin_tickets_mark_all'],
+    ['POST', 'admin/tickets/{id}/sent', 'admin_ticket_sent'],
     ['POST', 'admin/tickets/{id}/regenerate', 'admin_ticket_regenerate'],
     ['POST', 'admin/tickets/{id}/email', 'admin_ticket_email'],
     ['POST', 'admin/tickets/{id}/update', 'admin_ticket_update'],

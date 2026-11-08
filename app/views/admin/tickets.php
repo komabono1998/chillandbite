@@ -25,6 +25,18 @@ $manage = can('reservations_manage');
   <a href="<?= url('admin/tickets?' . http_build_query(array_filter(['event' => $eid, 'status' => $k, 'q' => $q]))) ?>"<?= $status === $k ? ' aria-current="true"' : '' ?>><?= $label ?> (<?= (int)($counts[$k] ?? 0) ?>)</a>
 <?php endforeach; ?></nav>
 
+<?php if (env('MAIL_ENABLED', '0') !== '1'): ?><div class="alert alert-err">Email is switched off on this site (MAIL_ENABLED is not 1), so &ldquo;Emailed&rdquo; marks only mean the email was written to the log, not delivered. Switch it on in the .env file.</div><?php endif; ?>
+<?php if ($ev && $status === 'confirmed' && $list): ?>
+<details class="panel tk-bulk"><summary>✔ Mark tickets that were already sent</summary>
+  <form method="post" action="<?= url('admin/tickets/mark-all') ?>" onsubmit="return confirm('Mark every confirmed ticket of this event that has no send recorded as already sent?')"><?= csrf_field() ?>
+    <input type="hidden" name="event_id" value="<?= (int)$eid ?>">
+    <p class="small muted" style="margin:6px 0 10px">For tickets you sent before this list started recording sends. Every confirmed ticket of <b><?= h(excerpt($ev['title'], 50)) ?></b> that has an email or phone number and no send recorded yet gets the mark. Each ticket then shows a <b>Resend</b> button.</p>
+    <div class="btn-row"><button class="btn btn-primary btn-sm" name="channel" value="both">Mark as emailed and sent on WhatsApp</button><button class="btn btn-ghost btn-sm" name="channel" value="email">Only emailed</button><button class="btn btn-ghost btn-sm" name="channel" value="whatsapp">Only WhatsApp</button></div>
+  </form></details>
+<?php endif; ?>
+<?php if (!empty($GLOBALS['tk_sends_error'])): ?><div class="alert alert-err">Sent marks could not be saved on this site: <?= h((string)$GLOBALS['tk_sends_error']) ?>. Press Settings &rarr; Update database, then try again.</div><?php endif; ?>
+<style>.tk-edit-num{border:0;background:none;cursor:pointer;font-size:.85rem;padding:0 2px}.tk-wa-preview{margin:6px 0 0;font-weight:600;color:#16632c}.tk-markform{display:inline-block;margin:4px 6px 0 0}.tk-sentmarks{margin-top:8px}.tk-mark{font-size:.78rem;color:#16632c;font-weight:600;margin-top:5px;line-height:1.5}.tk-mark form{display:inline}.tk-unsent{color:var(--muted);font-weight:500}
+.tk-resend{padding:2px 9px!important;font-size:.72rem!important;margin-left:4px}.tk-bulk{padding:12px 18px}.tk-bulk summary{cursor:pointer;font-weight:700}</style>
 <div class="panel">
 <?php if (!$ev): ?><div class="empty">There are no events yet. Create one first.</div>
 <?php elseif (!$list): ?><div class="empty"><?= $q !== '' ? 'No ' . h(strtolower($tabs[$status])) . ' match “' . h($q) . '”.' : 'Nothing here yet for this event.' ?></div>
@@ -41,18 +53,31 @@ $manage = can('reservations_manage');
       $act = fn(string $path) => url('admin/tickets/' . $r['id'] . '/' . $path); ?>
     <tr>
       <td data-label="Reference"><a href="<?= url('admin/reservations/' . $r['id']) ?>"><b><?= h($r['reference']) ?></b></a></td>
-      <td data-label="Guest"><b><?= h($r['full_name']) ?></b><br><span class="small muted"><?= h($r['phone']) ?><?= $r['email'] ? ' · ' . h($r['email']) : '' ?></span></td>
+      <td data-label="Guest"><b><?= h($r['full_name']) ?></b><br><span class="small muted"><?= h($r['phone']) ?><?= $r['email'] ? ' · ' . h($r['email']) : '' ?></span><?php if ($canManage): ?> <button type="button" class="tk-edit-num" data-tk-jump title="Change this number or email">✏️</button><?php endif; ?></td>
       <td data-label="Booking"><?= h(str_replace(' Reservation', '', RES_TYPES[$r['type']])) ?><?= $r['package'] ? ' · ' . h($r['package']) : '' ?><br><span class="small muted"><?= (int)$r['guests'] ?> guest(s)<?= $r['admin_note'] && str_starts_with((string)$r['admin_note'], 'Ticket issued') ? ' · complimentary' : '' ?></span></td>
       <td data-label="Ticket"><?php if ($isConfirmed): ?><?= $r['checked_in_at'] ? '<span class="badge badge-warn">Checked in ' . h(fmt_time($r['checked_in_at'])) . '</span>' : '<span class="badge badge-ok">Valid</span>' ?>
           <?php elseif ($isWithdrawn): ?><span class="badge badge-err">Withdrawn</span><br><span class="small muted"><?= h(fmt_date($r['withdrawn_at'], 'j M, H:i')) ?><?= $r['withdrawn_reason'] ? ' · ' . h($r['withdrawn_reason']) : '' ?></span>
-          <?php elseif ($r['status'] === 'pending'): ?><span class="badge badge-warn">Not issued yet</span><?php else: ?><span class="badge badge-err">Void</span><?php endif; ?></td>
+          <?php elseif ($r['status'] === 'pending'): ?><span class="badge badge-warn">Not issued yet</span><?php else: ?><span class="badge badge-err">Void</span><?php endif; ?>
+        <?php if ($isConfirmed): $sm = $sends[(int)$r['id']] ?? []; ?>
+          <div class="tk-sentmarks" data-sent-for="<?= (int)$r['id'] ?>">
+            <?php if (!empty($sm['email'])): ?><div class="tk-mark">✔ ✉️ Emailed · <?= h(fmt_date($sm['email']['at'], 'j M H:i')) ?><?= $sm['email']['n'] > 1 ? ' · ' . $sm['email']['n'] . '×' : '' ?>
+              <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act('email') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm tk-resend" title="Email the ticket again to <?= h($r['email']) ?>">↻ Resend email</button></form><?php endif; ?></div><?php endif; ?>
+            <?php if (!empty($sm['whatsapp'])): ?><div class="tk-mark">✔ 💬 WhatsApp · <?= h(fmt_date($sm['whatsapp']['at'], 'j M H:i')) ?><?= $sm['whatsapp']['n'] > 1 ? ' · ' . $sm['whatsapp']['n'] . '×' : '' ?>
+              <?php if ($wa): ?><a class="btn btn-ghost btn-sm tk-resend" href="<?= h($wa) ?>" target="_blank" rel="noopener" data-wa-sent="<?= $act('sent') ?>" title="Open WhatsApp with the ticket link ready to send again">↻ Resend WhatsApp</a><?php endif; ?></div><?php endif; ?>
+            <?php if (!$sm): ?><div class="tk-mark tk-unsent">Not sent yet</div><?php endif; ?>
+            <?php if (empty($sm['whatsapp']) && $hasPhone) { ?><form class="inline tk-markform" method="post" action="<?= $act('sent') ?>"><?= csrf_field() ?><input type="hidden" name="channel" value="whatsapp"><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm tk-resend" title="Mark this ticket as already sent on WhatsApp">✔ Mark sent on WhatsApp</button></form><?php } ?>
+            <?php if (empty($sm['email']) && $r['email']) { ?><form class="inline tk-markform" method="post" action="<?= $act('sent') ?>"><?= csrf_field() ?><input type="hidden" name="channel" value="email"><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm tk-resend" title="Mark this ticket as already emailed">✔ Mark sent by email</button></form><?php } ?>
+          </div>
+        <?php endif; ?></td>
       <td class="tk-cell" data-label="Actions"><div class="tk-actions" data-tk>
         <?php if ($isConfirmed): ?>
           <div class="tk-row tk-share">
             <a class="btn btn-ghost btn-sm" href="<?= h($tUrl) ?>" target="_blank" rel="noopener">Open</a>
             <a class="btn btn-ghost btn-sm" href="<?= h($tUrl . '?download=1') ?>" target="_blank" rel="noopener">Download</a>
-            <?php if ($wa): ?><a class="btn btn-wa btn-sm" href="<?= h($wa) ?>" target="_blank" rel="noopener" title="Open WhatsApp with the ticket link ready to send">💬 WhatsApp</a><?php endif; ?>
-            <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act('email') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm" title="Email the ticket to <?= h($r['email']) ?>">✉️ Email</button></form><?php endif; ?>
+            <button type="button" class="btn btn-ghost btn-sm" data-tk-open="update" aria-expanded="false" title="Change the WhatsApp number, email or name used to send this ticket">✏️ Edit details</button>
+            <?php $smx = $sends[(int)$r['id']] ?? []; ?>
+            <?php if ($wa && empty($smx['whatsapp'])): ?><a class="btn btn-wa btn-sm" href="<?= h($wa) ?>" target="_blank" rel="noopener" data-wa-sent="<?= $act('sent') ?>" title="Open WhatsApp with the ticket link ready to send">💬 WhatsApp</a><?php endif; ?>
+            <?php if ($r['email'] && empty($smx['email'])): ?><form class="inline" method="post" action="<?= $act('email') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-primary btn-sm" title="Email the ticket to <?= h($r['email']) ?>">✉️ Email</button></form><?php endif; ?>
           </div>
         <?php elseif ($isWithdrawn): ?>
           <div class="tk-row tk-share">
@@ -72,15 +97,16 @@ $manage = can('reservations_manage');
           <form class="tk-form" data-tk-panel="update" hidden method="post" action="<?= $act('update') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>">
             <b class="tk-form-title">Update ticket</b>
             <div class="tk-grid">
+              <label>WhatsApp number <small>(used to send the ticket)</small> <input name="phone" type="tel" inputmode="tel" value="<?= $hasPhone ? h($r['phone']) : '' ?>" placeholder="0772 123 456" data-wa-num></label>
+              <label>Email <small>(used to email the ticket)</small> <input name="email" type="email" value="<?= h((string)$r['email']) ?>"></label>
               <label>Guest name <input name="full_name" value="<?= h($r['full_name']) ?>" required maxlength="140"></label>
-              <label>Phone <input name="phone" type="tel" value="<?= $hasPhone ? h($r['phone']) : '' ?>"></label>
-              <label>Email <input name="email" type="email" value="<?= h((string)$r['email']) ?>"></label>
               <label>Guests <input name="guests" type="number" min="1" max="100" value="<?= (int)$r['guests'] ?>" required></label>
               <label>Ticket type <select name="type"><?php foreach (RES_TYPES as $k => $l): ?><option value="<?= $k ?>"<?= $r['type'] === $k ? ' selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></label>
               <label>Table package <input name="package" value="<?= h((string)$r['package']) ?>" maxlength="80"></label>
             </div>
+            <p class="small tk-wa-preview" data-wa-preview aria-live="polite"></p>
             <label class="chk"><input type="checkbox" name="notify" value="1"> Email the guest the updated ticket</label>
-            <p class="small muted">The ticket link and QR code stay the same and show the new details straight away.</p>
+            <p class="small muted">The ticket link and QR code stay the same and show the new details straight away. If you change the WhatsApp number or email, that channel goes back to &ldquo;not sent yet&rdquo; so you can send to the new one.</p>
             <div class="tk-form-actions"><button class="btn btn-primary btn-sm">Save changes</button><button type="button" class="btn btn-ghost btn-sm" data-tk-close>Cancel</button></div>
           </form>
           <form class="tk-form tk-form-danger" data-tk-panel="withdraw" hidden method="post" action="<?= $act('withdraw') ?>"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>">
@@ -139,6 +165,35 @@ $manage = can('reservations_manage');
 </script>
 
 <script>
+// Pressing a WhatsApp button counts as sending the ticket: remember it and show the mark straight away
+document.addEventListener('click', function (e) {
+  var a = e.target.closest('[data-wa-sent]'); if (!a || !window.fetch) return;
+  var fd = new FormData(); fd.append('_csrf', <?= json_encode(csrf_token()) ?>); fd.append('channel', 'whatsapp');
+  fetch(a.dataset.waSent, { method: 'POST', body: fd, keepalive: true }).then(function (r) { return r.json(); }).then(function (j) {
+    var row = a.closest('tr'), box = row && row.querySelector('.tk-sentmarks'); if (!box || !j.ok) return;
+    var un = box.querySelector('.tk-unsent'); if (un) un.remove();
+    var old = box.querySelector('.tk-wa-now'); if (old) old.remove();
+    var d = document.createElement('div'); d.className = 'tk-mark tk-wa-now'; d.textContent = '✔ 💬 WhatsApp · ' + j.at + ' ';
+    var again = a.cloneNode(false); again.className = 'btn btn-ghost btn-sm tk-resend'; again.textContent = '↻ Resend WhatsApp'; d.appendChild(again); box.appendChild(d);
+    box.querySelectorAll('.tk-markform').forEach(function (f) { if (f.querySelector('[value=whatsapp]')) f.remove(); });
+    if (a.classList.contains('btn-wa')) a.remove();
+    else if (a.classList.contains('tk-resend') && !a.closest('.tk-wa-now')) { var m = a.closest('.tk-mark'); if (m) m.firstChild.nodeValue = '✔ 💬 WhatsApp · ' + j.at + ' '; }
+  }).catch(function () { alert('The WhatsApp send could not be recorded. Check your connection and use the Mark sent button.'); });
+});
+// Pencil next to a number opens the ticket editor and puts the cursor in the WhatsApp number box
+document.addEventListener('click', function (e) {
+  var p = e.target.closest('[data-tk-jump]'); if (!p) return;
+  var row = p.closest('tr'), open = row && row.querySelector('[data-tk-open="update"]'); if (!open) return;
+  open.click(); var f = row.querySelector('[data-wa-num]'); if (f) { f.focus(); f.select(); }
+});
+// Show where WhatsApp will open for the number being typed
+function waPreview(inp) {
+  var out = inp.closest('form').querySelector('[data-wa-preview]'); if (!out) return;
+  var d = inp.value.replace(/\D/g, ''); if (d.charAt(0) === '0') d = '256' + d.slice(1);
+  out.textContent = d.length >= 11 ? 'WhatsApp will open a chat with +' + d : (inp.value.trim() ? 'This number looks too short.' : 'No WhatsApp number yet.');
+}
+document.addEventListener('input', function (e) { if (e.target.matches('[data-wa-num]')) waPreview(e.target); });
+document.addEventListener('click', function (e) { var b = e.target.closest('[data-tk-open="update"]'); if (b) setTimeout(function () { var f = b.closest('[data-tk]').querySelector('[data-wa-num]'); if (f) waPreview(f); }, 0); });
 // Update / Withdraw panels: one opens at a time under the buttons of its own row
 document.addEventListener('click', function (e) {
   var open = e.target.closest('[data-tk-open]'), close = e.target.closest('[data-tk-close]');

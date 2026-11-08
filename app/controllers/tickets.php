@@ -38,6 +38,82 @@ function admin_ticket_default_event(array $events): int
     if ($eid) return $eid;
     return (int)(val("SELECT id FROM events WHERE status='published' AND COALESCE(end_at,start_at) >= NOW() ORDER BY start_at LIMIT 1") ?: ($events[0]['id'] ?? 0));
 }
+/** Remember that a ticket was sent to its owner, by email or WhatsApp. */
+function ticket_sent_log(int $reservationId, string $channel, string $note = ''): bool
+{
+    if (!in_array($channel, ['email', 'whatsapp'], true)) return false;
+    $sql = 'INSERT INTO ticket_sends (reservation_id, channel, note, sent_by) VALUES (?,?,?,?)';
+    $args = [$reservationId, $channel, mb_substr($note, 0, 80) ?: null, current_user()['id'] ?? null];
+    try { q($sql, $args); return true; }
+    catch (PDOException $e) {
+        if ($e->getCode() !== '42S02') { $GLOBALS['tk_sends_error'] = $e->getMessage(); error_log('ticket_sent_log: ' . $e->getMessage()); return false; }
+        try { ticket_sends_ensure(); q($sql, $args); return true; }
+        catch (Throwable $e2) { $GLOBALS['tk_sends_error'] = $e2->getMessage(); error_log('ticket_sent_log: ' . $e2->getMessage()); return false; }
+    }
+}
+function ticket_sends_ensure(): void
+{
+    db()->exec("CREATE TABLE IF NOT EXISTS ticket_sends (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, reservation_id INT UNSIGNED NOT NULL, channel ENUM('email','whatsapp') NOT NULL, note VARCHAR(80) NULL,
+        sent_by INT UNSIGNED NULL, sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, KEY idx_ts_res (reservation_id, channel),
+        CONSTRAINT fk_ts_res FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+/** Latest send time and number of sends per channel for these bookings: [reservation id => [channel => [at, n]]]. */
+function ticket_sends_for(array $ids): array
+{
+    $ids = array_values(array_filter(array_map('intval', $ids)));
+    if (!$ids) return [];
+    $sql = 'SELECT reservation_id, channel, MAX(sent_at) AS at, COUNT(*) AS n FROM ticket_sends WHERE reservation_id IN (' . implode(',', $ids) . ') GROUP BY reservation_id, channel';
+    try { $rows = rows($sql); }
+    catch (PDOException $e) {
+        $rows = [];
+        try { ticket_sends_ensure(); } catch (Throwable $e2) { $GLOBALS['tk_sends_error'] = $e2->getMessage(); }
+    }
+    $out = [];
+    foreach ($rows as $x) $out[(int)$x['reservation_id']][$x['channel']] = ['at' => $x['at'], 'n' => (int)$x['n']];
+    return $out;
+}
+/** The WhatsApp button was pressed: remember the ticket as sent on WhatsApp (answers JSON). */
+function admin_ticket_sent(array $a): void
+{
+    require_can('tickets');
+    $id = (int)$a['id'];
+    $r = row("SELECT id, status, event_id FROM reservations WHERE id = ?", [$id]);
+    $channel = in_array($_POST['channel'] ?? '', ['email', 'whatsapp'], true) ? $_POST['channel'] : 'whatsapp';
+    $page = isset($_POST['back']);                       // a plain button on the list (redirects) or the WhatsApp press (JSON)
+    if (!$r || $r['status'] !== 'confirmed') {
+        if ($page) { flash('Only confirmed tickets can be marked as sent.', 'err'); redirect('admin/tickets'); }
+        header('Content-Type: application/json'); http_response_code(404); echo json_encode(['ok' => false, 'error' => 'Ticket not found']); return;
+    }
+    $ok = ticket_sent_log($id, $channel, ($page ? 'marked as sent by ' : 'sent by ') . (current_user()['name'] ?? 'staff'));
+    if ($ok) audit('ticket.sent_' . $channel, '#' . $id);
+    if ($page) {
+        flash($ok ? 'Marked as sent on ' . ($channel === 'email' ? 'email' : 'WhatsApp') . '. You can resend it any time.' : 'Could not save the mark: ' . ($GLOBALS['tk_sends_error'] ?? 'unknown error'), $ok ? 'ok' : 'err');
+        $back = (string)$_POST['back'];
+        redirect(preg_match('#^admin/tickets(\?[A-Za-z0-9=&_%.+-]*)?$#', $back) ? $back : 'admin/tickets?event=' . (int)$r['event_id']);
+    }
+    header('Content-Type: application/json'); header('Cache-Control: no-store');
+    echo json_encode($ok ? ['ok' => true, 'at' => date('j M H:i')] : ['ok' => false, 'error' => (string)($GLOBALS['tk_sends_error'] ?? 'Could not save')]);
+}
+/** Mark the listed tickets of an event as already sent (for tickets that were sent before sends were recorded). */
+function admin_tickets_mark_all(): void
+{
+    require_can('tickets');
+    $eid = (int)($_POST['event_id'] ?? 0);
+    $ch = in_array($_POST['channel'] ?? '', ['email', 'whatsapp', 'both'], true) ? $_POST['channel'] : 'both';
+    $back = 'admin/tickets?event=' . $eid;
+    if (!val('SELECT id FROM events WHERE id = ?', [$eid])) { flash('Choose an event.', 'err'); redirect('admin/tickets'); }
+    try { ticket_sends_ensure(); } catch (Throwable $e) { flash('Could not prepare the send records: ' . $e->getMessage(), 'err'); redirect($back); }
+    $n = ['email' => 0, 'whatsapp' => 0];
+    foreach (['email', 'whatsapp'] as $c) {
+        if ($ch !== 'both' && $ch !== $c) continue;
+        $has = $c === 'email' ? "r.email IS NOT NULL AND r.email <> ''" : "r.phone <> 'N/A' AND r.phone <> ''";
+        $list = rows("SELECT r.id FROM reservations r WHERE r.event_id = ? AND r.status = 'confirmed' AND $has AND NOT EXISTS (SELECT 1 FROM ticket_sends s WHERE s.reservation_id = r.id AND s.channel = ?)", [$eid, $c]);
+        foreach ($list as $x) { ticket_sent_log((int)$x['id'], $c, 'marked as already sent'); $n[$c]++; }
+    }
+    audit('ticket.mark_all_sent', "event #$eid, {$n['email']} email, {$n['whatsapp']} WhatsApp");
+    flash('Marked ' . ($n['email'] ? $n['email'] . ' as emailed' : '') . ($n['email'] && $n['whatsapp'] ? ' and ' : '') . ($n['whatsapp'] ? $n['whatsapp'] . ' as sent on WhatsApp' : '') . ($n['email'] + $n['whatsapp'] === 0 ? 'Nothing to mark: every ticket with those contact details is already marked' : '') . '. You can still resend any of them.');
+    redirect($back);
+}
 function admin_tickets(): void
 {
     require_can('tickets');
@@ -52,7 +128,8 @@ function admin_tickets(): void
     $counts = $eid ? array_column(rows("SELECT CASE WHEN status = 'cancelled' AND withdrawn_at IS NOT NULL THEN 'withdrawn' ELSE status END AS s, COUNT(*) n FROM reservations WHERE event_id = ? GROUP BY s", [$eid]), 'n', 's') : [];
     admin_view('tickets', [
         'title' => 'Tickets', 'events' => $events, 'ev' => $ev, 'status' => $status, 'q' => $q, 'counts' => $counts,
-        'list' => $eid ? rows(RES_SELECT . " WHERE $w ORDER BY r.full_name LIMIT 300", $p) : [],
+        'list' => $list = ($eid ? rows(RES_SELECT . " WHERE $w ORDER BY r.full_name LIMIT 300", $p) : []),
+        'sends' => ticket_sends_for(array_column($list, 'id')),
     ]);
 }
 
@@ -208,6 +285,15 @@ function admin_ticket_update(array $a): void
 
     audit('ticket.update', "#$id {$r['reference']} $name x$guests");
     $msg = "Ticket {$r['reference']} updated. The ticket link now shows the new details.";
+    $oldPhone = ($r['phone'] === 'N/A' ? '' : (string)$r['phone']);
+    if ($phone !== '' && preg_replace('/\D+/', '', $phone) !== preg_replace('/\D+/', '', $oldPhone)) {
+        try { q("DELETE FROM ticket_sends WHERE reservation_id = ? AND channel = 'whatsapp'", [$id]); } catch (Throwable $e) {}
+        $msg .= ' The WhatsApp number changed, so the ticket shows as not sent on WhatsApp yet: tap 💬 WhatsApp to send it to the new number.';
+    }
+    if ($email !== '' && $email !== strtolower((string)$r['email'])) {
+        try { q("DELETE FROM ticket_sends WHERE reservation_id = ? AND channel = 'email'", [$id]); } catch (Throwable $e) {}
+        $msg .= ' The email changed, so use ✉️ Email to send it to the new address.';
+    }
     if (!empty($_POST['notify']) && $email !== '' && $r['status'] === 'confirmed') {
         $fresh = reservation_with_event($id);
         $msg .= send_mail($email, 'Your Chill & Bite ticket was updated: ' . $r['reference'], ticket_updated_message($fresh)) ? " The guest was emailed." : '';

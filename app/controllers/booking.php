@@ -228,7 +228,9 @@ function send_ticket(int $reservationId): bool
 {
     $r = reservation_with_event($reservationId);
     if (!$r || $r['status'] !== 'confirmed' || empty($r['email'])) return false;
-    return send_mail($r['email'], 'Your Chill & Bite ticket: ' . $r['reference'], ticket_message($r));
+    $ok = send_mail($r['email'], 'Your Chill & Bite ticket: ' . $r['reference'], ticket_message($r));
+    if ($ok) ticket_sent_log($reservationId, 'email', current_user() ? 'sent by staff' : 'sent automatically');
+    return $ok;
 }
 
 function page_ticket(array $a): void

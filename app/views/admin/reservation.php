@@ -18,10 +18,18 @@
   <p class="small muted">The ticket is issued automatically when a booking is confirmed. Send it to the guest by email or WhatsApp.</p>
   <p class="small">Ticket link: <a href="<?= h($ticket) ?>" target="_blank" rel="noopener"><?= h($ticket) ?></a></p>
   <div class="actions">
-    <a class="btn btn-primary" href="<?= h($wa) ?>" target="_blank" rel="noopener">Send ticket on WhatsApp</a>
+    <a class="btn btn-primary" href="<?= h($wa) ?>" target="_blank" rel="noopener" id="waSend" data-wa-sent="<?= url('admin/tickets/' . (int)$r['id'] . '/sent') ?>">Send ticket on WhatsApp</a>
     <?php if ($r['email']): ?><form class="inline" method="post" action="<?= $act ?>"><?= csrf_field() ?><input type="hidden" name="action" value="send_ticket"><button class="btn btn-ghost">Email ticket</button></form><?php else: ?><span class="small muted">No email on file</span><?php endif; ?>
     <a class="btn btn-ghost" href="<?= h($ticket) ?>" target="_blank" rel="noopener">Open ticket</a>
-  </div></div>
+  </div>
+  <?php $sent = ticket_sends_for([(int)$r['id']])[(int)$r['id']] ?? []; ?>
+  <p class="small" id="waSentNote" style="margin:10px 0 0;color:#16632c;font-weight:600"><?= !empty($sent['email']) ? '✔ ✉️ Emailed ' . h(fmt_date($sent['email']['at'], 'j M H:i')) : '' ?><?= !empty($sent['email']) && !empty($sent['whatsapp']) ? ' · ' : '' ?><?= !empty($sent['whatsapp']) ? '✔ 💬 Sent on WhatsApp ' . h(fmt_date($sent['whatsapp']['at'], 'j M H:i')) : '' ?></p>
+  <script>
+  document.getElementById('waSend').addEventListener('click', function () {
+    var fd = new FormData(); fd.append('_csrf', <?= json_encode(csrf_token()) ?>); fd.append('channel', 'whatsapp');
+    fetch(this.dataset.waSent, { method: 'POST', body: fd, keepalive: true }).then(function (r) { return r.json(); }).then(function (j) { if (j.ok) document.getElementById('waSentNote').textContent = '✔ 💬 Sent on WhatsApp ' + j.at; }).catch(function () {});
+  });
+  </script></div>
 <?php endif; ?>
 <div class="panel"><h2>Payments</h2>
   <p>Due <strong><?= money($r['amount_due']) ?></strong> · Paid <strong><?= money($r['paid']) ?></strong> · Outstanding <strong><?= money(max(0, $bal)) ?></strong></p>

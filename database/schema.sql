@@ -206,6 +206,18 @@ CREATE TABLE IF NOT EXISTS gen_tickets (
   CONSTRAINT fk_gt_batch FOREIGN KEY (batch_id) REFERENCES gen_batches(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Every time a booking ticket was sent to its owner (email or WhatsApp), so the Tickets list can show it and offer a resend
+CREATE TABLE IF NOT EXISTS ticket_sends (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  reservation_id INT UNSIGNED NOT NULL,
+  channel ENUM('email','whatsapp') NOT NULL,
+  note VARCHAR(80) NULL,
+  sent_by INT UNSIGNED NULL,
+  sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_ts_res (reservation_id, channel),
+  CONSTRAINT fk_ts_res FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Money withdrawn from the Daraza wallet to a mobile money number (admin only)
 CREATE TABLE IF NOT EXISTS daraza_withdrawals (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
