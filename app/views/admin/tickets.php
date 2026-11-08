@@ -104,6 +104,8 @@ $manage = can('reservations_manage');
     <div class="form-grid">
       <div class="field"><label for="i_event">Event</label><select id="i_event" name="event_id" required><?php foreach ($events as $x): ?><option value="<?= $x['id'] ?>"<?= $eid === (int)$x['id'] ? ' selected' : '' ?>><?= h(excerpt($x['title'], 60)) ?> · <?= fmt_date($x['start_at'], 'j M Y') ?></option><?php endforeach; ?></select></div>
       <div class="field"><label for="i_type">Ticket type</label><select id="i_type" name="type"><?php foreach (RES_TYPES as $k => $l): ?><option value="<?= $k ?>"<?= $k === 'vip' ? ' selected' : '' ?>><?= h($l) ?></option><?php endforeach; ?></select></div>
+      <div class="field"><label for="i_pkg">Table package</label><select id="i_pkg" name="package"></select><small class="help" id="i_pkghelp"></small></div>
+      <div class="field" id="i_paywrap" hidden><label for="i_pay">Payment for the package</label><select id="i_pay" name="pay"><option value="free">Complimentary (no charge)</option><option value="cash">Paid in cash</option><option value="mobile_money">Paid by mobile money</option><option value="bank">Paid by bank</option></select></div>
       <div class="field"><label for="i_name">Guest name</label><input id="i_name" name="full_name" required maxlength="140"></div>
       <div class="field"><label for="i_guests">Number of guests</label><input id="i_guests" name="guests" type="number" min="1" max="100" value="1" required></div>
       <div class="field"><label for="i_phone">Phone (optional)</label><input id="i_phone" name="phone" type="tel" placeholder="+256 7XX XXX XXX"></div>
@@ -113,6 +115,24 @@ $manage = can('reservations_manage');
     <button class="btn btn-primary">Create ticket</button>
   </form>
 </div>
+<?php $pkgMap = []; foreach ($events as $x) $pkgMap[(int)$x['id']] = array_map(fn($p) => ['name' => $p['name'], 'price' => (int)$p['price']], event_packages((int)$x['id'])); ?>
+<script>
+(function () {
+  var map = <?= json_encode((object)$pkgMap) ?>, ev = document.getElementById('i_event'), pk = document.getElementById('i_pkg'), ty = document.getElementById('i_type'), pw = document.getElementById('i_paywrap'), help = document.getElementById('i_pkghelp');
+  if (!ev || !pk) return;
+  function fill() {
+    var list = map[ev.value] || []; pk.innerHTML = '';
+    var none = document.createElement('option'); none.value = ''; none.textContent = list.length ? 'No package' : 'No packages set for this event'; pk.appendChild(none);
+    list.forEach(function (p) { var o = document.createElement('option'); o.value = p.name; o.textContent = p.name + ' · UGX ' + p.price.toLocaleString(); pk.appendChild(o); });
+    pk.disabled = !list.length; sync();
+  }
+  function sync() {
+    var on = pk.value !== ''; pw.hidden = !on;
+    if (on) { ty.value = 'table'; help.textContent = 'The ticket shows this package. Choose how it was paid, or leave it complimentary.'; } else help.textContent = '';
+  }
+  ev.addEventListener('change', fill); pk.addEventListener('change', sync); fill();
+})();
+</script>
 
 <script>
 // Update / Withdraw panels: one opens at a time under the buttons of its own row

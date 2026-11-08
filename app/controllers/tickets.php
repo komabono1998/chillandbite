@@ -64,6 +64,9 @@ function admin_ticket_issue(): void
     $name = post_str('full_name', 140); $phone = post_str('phone', 30); $email = strtolower(post_str('email', 190));
     $guests = (int)($_POST['guests'] ?? 1);
     $type = array_key_exists($_POST['type'] ?? '', RES_TYPES) ? $_POST['type'] : 'individual';
+    // an optional table package (must be one of this event's packages); it can be complimentary or recorded as paid
+    $pkgName = post_str('package', 80); $pkgPrice = null; $pay = in_array($_POST['pay'] ?? '', ['cash', 'mobile_money', 'bank'], true) ? $_POST['pay'] : 'free';
+    if ($pkgName !== '') { foreach (event_packages($eid) as $pk) if ($pk['name'] === $pkgName) $pkgPrice = (int)$pk['price']; if ($pkgPrice === null) $pkgName = ''; else $type = 'table'; }
     $back = 'admin/tickets?event=' . $eid;
     $err = [];
     $ev = row('SELECT * FROM events WHERE id = ?', [$eid]);
@@ -82,17 +85,19 @@ function admin_ticket_issue(): void
         if ($left !== null && $guests > $left) throw new RuntimeException($left > 0 ? "Only $left place(s) are left for this event." : 'This event is fully booked.');
         $ref = booking_reference();
         $note = 'Ticket issued by ' . current_user()['name'] . (post_str('note') !== '' ? ': ' . post_str('note', 150) : '');
-        q("INSERT INTO reservations (reference, event_id, type, full_name, phone, email, guests, amount_due, status, admin_note)
-           VALUES (?,?,?,?,?,?,?,0,'confirmed',?)", [$ref, $eid, $type, $name, $phone !== '' ? $phone : 'N/A', $email ?: null, $guests, mb_substr($note, 0, 255)]);
+        $due = ($pkgName !== '' && $pay !== 'free') ? (int)$pkgPrice : 0;
+        q("INSERT INTO reservations (reference, event_id, type, full_name, phone, email, guests, package, amount_due, status, admin_note)
+           VALUES (?,?,?,?,?,?,?,?,?,'confirmed',?)", [$ref, $eid, $type, $name, $phone !== '' ? $phone : 'N/A', $email ?: null, $guests, $pkgName !== '' ? $pkgName : null, $due, mb_substr($note, 0, 255)]);
         $rid = (int)$pdo->lastInsertId();
+        if ($due > 0) q('INSERT INTO payments (reservation_id, amount, method, note, recorded_by) VALUES (?,?,?,?,?)', [$rid, $due, $pay, 'Package ' . $pkgName . ' paid when the ticket was issued', current_user()['id']]);
         $pdo->commit();
     } catch (RuntimeException $e) {
         $pdo->rollBack(); flash($e->getMessage(), 'err'); redirect($back);
     } catch (Throwable $e) { $pdo->rollBack(); throw $e; }
 
-    audit('ticket.issue', "#$rid $ref $name x$guests");
+    audit('ticket.issue', "#$rid $ref $name x$guests" . ($pkgName !== '' ? " package $pkgName" . ($due > 0 ? " paid $due via $pay" : ' complimentary') : ''));
     $sent = $email !== '' && send_ticket($rid);
-    flash("Ticket $ref created for $name ($guests guest" . ($guests === 1 ? '' : 's') . ')' . ($sent ? ' and emailed to them.' : '. Use the buttons to share it.'));
+    flash("Ticket $ref created for $name (" . ($pkgName !== '' ? $pkgName . ' table, ' : '') . "$guests guest" . ($guests === 1 ? '' : 's') . ')' . ($sent ? ' and emailed to them.' : '. Use the buttons to share it.'));
     redirect($back . '&q=' . urlencode($ref));
 }
 
