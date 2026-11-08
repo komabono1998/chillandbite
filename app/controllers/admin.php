@@ -126,7 +126,10 @@ function admin_event_save(): void
     rates_ensure_cols();
     foreach (rates_parse_packages((string)($_POST['packages'] ?? '')) as $i => [$pn, $pp, $ad])
         q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, sort) VALUES (?,?,?,?,?)', [$id, $pn, $pp, $ad, $i]);
-    flash('Event saved.');
+    events_ensure_countdown_cols();
+    $cdAt = dt_in($_POST['countdown_at'] ?? '');
+    q('UPDATE events SET countdown_at = ?, countdown_label = ? WHERE id = ?', [$cdAt, $cdAt ? (post_str('countdown_label', 80) ?: null) : null, $id]);
+    flash('Event saved.' . ($cdAt ? ' The homepage countdown now runs to ' . date('j M, g:i A', strtotime($cdAt)) . '.' : ''));
     redirect("admin/events/$id");
 }
 function admin_event_status(array $a): void

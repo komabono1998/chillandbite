@@ -13,8 +13,10 @@
     </div>
     <aside class="info-panel" aria-label="Event information">
       <p class="eyebrow gold"><?= cth('home.panel.label') ?></p>
-      <p class="countdown-date"><?= $next_date->format('l, j F Y') ?> · <?= $next_date->format('g:i A') ?></p>
-      <div class="countdown" id="countdown" data-target="<?= h($next_date->format('c')) ?>" role="timer" aria-label="Time until the next event">
+      <?php [$cdAt, $cdLabel, $cdCustom] = $cd ?? [$next_date, null, false]; ?>
+      <p class="countdown-date"><?= $cdAt->format('l, j F Y') ?> · <?= $cdAt->format('g:i A') ?></p>
+      <?php if ($cdCustom && $cdLabel): ?><p class="countdown-sub"><?= h($cdLabel) ?> at <?= h($cdAt->format('g:i A')) ?></p><?php endif; ?>
+      <div class="countdown" id="countdown" data-target="<?= h($cdAt->format('c')) ?>" role="timer" aria-label="Time until <?= h($cdLabel ?: 'the next event') ?>">
         <div><b data-u="d">00</b><span>Days</span></div><div><b data-u="h">00</b><span>Hours</span></div><div><b data-u="m">00</b><span>Mins</span></div><div><b data-u="s">00</b><span>Secs</span></div>
       </div>
       <p class="live-note" id="live-note" hidden>Happening now! Come and join us.</p>

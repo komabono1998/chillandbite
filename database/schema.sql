@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS events (
   booking_mode ENUM('instant','approval') NOT NULL DEFAULT 'instant',
   featured TINYINT(1) NOT NULL DEFAULT 0,
   video_url VARCHAR(255) NULL,
+  countdown_at DATETIME NULL COMMENT 'optional: the homepage countdown runs to this time instead of the start time',
+  countdown_label VARCHAR(80) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_events_start (start_at),

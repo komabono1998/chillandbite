@@ -1112,3 +1112,4 @@ body:has(.dj-player) .wa-fab{bottom:84px}
 .pt-state h3{margin:6px 0}
 .is-busy .pay-btn-spin,.pt-go.is-busy .pay-btn-spin{display:inline-block}
 @media(max-width:640px){.pt-amt{margin-left:0;text-align:left;flex-basis:100%}.pt-state .btn{width:100%}}
+.countdown-sub{margin:-.4em 0 .9em;font-size:.95rem;font-weight:700;color:#fff;opacity:.9}

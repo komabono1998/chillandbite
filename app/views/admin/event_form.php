@@ -10,6 +10,8 @@ $dtv = fn($k) => isset($old[$k]) ? $old[$k] : dt_out($e[$k] ?? null);
     field('category_id', 'Category', ['type' => 'select', 'value' => $v('category_id'), 'options' => ['' => '—'] + array_column($cats, 'name', 'id')]);
     field('start_at', 'Starts', ['type' => 'datetime-local', 'required' => true, 'value' => $dtv('start_at')]);
     field('end_at', 'Ends', ['type' => 'datetime-local', 'value' => $dtv('end_at')]);
+    field('countdown_at', 'Countdown to (optional)', ['type' => 'datetime-local', 'value' => $dtv('countdown_at'), 'help' => 'The homepage countdown runs to this time instead of the start time, for example the main show at 6 PM. Leave empty to count down to the start.']);
+    field('countdown_label', 'Countdown label (optional)', ['value' => $v('countdown_label'), 'attrs' => 'maxlength="80" placeholder="e.g. Main show starts"']);
     field('venue', 'Venue', ['value' => $v('venue', setting('venue'))]); field('location', 'Location', ['value' => $v('location', setting('location'))]);
     field('capacity', 'Maximum guests (blank = unlimited)', ['type' => 'number', 'value' => $v('capacity'), 'attrs' => 'min="0"']);
     field('status', 'Status', ['type' => 'select', 'value' => $v('status', 'draft'), 'options' => ['draft' => 'Draft', 'published' => 'Published', 'cancelled' => 'Cancelled', 'archived' => 'Archived']]);

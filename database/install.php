@@ -23,6 +23,8 @@ if ((int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA 
     db()->exec("ALTER TABLE gen_batches ADD COLUMN label VARCHAR(80) NULL AFTER note, ADD COLUMN admits TINYINT UNSIGNED NULL AFTER label, ADD COLUMN perks VARCHAR(500) NULL AFTER admits, ADD COLUMN price INT UNSIGNED NULL AFTER perks, ADD COLUMN color CHAR(7) NULL AFTER price, ADD COLUMN terms VARCHAR(255) NULL AFTER color");
 if ((int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'event_packages'") && !(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'event_packages' AND COLUMN_NAME = 'admits'"))
     db()->exec("ALTER TABLE event_packages ADD COLUMN admits TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER price");
+if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'events' AND COLUMN_NAME = 'countdown_at'") && (int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'events'"))
+    db()->exec("ALTER TABLE events ADD COLUMN countdown_at DATETIME NULL AFTER video_url, ADD COLUMN countdown_label VARCHAR(80) NULL AFTER countdown_at");
 // Upgrade older databases before the schema seeds run: ticket categories get a perks column
 $tc = (int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ticket_categories'");
 if ($tc && !(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ticket_categories' AND COLUMN_NAME = 'perks'")) {

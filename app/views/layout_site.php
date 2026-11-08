@@ -49,10 +49,10 @@ $pageDesc = $desc ?? setting('tagline');
 <?= quick_edit_bar() ?>
 <a class="skip" href="#main">Skip to content</a>
 <?php if (setting('announcement_on', '1') === '1' && setting('announcement') !== ''): ?>
-<?php $barEv = upcoming_events(1, 'chill-bite-meatings')[0] ?? null; $barDate = $barEv ? new DateTimeImmutable($barEv['start_at']) : next_first_sunday(); ?>
+<?php $barEv = upcoming_events(1, 'chill-bite-meatings')[0] ?? null; [$barDate, $barLabel] = event_countdown($barEv); ?>
 <div class="announce" role="note"><div class="announce-in">
   <p class="announce-text"><span class="announce-dot" aria-hidden="true"></span><?= h(setting('announcement')) ?></p>
-  <p class="announce-date"><small>Next meeting</small><b><?= h($barDate->format('l, j F Y')) ?></b><span><?= h($barDate->format('g:i A')) ?> · Gulu City</span></p>
+  <p class="announce-date"><small>Next meeting</small><b><?= h($barDate->format('l, j F Y')) ?></b><span><?= h(($barLabel ? $barLabel . ' ' : '') . $barDate->format('g:i A')) ?> · Gulu City</span></p>
   <div class="announce-timer" id="barTimer" data-target="<?= h($barDate->format('c')) ?>" role="timer" aria-label="Time until the next event">
     <span><b data-u="d">--</b><i>Days</i></span><span><b data-u="h">--</b><i>Hours</i></span><span><b data-u="m">--</b><i>Mins</i></span><span><b data-u="s">--</b><i>Secs</i></span>
   </div>

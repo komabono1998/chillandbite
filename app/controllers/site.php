@@ -51,6 +51,29 @@ function wall_photos(int $limit): array
     return $rows;
 }
 
+/** Add the countdown columns to a site that was set up before they existed. */
+function events_ensure_countdown_cols(): void
+{
+    static $done = false; if ($done) return; $done = true;
+    try {
+        if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'events' AND COLUMN_NAME = 'countdown_at'"))
+            db()->exec('ALTER TABLE events ADD COLUMN countdown_at DATETIME NULL AFTER video_url, ADD COLUMN countdown_label VARCHAR(80) NULL AFTER countdown_at');
+    } catch (PDOException $e) { error_log('events_ensure_countdown_cols: ' . $e->getMessage()); }
+}
+/**
+ * What the homepage countdown runs to: the event's own countdown time (for example the main show at 6 PM) while it is still ahead,
+ * otherwise the start time. Returns [DateTimeImmutable time, label or null, true when it is the custom time].
+ */
+function event_countdown(?array $e, ?DateTimeImmutable $fallback = null): array
+{
+    $start = $e ? new DateTimeImmutable($e['start_at']) : ($fallback ?? next_first_sunday());
+    if ($e && !empty($e['countdown_at'])) {
+        $cd = new DateTimeImmutable($e['countdown_at']);
+        if ($cd > new DateTimeImmutable('now')) return [$cd, trim((string)($e['countdown_label'] ?? '')) ?: null, true];
+    }
+    return [$start, null, false];
+}
+
 /* ================= Pages ================= */
 function page_home(): void
 {
@@ -65,6 +88,7 @@ function page_home(): void
         'desc' => 'Chill & Bite MEATINGS is the Gulu City monthly food, music, comedy and networking event, hosted by MC Kash Owakabi and organized by Owakabi & The Geng. Reserve your table today.',
         'next' => $next,
         'next_date' => $next ? new DateTimeImmutable($next['start_at']) : next_first_sunday(),
+        'cd' => event_countdown($next),
         'others' => array_slice($events, 1),
         'video' => row('SELECT * FROM videos ORDER BY featured DESC, id DESC LIMIT 1'),
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
