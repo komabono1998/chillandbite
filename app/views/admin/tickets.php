@@ -8,6 +8,7 @@ $manage = can('reservations_manage');
   <div><h1>Tickets</h1><p class="adm-sub">Every confirmed booking has a ticket with a QR code. Find a guest, then open it, download it, send it, or issue a new one.</p></div>
   <div class="btn-row">
     <?php if ($ev): ?><a class="btn btn-outline" href="<?= url('admin/tickets/print?event=' . $eid) ?>" target="_blank" rel="noopener">🖨️ Print all tickets</a><?php endif; ?>
+    <a class="btn btn-outline" href="<?= url('admin/gen-tickets') ?>">🖨️ Printable general tickets</a>
     <a class="btn btn-primary" href="#issue">＋ Issue a ticket</a>
   </div>
 </div>

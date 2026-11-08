@@ -17,6 +17,7 @@ $groups = [
         ['Ticket rates', 'admin/rates', 'events', '🏷️'],
         ['Reservations', 'admin/reservations', 'reservations', '🎟️'],
         ['Tickets', 'admin/tickets', 'tickets', '🎫'],
+        ['Printable tickets', 'admin/gen-tickets', 'tickets', '🖨️'],
         ['Check-in desk', 'admin/checkin', 'checkin', '✅'],
         ['Inquiries', 'admin/inquiries', 'inquiries', '📬'],
     ],

@@ -154,6 +154,50 @@ INSERT IGNORE INTO payment_tabs (slug, title, blurb, pages, sort) VALUES ('adver
 INSERT IGNORE INTO payment_tabs (slug, title, blurb, pages, sort) VALUES ('dj-booking', 'DJ booking payment', 'Pay your DJ booking fee or deposit.', 'djs', 2);
 INSERT IGNORE INTO payment_tabs (slug, title, blurb, pages, sort) VALUES ('mc-booking', 'MC and comedy booking payment', 'Pay your MC or comedy show booking fee or deposit.', 'laugh', 3);
 
+-- Printable general tickets: categories the admin defines, batches (numbered ranges) and the individual tickets
+CREATE TABLE IF NOT EXISTS ticket_categories (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(80) NOT NULL,
+  prefix VARCHAR(8) NOT NULL,
+  admits TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  price INT UNSIGNED NOT NULL DEFAULT 0,
+  color CHAR(7) NOT NULL DEFAULT '#D96B27',
+  terms VARCHAR(255) NOT NULL DEFAULT '',
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  sort SMALLINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_tc_prefix (prefix)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('General Admission', 'GA', 1, '#D96B27', 1);
+INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('VIP', 'VIP', 1, '#7B4FC4', 2);
+INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('VVIP', 'VVIP', 1, '#B8860B', 3);
+INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('Complimentary', 'COMP', 1, '#2E9D57', 4);
+CREATE TABLE IF NOT EXISTS gen_batches (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  event_id INT UNSIGNED NOT NULL,
+  category_id INT UNSIGNED NOT NULL,
+  from_no INT UNSIGNED NOT NULL,
+  to_no INT UNSIGNED NOT NULL,
+  note VARCHAR(190) NULL,
+  created_by INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_gb_event (event_id),
+  CONSTRAINT fk_gb_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS gen_tickets (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  batch_id INT UNSIGNED NOT NULL,
+  event_id INT UNSIGNED NOT NULL,
+  category_id INT UNSIGNED NOT NULL,
+  number INT UNSIGNED NOT NULL,
+  token CHAR(24) NOT NULL UNIQUE,
+  status ENUM('valid','used','void') NOT NULL DEFAULT 'valid',
+  used_at DATETIME NULL,
+  used_by INT UNSIGNED NULL,
+  UNIQUE KEY uq_gt_number (event_id, category_id, number),
+  KEY idx_gt_batch (batch_id),
+  CONSTRAINT fk_gt_batch FOREIGN KEY (batch_id) REFERENCES gen_batches(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Money withdrawn from the Daraza wallet to a mobile money number (admin only)
 CREATE TABLE IF NOT EXISTS daraza_withdrawals (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

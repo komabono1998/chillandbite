@@ -222,6 +222,17 @@ function admin_checkin(array $a): void
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) not_found();
     $r = row(RES_SELECT . ' WHERE r.ticket_token = ?', [$a['token']]);
     $dups = 0;
+    if (!$r) {            // not a booking ticket: maybe a printed general ticket
+        try { $g = row("SELECT g.*, e.title AS event_title, c.name AS cat_name, c.prefix, COALESCE(c.admits,1) AS admits FROM gen_tickets g JOIN events e ON e.id = g.event_id LEFT JOIN ticket_categories c ON c.id = g.category_id WHERE g.token = ?", [$a['token']]); } catch (Throwable $e) { $g = null; }
+        if ($g) {
+            if ($g['status'] === 'used' && strtotime((string)$g['used_at']) < time() - 20) {
+                audit('gentickets.duplicate_scan', '#' . $g['id'] . ' scanned again; first used ' . $g['used_at']);
+                $dups = (int)val("SELECT COUNT(*) FROM audit_log WHERE action = 'gentickets.duplicate_scan' AND detail LIKE ?", ['#' . $g['id'] . ' %']);
+            } elseif ($g['status'] === 'void') audit('gentickets.invalid_scan', '#' . $g['id'] . ' scanned while void');
+            admin_view('checkin_general', ['title' => 'Check-in', 'g' => $g, 'token' => $a['token'], 'dups' => $dups]);
+            return;
+        }
+    }
     if ($r && $r['status'] === 'confirmed' && $r['checked_in_at'] && strtotime($r['checked_in_at']) < time() - 20) {   // the redirect right after a check-in is not a duplicate
         audit('ticket.duplicate_scan', $r['reference'] . ' scanned again; first entry ' . $r['checked_in_at']);
         $dups = (int)val("SELECT COUNT(*) FROM audit_log WHERE action = 'ticket.duplicate_scan' AND detail LIKE ?", [$r['reference'] . ' %']);

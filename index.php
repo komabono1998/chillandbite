@@ -20,6 +20,9 @@ require __DIR__ . '/app/controllers/payments.php';
 require __DIR__ . '/app/controllers/collections.php';
 require __DIR__ . '/app/controllers/paytabs.php';
 require __DIR__ . '/app/controllers/rates.php';
+require __DIR__ . '/app/qr.php';
+require __DIR__ . '/app/ticketpdf.php';
+require __DIR__ . '/app/controllers/gentickets.php';
 require __DIR__ . '/app/controllers/analytics.php';
 
 header('X-Frame-Options: SAMEORIGIN');
@@ -79,6 +82,13 @@ $routes = [
     ['POST', 'admin/pay-tabs/new',   'admin_paytab_new'],
     ['POST', 'admin/pay-tabs/{id}/delete', 'admin_paytab_delete'],
     ['GET',  'admin/rates',          'admin_rates'],
+    ['GET',  'admin/gen-tickets',    'admin_gentickets'],
+    ['POST', 'admin/gen-tickets/create', 'admin_gen_create'],
+    ['POST', 'admin/gen-tickets/categories', 'admin_gen_categories_save'],
+    ['POST', 'admin/gen-tickets/categories/{id}/delete', 'admin_gen_category_delete'],
+    ['GET',  'admin/gen-tickets/batch/{id}', 'admin_gen_batch'],
+    ['GET',  'admin/gen-tickets/download', 'admin_gen_download'],
+    ['POST', 'admin/gen-tickets/ticket/{id}/{action}', 'admin_gen_ticket_action'],
     ['POST', 'admin/rates/{id}',     'admin_rates_save'],
     ['POST', 'admin/rates/{id}/copy', 'admin_rates_copy'],
     ['GET',  'admin/collections/fees', 'admin_collections_fees'],
