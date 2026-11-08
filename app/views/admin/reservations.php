@@ -6,11 +6,12 @@
 <form class="filters panel" method="get">
   <label>Event <select name="event"><option value="">All</option><?php foreach ($events as $x): ?><option value="<?= $x['id'] ?>"<?= (int)($_GET['event'] ?? 0) === (int)$x['id'] ? ' selected' : '' ?>><?= h($x['title']) ?></option><?php endforeach; ?></select></label>
   <label>Status <select name="status"><option value="">All</option><?php foreach (['pending', 'confirmed', 'rejected', 'cancelled'] as $s): ?><option<?= ($_GET['status'] ?? '') === $s ? ' selected' : '' ?>><?= $s ?></option><?php endforeach; ?></select></label>
+  <label>Table package <?= package_select($package_opts ?? [], (string)($_GET['package'] ?? '')) ?></label>
   <label>Booked on <input type="date" name="date" value="<?= h($_GET['date'] ?? '') ?>"></label>
   <label>Search <input type="search" name="q" placeholder="Name, phone, ref" value="<?= h($_GET['q'] ?? '') ?>"></label>
   <button class="btn btn-primary btn-sm">Filter</button></form>
 <?php if (!empty($purge) && ($purge['rejected']['all'] || $purge['cancelled']['all'])): $pq = (int)($_GET['event'] ?? 0); ?>
-<details class="panel" id="cleanup"<?= in_array($_GET['status'] ?? '', ['rejected', 'cancelled'], true) ? ' open' : '' ?>><summary style="cursor:pointer;font-weight:700">🧹 Clean up rejected and cancelled records<span class="muted small" style="font-weight:400"> · <?= (int)$purge['rejected']['all'] ?> rejected, <?= (int)$purge['cancelled']['all'] ?> cancelled<?= $ev ? ' for this event' : '' ?></span></summary>
+<details class="panel" id="cleanup" open><summary style="cursor:pointer;font-weight:700">🧹 Clean up rejected and cancelled records<span class="muted small" style="font-weight:400"> · <?= (int)$purge['rejected']['all'] ?> rejected, <?= (int)$purge['cancelled']['all'] ?> cancelled<?= $ev ? ' for this event' : '' ?></span></summary>
   <form method="post" action="<?= url('admin/reservations/purge') ?>" onsubmit="return confirm('Permanently delete these records? This cannot be undone.')"><?= csrf_field() ?><input type="hidden" name="event" value="<?= $pq ?>">
     <p class="small muted" style="margin:8px 0 10px">Deleting removes the records for good, so the dashboard and reports stop counting them. Bookings that have payment records, and withdrawn tickets, are always kept. <?= $ev ? 'This applies to <b>' . h($ev['title']) . '</b> only.' : 'This applies to <b>all events</b>. Filter by an event above to clean up just one.' ?></p>
     <div class="filters"><label>Type DELETE to confirm <input name="confirm" autocomplete="off" placeholder="DELETE" style="width:130px"></label>
@@ -39,10 +40,13 @@
   <td><?= status_badge($r['status']) ?><?= $r['checked_in_at'] ? '<br><span class="badge badge-ok">In</span>' : '' ?></td>
   <td><div class="actions"><?php foreach (array_filter([
       $r['status'] === 'pending' && can('reservations_manage') ? ['approve', 'Approve'] : null, $r['status'] === 'pending' && can('reservations_manage') ? ['reject', 'Reject'] : null,
-      $r['status'] === 'confirmed' && !$r['checked_in_at'] && can('checkin') ? ['checkin', 'Check in'] : null] ) as [$act, $lab]): ?>
+      $r['status'] === 'confirmed' && !$r['checked_in_at'] && can('checkin') ? ['checkin', 'Check in'] : null,
+      $r['checked_in_at'] && can('checkin') ? ['undo_checkin', '↩ Undo check-in'] : null] ) as [$act, $lab]): ?>
     <form class="inline" method="post" action="<?= url('admin/reservations/' . $r['id'] . '/action') ?>"><?= csrf_field() ?><input type="hidden" name="action" value="<?= $act ?>"><input type="hidden" name="back" value="admin/reservations?<?= h(http_build_query($_GET)) ?>"><button class="btn btn-ghost btn-sm"><?= $lab ?></button></form>
   <?php endforeach; ?>
-  <?php if (can('purge') && in_array($r['status'], ['rejected', 'cancelled'], true) && !($r['status'] === 'cancelled' && !empty($r['withdrawn_at']))): ?>
-    <form class="inline" method="post" action="<?= url('admin/reservations/' . $r['id'] . '/delete') ?>" onsubmit="return confirm('Delete record <?= h($r['reference']) ?> permanently? This cannot be undone.')"><?= csrf_field() ?><input type="hidden" name="back" value="admin/reservations?<?= h(http_build_query($_GET)) ?>"><button class="btn btn-ghost btn-sm btn-danger-soft" title="Delete this record for good">🗑 Delete</button></form>
+  <?php if (can('purge') && in_array($r['status'], ['rejected', 'cancelled'], true)):
+      $prot = ($r['status'] === 'cancelled' && !empty($r['withdrawn_at'])) || isset($has_pay[(int)$r['id']]); ?>
+    <form class="inline" method="post" action="<?= url('admin/reservations/' . $r['id'] . '/delete') ?>" onsubmit="return confirm('<?= $prot ? 'FORCE delete record ' . h($r['reference']) . '? ' . (isset($has_pay[(int)$r['id']]) ? 'Its payment records are deleted too and disappear from the finance reports. ' : '') . 'A safety copy is saved first. This cannot be undone.' : 'Delete record ' . h($r['reference']) . ' permanently? This cannot be undone.' ?>')"><?= csrf_field() ?><input type="hidden" name="back" value="admin/reservations?<?= h(http_build_query($_GET)) ?>"><?php if ($prot): ?><input type="hidden" name="force" value="1"><?php endif; ?>
+      <button class="btn btn-sm <?= $prot ? '' : 'btn-ghost btn-danger-soft' ?>"<?= $prot ? ' style="background:#d9534f;color:#fff"' : '' ?> title="<?= $prot ? 'This record has payments or is a withdrawn ticket: force delete removes it anyway' : 'Delete this record for good' ?>"><?= $prot ? '🗑 Force delete' : '🗑 Delete' ?></button></form>
   <?php endif; ?></div></td></tr><?php endforeach; ?>
 <?php if (!$list): ?><tr><td colspan="8" class="muted">No reservations match.</td></tr><?php endif; ?></table></div></div>

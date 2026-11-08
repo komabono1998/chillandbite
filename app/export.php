@@ -398,6 +398,7 @@ function export_dataset(string $name): ?array
             $sub = [];
             if (!empty($_GET['event'])) $sub[] = 'Event: ' . (val('SELECT title FROM events WHERE id = ?', [(int)$_GET['event']]) ?? '?');
             if (!empty($_GET['status'])) $sub[] = 'Status: ' . $_GET['status'];
+            if (!empty($_GET['package'])) $sub[] = 'Package: ' . ($_GET['package'] === '__none' ? 'none' : $_GET['package']);
             if ($from || $to) $sub[] = 'Booked ' . ($from ?: '...') . ' to ' . ($to ?: '...');
             if (!empty($_GET['q'])) $sub[] = 'Search: ' . $_GET['q'];
             $rows = [];

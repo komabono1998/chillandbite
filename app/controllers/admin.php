@@ -170,12 +170,38 @@ function admin_event_recurring(): void
 }
 
 /* ================= Reservations ================= */
+/** Table package names used by bookings (and set on events), for the "Table package" filters. $eventId 0 = all events. */
+function package_options(int $eventId = 0): array
+{
+    $names = [];
+    $a = $eventId ? [$eventId] : [];
+    foreach (rows('SELECT DISTINCT package AS n FROM reservations WHERE package IS NOT NULL AND package <> \'\'' . ($eventId ? ' AND event_id = ?' : ''), $a) as $x) $names[$x['n']] = true;
+    foreach (rows('SELECT DISTINCT name AS n FROM event_packages' . ($eventId ? ' WHERE event_id = ?' : ''), $a) as $x) $names[$x['n']] = true;
+    $names = array_keys($names); natcasesort($names);
+    return array_values($names);
+}
+/** SQL for the chosen package: '' = any, '__none' = bookings without a table package. */
+function package_condition(string $pkg, string $col = 'r.package'): array
+{
+    if ($pkg === '') return ['', []];
+    if ($pkg === '__none') return [" AND ($col IS NULL OR $col = '')", []];
+    return [" AND $col = ?", [$pkg]];
+}
+function package_select(array $options, string $current, bool $autoSubmit = false): string
+{
+    $o = '<option value="">All packages</option>';
+    foreach ($options as $n) $o .= '<option value="' . h($n) . '"' . ($current === $n ? ' selected' : '') . '>' . h($n) . '</option>';
+    $o .= '<option value="__none"' . ($current === '__none' ? ' selected' : '') . '>No table package</option>';
+    return '<select name="package"' . ($autoSubmit ? ' onchange="this.form.submit()"' : '') . ' aria-label="Table package">' . $o . '</select>';
+}
 function reservation_filters(): array
 {
     $w = ['1=1']; $p = [];
     if (!empty($_GET['event'])) { $w[] = 'r.event_id = ?'; $p[] = (int)$_GET['event']; }
     if (in_array($_GET['status'] ?? '', ['pending', 'confirmed', 'rejected', 'cancelled'], true)) { $w[] = 'r.status = ?'; $p[] = $_GET['status']; }
     if (!empty($_GET['date']) && strtotime($_GET['date'])) { $w[] = 'DATE(r.created_at) = ?'; $p[] = date('Y-m-d', strtotime($_GET['date'])); }
+    [$pc, $pa] = package_condition(trim((string)($_GET['package'] ?? '')));
+    if ($pc !== '') { $w[] = ltrim(substr($pc, 5)); array_push($p, ...$pa); }
     if (($qq = trim((string)($_GET['q'] ?? ''))) !== '') {
         $w[] = '(r.full_name LIKE ? OR r.phone LIKE ? OR r.reference LIKE ?)';
         $like = '%' . addcslashes($qq, '%_\\') . '%'; array_push($p, $like, $like, $like);
@@ -190,12 +216,14 @@ function admin_reservations(): void
     [$w, $p] = reservation_filters();
     $eventId = (int)($_GET['event'] ?? 0);
     $ev = $eventId ? row('SELECT * FROM events WHERE id = ?', [$eventId]) : null;
+    $listRows = rows(RES_SELECT . " WHERE $w ORDER BY r.id DESC LIMIT 300", $p);
     admin_view('reservations', [
         'title' => 'Reservations', 'ev' => $ev, 'booked' => $ev ? event_booked((int)$ev['id']) : null,
         'checked' => $ev ? (int)val("SELECT COALESCE(SUM(guests),0) FROM reservations WHERE event_id = ? AND checked_in_at IS NOT NULL AND status='confirmed'", [$ev['id']]) : null,
-        'list' => rows(RES_SELECT . " WHERE $w ORDER BY r.id DESC LIMIT 300", $p),
+        'list' => $listRows,
         'events' => rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 100'),
-        'purge' => can('purge') ? res_purge_counts($eventId) : null, 'force' => can('purge') ? res_force_counts($eventId) : null,
+        'package_opts' => package_options($eventId), 'purge' => can('purge') ? res_purge_counts($eventId) : null, 'force' => can('purge') ? res_force_counts($eventId) : null,
+        'has_pay' => $listRows ? array_flip(array_map('intval', array_column(rows('SELECT DISTINCT reservation_id FROM payments WHERE reservation_id IN (' . implode(',', array_map('intval', array_column($listRows, 'id'))) . ')'), 'reservation_id'))) : [],
     ]);
 }
 function admin_reservation(array $a): void
@@ -246,7 +274,7 @@ function admin_reservation_action(array $a): void
     $r = row('SELECT * FROM reservations WHERE id = ?', [$id]) ?? not_found();
     $act = $_POST['action'] ?? '';
     $back = $_POST['back'] ?? '';
-    $dest = (str_starts_with($back, 'admin/reservations') || preg_match('#^admin/checkin(/[a-f0-9]{24}|\?[A-Za-z0-9=&_%.-]*)?$#', $back) || preg_match('#^admin/tickets(\?[A-Za-z0-9=&_%.+-]*)?$#', $back)) ? $back
+    $dest = (str_starts_with($back, 'admin/reservations') || preg_match('#^admin/checkin(/[a-f0-9]{24}|\?[A-Za-z0-9=&_%.+-]*)?$#', $back) || preg_match('#^admin/tickets(\?[A-Za-z0-9=&_%.+-]*)?$#', $back)) ? $back
         : (can('reservations') ? "admin/reservations/$id" : 'admin/checkin');
     switch ($act) {
         case 'approve':
@@ -432,14 +460,35 @@ function res_purge_counts(int $eventId = 0): array
     }
     return $out;
 }
+/** Save a copy of bookings (and their payments) about to be force-deleted. Returns the file name, or null when it could not be written. */
+function res_safety_copy(array $res, string $which, int $eventId = 0): ?string
+{
+    if (!$res) return null;
+    $ids = array_map('intval', array_column($res, 'id'));
+    $pay = rows('SELECT * FROM payments WHERE reservation_id IN (' . implode(',', $ids) . ')');
+    $dir = ROOT . '/storage/purged'; @mkdir($dir, 0775, true);
+    $file = $dir . '/purge-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(2)), 0, 4) . '.json';
+    $ok = @file_put_contents($file, json_encode(['deleted_at' => date('c'), 'by' => current_user()['email'] ?? '', 'which' => $which, 'event' => $eventId, 'reservations' => $res, 'payments' => $pay], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_PARTIAL_OUTPUT_ON_ERROR));
+    return $ok === false ? null : basename($file);
+}
 function admin_reservation_delete(array $a): void
 {
     require_can('purge');
     $r = row('SELECT * FROM reservations WHERE id = ?', [(int)$a['id']]) ?? not_found();
-    $why = res_delete_block($r);
+    $force = !empty($_POST['force']);
+    $why = $force ? (in_array($r['status'], ['rejected', 'cancelled'], true) ? null : 'Only rejected or cancelled records can be deleted.') : res_delete_block($r);
     $back = (string)($_POST['back'] ?? '');
     $dest = preg_match('#^admin/reservations(\?[A-Za-z0-9=&_%.+-]*)?$#', $back) ? $back : 'admin/reservations';
     if ($why) { flash('Not deleted: ' . $why, 'err'); redirect($dest); }
+    if ($force) {                                              // forced: payments and withdrawn tickets go too, after a safety copy
+        $copy = res_safety_copy([$r], 'single');
+        if ($copy === null) { flash('Could not save the safety copy in storage/purged, so nothing was deleted.', 'err'); redirect($dest); }
+        $np = (int)val('SELECT COUNT(*) FROM payments WHERE reservation_id = ?', [$r['id']]);
+        q('DELETE FROM reservations WHERE id = ?', [$r['id']]);
+        audit('reservation.force_delete', "{$r['reference']} {$r['full_name']} ({$r['status']}) force-deleted incl. $np payment record(s); copy: $copy");
+        flash("Record {$r['reference']} for {$r['full_name']} was force deleted" . ($np ? ", with $np payment record" . ($np === 1 ? '' : 's') : '') . '. A safety copy was saved as storage/purged/' . $copy . '.');
+        redirect($dest);
+    }
     q('DELETE FROM reservations WHERE id = ?', [$r['id']]);
     audit('reservation.delete', "{$r['reference']} {$r['full_name']} ({$r['status']}) deleted");
     flash("Record {$r['reference']} for {$r['full_name']} was deleted. The dashboard and reports no longer count it.");
@@ -496,11 +545,9 @@ function admin_reservations_force_purge(): void
     $in = implode(',', $ids);
     $pay = rows("SELECT * FROM payments WHERE reservation_id IN ($in)");
     $net = (int)array_sum(array_column($pay, 'amount'));
-    // safety copy first
-    $dir = ROOT . '/storage/purged'; @mkdir($dir, 0775, true);
-    $file = $dir . '/purge-' . date('Ymd-His') . '.json';
-    $ok = @file_put_contents($file, json_encode(['deleted_at' => date('c'), 'by' => current_user()['email'] ?? '', 'which' => $which, 'event' => $eventId, 'reservations' => $res, 'payments' => $pay], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_PARTIAL_OUTPUT_ON_ERROR));
-    if ($ok === false) { flash('Could not save the safety copy in storage/purged, so nothing was deleted.', 'err'); redirect($dest); }
+    $copy = res_safety_copy($res, $which, $eventId);                       // safety copy first
+    if ($copy === null) { flash('Could not save the safety copy in storage/purged, so nothing was deleted.', 'err'); redirect($dest); }
+    $file = $copy;
     foreach (array_chunk($ids, 200) as $chunk) q('DELETE FROM reservations WHERE id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ')', $chunk);
     audit('reservation.force_purge', count($ids) . " $which record(s) force-deleted incl. " . count($pay) . " payment record(s) (net UGX $net)" . ($eventId ? " for event #$eventId" : ' for all events') . '; copy: ' . basename($file));
     flash('Force deleted ' . count($ids) . ' ' . ($which === 'both' ? 'rejected and cancelled' : $which) . ' booking' . (count($ids) === 1 ? '' : 's') . ', with ' . count($pay) . ' payment record' . (count($pay) === 1 ? '' : 's') . '. The dashboard, collections and reports no longer count them. A safety copy was saved as storage/purged/' . basename($file) . '.');

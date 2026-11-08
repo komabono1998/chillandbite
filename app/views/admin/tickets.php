@@ -1,6 +1,6 @@
 <?php
 $eid = (int)($ev['id'] ?? 0);
-$back = 'admin/tickets?' . http_build_query(array_filter(['event' => $eid ?: '', 'status' => $status !== 'confirmed' ? $status : '', 'q' => $q]));
+$back = 'admin/tickets?' . http_build_query(array_filter(['event' => $eid ?: '', 'status' => $status !== 'confirmed' ? $status : '', 'q' => $q, 'package' => $pkg]));
 $tabs = ['confirmed' => 'Tickets issued', 'pending' => 'Awaiting approval', 'withdrawn' => 'Withdrawn', 'cancelled' => 'Cancelled'];
 $manage = can('reservations_manage');
 ?>
@@ -15,14 +15,18 @@ $manage = can('reservations_manage');
 
 <form class="panel filters" method="get" action="<?= url('admin/tickets') ?>">
   <label>Event <select name="event" onchange="this.form.submit()"><?php foreach ($events as $x): ?><option value="<?= $x['id'] ?>"<?= $eid === (int)$x['id'] ? ' selected' : '' ?>><?= h(excerpt($x['title'], 56)) ?> · <?= fmt_date($x['start_at'], 'j M Y') ?></option><?php endforeach; ?></select></label>
+  <label>Table package <?= package_select($package_opts, $pkg, true) ?></label>
   <label style="flex:1;min-width:220px">Find a guest <input type="search" name="q" value="<?= h($q) ?>" placeholder="Name, phone or reference"></label>
   <input type="hidden" name="status" value="<?= h($status) ?>">
   <button class="btn btn-primary btn-sm">Search</button>
-  <?php if ($q !== ''): ?><a class="btn btn-ghost btn-sm" href="<?= url('admin/tickets?event=' . $eid . '&status=' . $status) ?>">Clear</a><?php endif; ?>
+  <?php if ($q !== '' || $pkg !== ''): ?><a class="btn btn-ghost btn-sm" href="<?= url('admin/tickets?event=' . $eid . '&status=' . $status) ?>">Clear</a><?php endif; ?>
 </form>
+<?php if ($pkg !== '' && $list): $pkgGuests = array_sum(array_map(fn($x) => (int)$x['guests'], $list)); ?>
+<p class="small" style="margin:-4px 0 10px"><b><?= h($pkg === '__none' ? 'No table package' : $pkg) ?></b>: <?= count($list) ?> ticket<?= count($list) === 1 ? '' : 's' ?> · <?= $pkgGuests ?> guest<?= $pkgGuests === 1 ? '' : 's' ?> in this view.</p>
+<?php endif; ?>
 
 <nav class="pills" aria-label="Ticket status"><?php foreach ($tabs as $k => $label): ?>
-  <a href="<?= url('admin/tickets?' . http_build_query(array_filter(['event' => $eid, 'status' => $k, 'q' => $q]))) ?>"<?= $status === $k ? ' aria-current="true"' : '' ?>><?= $label ?> (<?= (int)($counts[$k] ?? 0) ?>)</a>
+  <a href="<?= url('admin/tickets?' . http_build_query(array_filter(['event' => $eid, 'status' => $k, 'q' => $q, 'package' => $pkg]))) ?>"<?= $status === $k ? ' aria-current="true"' : '' ?>><?= $label ?> (<?= (int)($counts[$k] ?? 0) ?>)</a>
 <?php endforeach; ?></nav>
 
 <?php if (env('MAIL_ENABLED', '0') !== '1'): ?><div class="alert alert-err">Email is switched off on this site (MAIL_ENABLED is not 1), so &ldquo;Emailed&rdquo; marks only mean the email was written to the log, not delivered. Switch it on in the .env file.</div><?php endif; ?>
@@ -56,6 +60,7 @@ $manage = can('reservations_manage');
       <td data-label="Guest"><b><?= h($r['full_name']) ?></b><br><span class="small muted"><?= h($r['phone']) ?><?= $r['email'] ? ' · ' . h($r['email']) : '' ?></span><?php if ($canManage): ?> <button type="button" class="tk-edit-num" data-tk-jump title="Change this number or email">✏️</button><?php endif; ?></td>
       <td data-label="Booking"><?= h(str_replace(' Reservation', '', RES_TYPES[$r['type']])) ?><?= $r['package'] ? ' · ' . h($r['package']) : '' ?><br><span class="small muted"><?= (int)$r['guests'] ?> guest(s)<?= $r['admin_note'] && str_starts_with((string)$r['admin_note'], 'Ticket issued') ? ' · complimentary' : '' ?></span></td>
       <td data-label="Ticket"><?php if ($isConfirmed): ?><?= $r['checked_in_at'] ? '<span class="badge badge-warn">Checked in ' . h(fmt_time($r['checked_in_at'])) . '</span>' : '<span class="badge badge-ok">Valid</span>' ?>
+          <?php if ($r['checked_in_at'] && can('checkin')): ?><form class="inline" method="post" action="<?= url('admin/reservations/' . (int)$r['id'] . '/action') ?>" onsubmit="return confirm('Undo the check-in for <?= h($r['full_name']) ?>? The ticket becomes valid again.')"><?= csrf_field() ?><input type="hidden" name="action" value="undo_checkin"><input type="hidden" name="back" value="<?= h($back) ?>"><button class="btn btn-ghost btn-sm tk-resend" title="Undo the check-in">↩ Undo</button></form><?php endif; ?>
           <?php elseif ($isWithdrawn): ?><span class="badge badge-err">Withdrawn</span><br><span class="small muted"><?= h(fmt_date($r['withdrawn_at'], 'j M, H:i')) ?><?= $r['withdrawn_reason'] ? ' · ' . h($r['withdrawn_reason']) : '' ?></span>
           <?php elseif ($r['status'] === 'pending'): ?><span class="badge badge-warn">Not issued yet</span><?php else: ?><span class="badge badge-err">Void</span><?php endif; ?>
         <?php if ($isConfirmed): $sm = $sends[(int)$r['id']] ?? []; ?>

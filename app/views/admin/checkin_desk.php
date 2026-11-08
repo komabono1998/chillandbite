@@ -2,7 +2,7 @@
 $left = max(0, $stats['expected'] - $stats['in']);
 $pct = $stats['expected'] ? min(100, (int)round($stats['in'] / $stats['expected'] * 100)) : 0;
 $showPhone = can('reservations');
-$back = 'admin/checkin?' . http_build_query(array_filter(['event' => $ev['id'] ?? '', 'q' => $q]));
+$back = 'admin/checkin?' . http_build_query(array_filter(['event' => $ev['id'] ?? '', 'q' => $q, 'package' => $pkg ?? '']));
 ?>
 <div class="adm-head">
   <div><h1>Check-in desk</h1><p class="adm-sub">Search a guest by name, phone or reference, or scan their QR ticket with your phone camera.</p></div>
@@ -11,9 +11,10 @@ $back = 'admin/checkin?' . http_build_query(array_filter(['event' => $ev['id'] ?
 
 <form class="panel filters" method="get" action="<?= url('admin/checkin') ?>">
   <label>Event <select name="event" onchange="this.form.submit()"><?php foreach ($events as $x): ?><option value="<?= $x['id'] ?>"<?= $ev && (int)$ev['id'] === (int)$x['id'] ? ' selected' : '' ?>><?= h(excerpt($x['title'], 56)) ?> · <?= fmt_date($x['start_at'], 'j M Y') ?></option><?php endforeach; ?></select></label>
+  <label>Table package <?= package_select($package_opts ?? [], $pkg ?? '', true) ?></label>
   <label style="flex:1;min-width:220px">Find a guest <input type="search" name="q" value="<?= h($q) ?>" placeholder="Name, phone or reference" autofocus></label>
   <button class="btn btn-primary btn-sm">Search</button>
-  <?php if ($q !== ''): ?><a class="btn btn-ghost btn-sm" href="<?= url('admin/checkin?event=' . (int)($ev['id'] ?? 0)) ?>">Clear</a><?php endif; ?>
+  <?php if ($q !== '' || ($pkg ?? '') !== ''): ?><a class="btn btn-ghost btn-sm" href="<?= url('admin/checkin?event=' . (int)($ev['id'] ?? 0)) ?>">Clear</a><?php endif; ?>
 </form>
 
 <?php if (!$ev): ?><div class="empty">There are no events to check guests into yet.</div><?php else: ?>

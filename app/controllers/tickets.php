@@ -124,10 +124,14 @@ function admin_tickets(): void
     $w = 'r.event_id = ? AND ' . (['withdrawn' => "r.status = 'cancelled' AND r.withdrawn_at IS NOT NULL", 'cancelled' => "r.status = 'cancelled' AND r.withdrawn_at IS NULL"][$status] ?? 'r.status = ?');
     $p = in_array($status, ['withdrawn', 'cancelled'], true) ? [$eid] : [$eid, $status];
     if ($q !== '') { $w .= ' AND (r.full_name LIKE ? OR r.phone LIKE ? OR r.reference LIKE ?)'; $like = '%' . addcslashes($q, '%_\\') . '%'; array_push($p, $like, $like, $like); }
+    $pkg = trim((string)($_GET['package'] ?? ''));
+    [$pc, $pa] = package_condition($pkg);
+    $w .= $pc; array_push($p, ...$pa);
     $ev = $eid ? row('SELECT * FROM events WHERE id = ?', [$eid]) : null;
-    $counts = $eid ? array_column(rows("SELECT CASE WHEN status = 'cancelled' AND withdrawn_at IS NOT NULL THEN 'withdrawn' ELSE status END AS s, COUNT(*) n FROM reservations WHERE event_id = ? GROUP BY s", [$eid]), 'n', 's') : [];
+    [$pc2, $pa2] = package_condition($pkg, 'package');
+    $counts = $eid ? array_column(rows("SELECT CASE WHEN status = 'cancelled' AND withdrawn_at IS NOT NULL THEN 'withdrawn' ELSE status END AS s, COUNT(*) n FROM reservations WHERE event_id = ?$pc2 GROUP BY s", [$eid, ...$pa2]), 'n', 's') : [];
     admin_view('tickets', [
-        'title' => 'Tickets', 'events' => $events, 'ev' => $ev, 'status' => $status, 'q' => $q, 'counts' => $counts,
+        'title' => 'Tickets', 'events' => $events, 'ev' => $ev, 'status' => $status, 'q' => $q, 'counts' => $counts, 'pkg' => $pkg, 'package_opts' => package_options($eid),
         'list' => $list = ($eid ? rows(RES_SELECT . " WHERE $w ORDER BY r.full_name LIMIT 300", $p) : []),
         'sends' => ticket_sends_for(array_column($list, 'id')),
     ]);

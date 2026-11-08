@@ -126,12 +126,13 @@ function admin_checkin_desk(): void
     if ($ev) {
         $w = "r.event_id = ? AND r.status = 'confirmed'"; $p = [$eid];
         if ($q !== '') { $w .= ' AND (r.full_name LIKE ? OR r.phone LIKE ? OR r.reference LIKE ?)'; $like = '%' . addcslashes($q, '%_\\') . '%'; array_push($p, $like, $like, $like); }
+        [$pc, $pa] = package_condition($pkg = trim((string)($_GET['package'] ?? ''))); $w .= $pc; array_push($p, ...$pa);
         $list = rows(RES_SELECT . " WHERE $w ORDER BY (r.checked_in_at IS NOT NULL), r.full_name LIMIT 300", $p);
         $s = row("SELECT COALESCE(SUM(guests),0) expected, COALESCE(SUM(CASE WHEN checked_in_at IS NOT NULL THEN guests END),0) in_guests, COUNT(*) bookings FROM reservations WHERE event_id = ? AND status='confirmed'", [$eid]);
         $stats = ['expected' => (int)$s['expected'], 'in' => (int)$s['in_guests'], 'bookings' => (int)$s['bookings'],
             'pending' => (int)val("SELECT COUNT(*) FROM reservations WHERE event_id = ? AND status='pending'", [$eid])];
     }
-    admin_view('checkin_desk', ['title' => 'Check-in desk', 'events' => $events, 'ev' => $ev, 'q' => $q, 'list' => $list, 'stats' => $stats]);
+    admin_view('checkin_desk', ['title' => 'Check-in desk', 'events' => $events, 'ev' => $ev, 'q' => $q, 'pkg' => $pkg ?? '', 'package_opts' => package_options($eid), 'list' => $list, 'stats' => $stats]);
 }
 
 /* ================= Website pages manager ================= */
