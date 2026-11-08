@@ -55,7 +55,17 @@ function rates_from_post(array $post): array
         $min = max(1, (int)($o['min'] ?? $d['min'])); $max = max($min, (int)($o['max'] ?? $d['max']));
         $opt[$t] = ['on' => 1, 'price' => max(0, (int)preg_replace('/\D+/', '', (string)($o['price'] ?? '0'))), 'min' => $min, 'max' => $max];
     }
-    return ['opt' => $opt, 'packages' => (string)($post['packages'] ?? '')];
+    $packages = (string)($post['packages'] ?? '');
+    if (isset($post['pk']['n']) && is_array($post['pk']['n'])) {          // the package grid: type, price and how many people it admits
+        $lines = [];
+        foreach ($post['pk']['n'] as $i => $n) {
+            $n = mb_substr(trim((string)$n), 0, 80); if ($n === '') continue;
+            $p = (int)preg_replace('/\D+/', '', (string)($post['pk']['p'][$i] ?? '0')); $a = max(0, min(50, (int)preg_replace('/\D+/', '', (string)($post['pk']['a'][$i] ?? '0'))));
+            $lines[] = str_replace('|', '/', $n) . ' | ' . $p . ($a > 0 ? ' | ' . $a : '');
+        }
+        $packages = implode("\n", $lines);
+    }
+    return ['opt' => $opt, 'packages' => $packages];
 }
 /** Write rates to an event (replaces its options and table packages). */
 function rates_apply(int $eventId, array $r): void
@@ -97,6 +107,12 @@ function admin_rates_save(array $a): void
     require_can('events');
     $id = (int)$a['id'];
     $r = rates_from_post($_POST);
+    // the Table Reservation option has no row of its own any more: keep what is saved, and switch it on when packages exist
+    $cur = $id ? rates_of_event($id)['opt'] : (rates_template()['opt'] ?? []);
+    if (!isset($r['opt']['table'])) {
+        if (rates_parse_packages($r['packages'])) $r['opt']['table'] = $cur['table'] ?? ['on' => 1, 'price' => 0, 'min' => 2, 'max' => 15];
+        elseif (isset($cur['table'])) $r['opt']['table'] = $cur['table'];
+    }
     if ($id === 0) {
         save_setting('rates_template', json_encode($r));
         audit('rates.template', 'default rates for new events');

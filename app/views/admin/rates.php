@@ -1,16 +1,44 @@
 <?php
 if (!function_exists('rates_fields')) {
-    /** The editable rates: ticket types with price, and table packages. */
-    function rates_fields(array $r): void { ?>
-      <div class="tbl-wrap"><table class="tbl"><tr><th>On</th><th>Ticket type</th><th>Price per guest (UGX, 0 = free)</th><th>Min</th><th>Max</th></tr>
-      <?php foreach (RES_TYPES as $t => $lab): $o = $r['opt'][$t] ?? null; $d = rates_type_defaults($t); ?>
-        <tr><td><input type="checkbox" name="opt[<?= $t ?>][on]" value="1"<?= $o ? ' checked' : '' ?> aria-label="Enable <?= h($lab) ?>"></td><td><?= h($lab) ?></td>
-          <td><input type="text" inputmode="numeric" name="opt[<?= $t ?>][price]" value="<?= (int)($o['price'] ?? 0) ?>"></td>
-          <td><input type="number" min="1" name="opt[<?= $t ?>][min]" value="<?= (int)($o['min'] ?? $d['min']) ?>" style="width:70px"></td>
-          <td><input type="number" min="1" name="opt[<?= $t ?>][max]" value="<?= (int)($o['max'] ?? $d['max']) ?>" style="width:70px"></td></tr>
-      <?php endforeach; ?></table></div>
-      <label class="rates-pk">Table packages (one per line: Name | price in UGX). Shown when &ldquo;Table Reservation&rdquo; is on.
-        <textarea name="packages" rows="5" placeholder="Silver | 200000&#10;Gold Pro | 300000"><?= h($r['packages']) ?></textarea></label>
+    /** The editable rates: a grid of table packages (type, price, people admitted), and the other ticket types tucked underneath. */
+    function rates_fields(array $r): void {
+        $rows = rates_parse_packages($r['packages']);
+        if (!$rows) $rows = [['', '', 0]];
+        $tr = function (array $row): string {
+            return '<tr><td><input type="text" name="pk[n][]" value="' . h($row[0]) . '" maxlength="80" placeholder="e.g. Silver" aria-label="Table package type"></td>'
+                . '<td><input type="text" inputmode="numeric" name="pk[p][]" value="' . h($row[1] === '' ? '' : (string)$row[1]) . '" placeholder="e.g. 200000" aria-label="Price in UGX"></td>'
+                . '<td><input type="number" min="0" max="50" name="pk[a][]" value="' . ((int)$row[2] > 0 ? (int)$row[2] : '') . '" placeholder="e.g. 4" aria-label="People it admits"></td>'
+                . '<td style="text-align:right"><button type="button" class="btn btn-ghost btn-sm pk-del" title="Remove this package" aria-label="Remove this package">✕</button></td></tr>';
+        }; ?>
+      <div class="pk-wrap">
+        <div class="tbl-wrap"><table class="tbl pk-tbl"><thead><tr><th>Table package type</th><th>Price (UGX)</th><th>Admission (people it admits)</th><th></th></tr></thead>
+          <tbody><?php foreach ($rows as $row) echo $tr($row); ?></tbody></table></div>
+        <button type="button" class="btn btn-ghost btn-sm pk-add" style="margin-top:8px">＋ Add a table package</button>
+        <p class="small muted" style="margin:8px 0 0">Guests choose a package on the reserve page. One table admits the number of people you enter. The Table Reservation option is switched on for you while there is at least one package.</p>
+      </div>
+      <details class="rates-other"><summary>Other ticket types (individual, couple, group, corporate, VIP)</summary>
+        <div class="tbl-wrap"><table class="tbl"><tr><th>On</th><th>Ticket type</th><th>Price per guest (UGX, 0 = free)</th><th>Min</th><th>Max</th></tr>
+        <?php foreach (RES_TYPES as $t => $lab): if ($t === 'table') continue; $o = $r['opt'][$t] ?? null; $d = rates_type_defaults($t); ?>
+          <tr><td><input type="checkbox" name="opt[<?= $t ?>][on]" value="1"<?= $o ? ' checked' : '' ?> aria-label="Enable <?= h($lab) ?>"></td><td><?= h($lab) ?></td>
+            <td><input type="text" inputmode="numeric" name="opt[<?= $t ?>][price]" value="<?= (int)($o['price'] ?? 0) ?>"></td>
+            <td><input type="number" min="1" name="opt[<?= $t ?>][min]" value="<?= (int)($o['min'] ?? $d['min']) ?>" style="width:70px"></td>
+            <td><input type="number" min="1" name="opt[<?= $t ?>][max]" value="<?= (int)($o['max'] ?? $d['max']) ?>" style="width:70px"></td></tr>
+        <?php endforeach; ?></table></div>
+      </details>
+      <?php static $js = false; if (!$js) { $js = true; ?>
+      <script>
+      document.addEventListener('click', function (e) {
+        var add = e.target.closest('.pk-add'), del = e.target.closest('.pk-del');
+        if (add) {
+          var body = add.closest('.pk-wrap').querySelector('tbody'), last = body.lastElementChild, row = last.cloneNode(true);
+          row.querySelectorAll('input').forEach(function (i) { i.value = ''; }); body.appendChild(row); row.querySelector('input').focus();
+        } else if (del) {
+          var tb = del.closest('tbody'), tr = del.closest('tr');
+          if (tb.children.length > 1) tr.remove(); else tr.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+        }
+      });
+      </script>
+      <?php } ?>
     <?php }
 }
 $pastQ = $past ? '?past=1' : '';
@@ -19,6 +47,7 @@ $pastQ = $past ? '?past=1' : '';
 .rates-ev{padding:0;overflow:hidden}.rates-ev>summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:14px 18px}
 .rates-ev>summary::-webkit-details-marker{display:none}.rates-ev[open]>summary{background:#fbf4e8;border-bottom:1px solid var(--line)}
 .rates-ev .rv-title{font-weight:800}.rates-ev .rv-date{color:var(--muted);font-size:.82rem}.rates-ev .rv-sum{flex-basis:100%;color:#5a5249;font-size:.82rem}
+.pk-tbl input[type=text],.pk-tbl input[type=number]{width:100%;min-width:90px}.rates-other{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}.rates-other summary{cursor:pointer;font-weight:700;font-size:.88rem;color:var(--accent-d);padding:4px 0}
 .rates-body{padding:16px 18px}.rates-pk{display:block;font-weight:600;font-size:.88rem;margin-top:12px}.rates-pk textarea{width:100%;margin-top:6px}
 .rates-copy{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .tag-soft{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:99px;background:#efe9dd;color:#6b6258}
