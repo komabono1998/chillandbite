@@ -23,6 +23,9 @@
     <label>From number<input type="number" name="from_no" id="gFrom" min="1" value="1" required></label>
     <label>To number<input type="number" name="to_no" id="gTo" min="1" value="200" required></label>
     <label>Note (optional)<input type="text" name="note" maxlength="190" placeholder="e.g. Gate sales batch"></label>
+    <label>How many it admits<input type="number" name="admits" min="1" max="50" placeholder="category default"></label>
+    <label>Rate (UGX)<input type="text" inputmode="numeric" name="price" placeholder="category default"></label>
+    <label style="grid-column:1/-1">What it comes with (one per line, optional)<textarea name="perks" rows="2" maxlength="500" placeholder="Leave empty to use the category list&#10;e.g. 2 beers and a stick of meat"></textarea></label>
     <div><button class="btn btn-primary">Create <span class="gt-qty" id="gQty" style="color:#fff">200</span> tickets</button></div>
   </div>
   <p class="small muted" style="margin:10px 0 0">Tickets are numbered per event and category, for example GA-0001 to GA-0200. A batch can hold up to <?= number_format(GEN_MAX_BATCH) ?> tickets; make another batch to continue the numbering.</p>
@@ -46,9 +49,10 @@
     <tr><td><input type="checkbox" name="batch[]" value="<?= (int)$b['id'] ?>" aria-label="Select batch <?= (int)$b['id'] ?>"></td><td><?= fmt_date($b['created_at'], 'j M H:i') ?></td>
       <td><?= h(excerpt($b['event_title'], 36)) ?><br><span class="muted small"><?= fmt_date($b['start_at'], 'j M Y') ?></span></td>
       <td><span class="chip" style="--c:<?= h($b['color'] ?? '#888') ?>"><?= h($b['cat_name'] ?? 'Removed') ?></span></td>
-      <td><b><?= h(gen_serial($cat, (int)$b['from_no'])) ?></b> to <b><?= h(gen_serial($cat, (int)$b['to_no'])) ?></b><br><span class="muted small"><?= number_format((int)$b['to_no'] - (int)$b['from_no'] + 1) ?> tickets<?= $b['note'] ? ' · ' . h($b['note']) : '' ?></span></td>
+      <td><b><?= h(gen_serial($cat, (int)$b['from_no'])) ?></b> to <b><?= h(gen_serial($cat, (int)$b['to_no'])) ?></b><br><span class="muted small"><?= number_format((int)$b['to_no'] - (int)$b['from_no'] + 1) ?> tickets · admits <?= (int)($b['admits'] ?? $b['cat_admits'] ?? 1) ?><?php $pk = gen_perks((string)($b['perks'] ?? $b['cat_perks'] ?? '')); if ($pk): ?> · comes with <?= h(implode(', ', $pk)) ?><?php endif; ?><?= $b['note'] ? ' · ' . h($b['note']) : '' ?></span></td>
       <td><?= (int)$b['n_valid'] ?></td><td><?= (int)$b['n_used'] ?></td><td><?= (int)$b['n_void'] ?></td>
       <td style="white-space:nowrap"><a class="btn btn-ghost btn-sm" href="<?= url('admin/gen-tickets/batch/' . (int)$b['id']) ?>">Open</a>
+        <a class="btn btn-ghost btn-sm" href="<?= url('admin/gen-tickets/batch/' . (int)$b['id'] . '/edit') ?>" title="Preview and change what is printed">✏️ Edit &amp; preview</a>
         <a class="btn btn-primary btn-sm" href="<?= url('admin/gen-tickets/download?batch[]=' . (int)$b['id'] . '&layout=a4') ?>">PDF</a>
         <a class="btn btn-ghost btn-sm" href="<?= url('admin/gen-tickets/download?batch[]=' . (int)$b['id'] . '&mode=print') ?>" target="_blank" rel="noopener">Print</a></td></tr>
   <?php endforeach; ?></tbody></table></div>

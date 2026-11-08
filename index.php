@@ -87,6 +87,8 @@ $routes = [
     ['POST', 'admin/gen-tickets/categories', 'admin_gen_categories_save'],
     ['POST', 'admin/gen-tickets/categories/{id}/delete', 'admin_gen_category_delete'],
     ['GET',  'admin/gen-tickets/batch/{id}', 'admin_gen_batch'],
+    ['GET',  'admin/gen-tickets/batch/{id}/edit', 'admin_gen_batch_edit'],
+    ['POST', 'admin/gen-tickets/batch/{id}/edit', 'admin_gen_batch_edit'],
     ['GET',  'admin/gen-tickets/download', 'admin_gen_download'],
     ['GET',  'admin/gen-tickets/preview', 'admin_gen_preview'],
     ['POST', 'admin/gen-tickets/ticket/{id}/{action}', 'admin_gen_ticket_action'],

@@ -223,7 +223,7 @@ function admin_checkin(array $a): void
     $r = row(RES_SELECT . ' WHERE r.ticket_token = ?', [$a['token']]);
     $dups = 0;
     if (!$r) {            // not a booking ticket: maybe a printed general ticket
-        try { $g = row("SELECT g.*, e.title AS event_title, c.name AS cat_name, c.prefix, COALESCE(c.admits,1) AS admits FROM gen_tickets g JOIN events e ON e.id = g.event_id LEFT JOIN ticket_categories c ON c.id = g.category_id WHERE g.token = ?", [$a['token']]); } catch (Throwable $e) { $g = null; }
+        try { gen_ensure_cols(); $g = row("SELECT g.*, e.title AS event_title, COALESCE(NULLIF(b.label, ''), c.name) AS cat_name, c.prefix, COALESCE(b.admits, c.admits, 1) AS admits FROM gen_tickets g JOIN events e ON e.id = g.event_id LEFT JOIN gen_batches b ON b.id = g.batch_id LEFT JOIN ticket_categories c ON c.id = g.category_id WHERE g.token = ?", [$a['token']]); } catch (Throwable $e) { $g = null; }
         if ($g) {
             if ($g['status'] === 'used' && strtotime((string)$g['used_at']) < time() - 20) {
                 audit('gentickets.duplicate_scan', '#' . $g['id'] . ' scanned again; first used ' . $g['used_at']);

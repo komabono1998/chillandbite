@@ -19,6 +19,8 @@ catch (PDOException $e) { echo "Using the existing database (could not create it
 db()->query('SELECT 1');   // fails early with a clear message when the DB name, user or password in .env is wrong
 echo "Database `$dbName` ready.\n";
 
+if ((int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'gen_batches'") && !(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'gen_batches' AND COLUMN_NAME = 'admits'"))
+    db()->exec("ALTER TABLE gen_batches ADD COLUMN label VARCHAR(80) NULL AFTER note, ADD COLUMN admits TINYINT UNSIGNED NULL AFTER label, ADD COLUMN perks VARCHAR(500) NULL AFTER admits, ADD COLUMN price INT UNSIGNED NULL AFTER perks, ADD COLUMN color CHAR(7) NULL AFTER price, ADD COLUMN terms VARCHAR(255) NULL AFTER color");
 // Upgrade older databases before the schema seeds run: ticket categories get a perks column
 $tc = (int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ticket_categories'");
 if ($tc && !(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ticket_categories' AND COLUMN_NAME = 'perks'")) {

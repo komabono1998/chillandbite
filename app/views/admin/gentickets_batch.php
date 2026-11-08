@@ -7,7 +7,7 @@ $base = 'admin/gen-tickets/download?batch[]=' . (int)$b['id'];
 <div class="adm-head">
   <div><h1><span class="chip" style="--c:<?= h($c['color']) ?>;font-size:inherit"><?= h($c['name']) ?></span> tickets</h1>
     <p class="adm-sub"><?= h($b['event_title']) ?> · <?= fmt_date($b['start_at'], 'j M Y') ?> · <b><?= h(gen_serial($cat, (int)$b['from_no'])) ?></b> to <b><?= h(gen_serial($cat, (int)$b['to_no'])) ?></b></p></div>
-  <a class="btn btn-ghost btn-sm" href="<?= url('admin/gen-tickets') ?>">&larr; All batches</a>
+  <div class="btn-row"><a class="btn btn-primary btn-sm" href="<?= url('admin/gen-tickets/batch/' . (int)$b['id'] . '/edit') ?>">✏️ Edit &amp; preview details</a><a class="btn btn-ghost btn-sm" href="<?= url('admin/gen-tickets') ?>">&larr; All batches</a></div>
 </div>
 
 <div class="panel">
