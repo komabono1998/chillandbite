@@ -163,13 +163,14 @@ CREATE TABLE IF NOT EXISTS ticket_categories (
   price INT UNSIGNED NOT NULL DEFAULT 0,
   color CHAR(7) NOT NULL DEFAULT '#D96B27',
   terms VARCHAR(255) NOT NULL DEFAULT '',
+  perks VARCHAR(500) NOT NULL DEFAULT '',
   active TINYINT(1) NOT NULL DEFAULT 1,
   sort SMALLINT NOT NULL DEFAULT 0,
   UNIQUE KEY uq_tc_prefix (prefix)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('General Admission', 'GA', 1, '#D96B27', 1);
-INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('VIP', 'VIP', 1, '#7B4FC4', 2);
-INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('VVIP', 'VVIP', 1, '#B8860B', 3);
+INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, perks, sort) VALUES ('VIP', 'VIP', 1, '#7B4FC4', CONCAT('Reserved seating', CHAR(10), 'Complimentary drink', CHAR(10), 'Fast-track entry'), 2);
+INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, perks, sort) VALUES ('VVIP', 'VVIP', 1, '#B8860B', CONCAT('Front-row table', CHAR(10), 'Bottle service', CHAR(10), 'Meet the host', CHAR(10), 'Express entry'), 3);
 INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES ('Complimentary', 'COMP', 1, '#2E9D57', 4);
 CREATE TABLE IF NOT EXISTS gen_batches (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

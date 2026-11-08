@@ -5,6 +5,7 @@
 .chip{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.82rem;white-space:nowrap}.chip::before{content:"";width:11px;height:11px;border-radius:4px;background:var(--c)}
 .gt-new{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end}.gt-new label{font-size:.82rem;font-weight:600;display:block}.gt-new input,.gt-new select{display:block;width:100%;margin-top:4px}
 .gt-qty{font-weight:800;color:var(--accent-d)}
+.gt-perks{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:6px 0 14px;border-bottom:1px solid var(--line)}.gt-perks label{flex:1;min-width:240px;font-size:.82rem;font-weight:600}.gt-perks textarea{display:block;width:100%;margin-top:4px}.gt-perks small{font-weight:400;color:var(--muted)}
 .gt-bulk{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
 @media(max-width:900px){.gt-cat-row{grid-template-columns:1fr 1fr}.gt-cat-head{display:none}}
 </style>
@@ -65,7 +66,7 @@
   <div class="panel-head"><h2>Ticket categories</h2><span class="muted small">Name, short code, how many it admits, printed price and colour</span></div>
   <?php if (!$can_cats): ?><p class="small muted">Only an administrator or event manager can change categories.</p><?php endif; ?>
   <form method="post" action="<?= url('admin/gen-tickets/categories') ?>"><?= csrf_field() ?>
-    <div class="gt-cat-row gt-cat-head"><span>Name</span><span>Short code</span><span>Admits</span><span>Price (UGX, 0 = hidden)</span><span>Colour</span><span>Small print on the ticket</span><span></span></div>
+    <div class="gt-cat-row gt-cat-head"><span>Name</span><span>Short code</span><span>Admits</span><span>Rate (UGX, 0 = not printed)</span><span>Colour</span><span>Small print on the ticket</span><span></span></div>
     <?php foreach ($cats as $c): $d = $can_cats ? '' : ' disabled'; ?>
     <div class="gt-cat-row">
       <input type="text" name="cat[<?= (int)$c['id'] ?>][name]" value="<?= h($c['name']) ?>" maxlength="80" aria-label="Name"<?= $d ?>>
@@ -77,6 +78,9 @@
       <span style="white-space:nowrap"><label class="small"><input type="checkbox" name="cat[<?= (int)$c['id'] ?>][active]" value="1"<?= $c['active'] ? ' checked' : '' ?><?= $d ?>> On</label>
         <?php if ($can_cats): ?><button class="btn btn-ghost btn-sm" form="delcat<?= (int)$c['id'] ?>" onclick="return confirm('Delete this category?')">Delete</button><?php endif; ?></span>
     </div>
+    <div class="gt-perks"><label>What this ticket comes with <small>(one per line, up to 6, printed on the ticket)</small>
+      <textarea name="cat[<?= (int)$c['id'] ?>][perks]" rows="3" maxlength="500" placeholder="Reserved seating&#10;Complimentary drink&#10;Fast-track entry"<?= $d ?>><?= h($c['perks'] ?? '') ?></textarea></label>
+      <a class="btn btn-ghost btn-sm" href="<?= url('admin/gen-tickets/preview?cat=' . (int)$c['id']) ?>">👁 Preview this ticket</a></div>
     <?php endforeach; ?>
     <?php if ($can_cats): ?>
     <h3 style="margin:16px 0 4px;font-size:.95rem">Add a category</h3>
@@ -85,6 +89,7 @@
       <input type="number" name="new[admits]" value="1" min="1" max="50" aria-label="Admits"><input type="text" inputmode="numeric" name="new[price]" value="0" aria-label="Price"><input type="color" name="new[color]" value="#D96B27" aria-label="Colour">
       <input type="text" name="new[terms]" maxlength="255" placeholder="Small print (optional)" aria-label="Small print"><span></span>
     </div>
+    <div class="gt-perks"><label>What this ticket comes with <small>(one per line, up to 6)</small><textarea name="new[perks]" rows="3" maxlength="500" placeholder="Free entry before 8pm&#10;Welcome drink"></textarea></label></div>
     <p style="margin-top:14px"><button class="btn btn-primary btn-sm">Save categories</button></p>
     <?php endif; ?>
   </form>

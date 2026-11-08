@@ -8,7 +8,7 @@ const GEN_MAX_BATCH = 2000, GEN_MAX_PDF = 3000;
 function gentickets_ensure(): void
 {
     db()->exec("CREATE TABLE IF NOT EXISTS ticket_categories (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(80) NOT NULL, prefix VARCHAR(8) NOT NULL, admits TINYINT UNSIGNED NOT NULL DEFAULT 1,
-        price INT UNSIGNED NOT NULL DEFAULT 0, color CHAR(7) NOT NULL DEFAULT '#D96B27', terms VARCHAR(255) NOT NULL DEFAULT '', active TINYINT(1) NOT NULL DEFAULT 1, sort SMALLINT NOT NULL DEFAULT 0,
+        price INT UNSIGNED NOT NULL DEFAULT 0, color CHAR(7) NOT NULL DEFAULT '#D96B27', terms VARCHAR(255) NOT NULL DEFAULT '', perks VARCHAR(500) NOT NULL DEFAULT '', active TINYINT(1) NOT NULL DEFAULT 1, sort SMALLINT NOT NULL DEFAULT 0,
         UNIQUE KEY uq_tc_prefix (prefix)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     foreach ([['General Admission', 'GA', '#D96B27', 1], ['VIP', 'VIP', '#7B4FC4', 2], ['VVIP', 'VVIP', '#B8860B', 3], ['Complimentary', 'COMP', '#2E9D57', 4]] as $c)
         q('INSERT IGNORE INTO ticket_categories (name, prefix, admits, color, sort) VALUES (?,?,1,?,?)', [$c[0], $c[1], $c[2], $c[3]]);
@@ -19,6 +19,23 @@ function gentickets_ensure(): void
         token CHAR(24) NOT NULL UNIQUE, status ENUM('valid','used','void') NOT NULL DEFAULT 'valid', used_at DATETIME NULL, used_by INT UNSIGNED NULL,
         UNIQUE KEY uq_gt_number (event_id, category_id, number), KEY idx_gt_batch (batch_id), CONSTRAINT fk_gt_batch FOREIGN KEY (batch_id) REFERENCES gen_batches(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 }
+/** Add the perks column to a site that was set up before it existed (with starter perks for VIP and VVIP). */
+function gen_ensure_cols(): void
+{
+    static $done = false; if ($done) return; $done = true;
+    try {
+        if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ticket_categories' AND COLUMN_NAME = 'perks'")) {
+            db()->exec("ALTER TABLE ticket_categories ADD COLUMN perks VARCHAR(500) NOT NULL DEFAULT '' AFTER terms");
+            q("UPDATE ticket_categories SET perks = ? WHERE prefix = 'VIP' AND perks = ''", ["Reserved seating
+Complimentary drink
+Fast-track entry"]);
+            q("UPDATE ticket_categories SET perks = ? WHERE prefix = 'VVIP' AND perks = ''", ["Front-row table
+Bottle service
+Meet the host
+Express entry"]);
+        }
+    } catch (PDOException $e) { gentickets_ensure(); }
+}
 function gen_q(string $sql, array $p = []): array
 {
     try { return rows($sql, $p); }
@@ -28,6 +45,7 @@ function gen_q(string $sql, array $p = []): array
 function admin_gentickets(): void
 {
     require_can('tickets');
+    gen_ensure_cols();
     $cats = gen_q('SELECT * FROM ticket_categories ORDER BY sort, id');
     $events = rows("SELECT id, title, start_at FROM events WHERE status <> 'draft' AND start_at >= (NOW() - INTERVAL 30 DAY) ORDER BY start_at ASC LIMIT 60");
     $batches = rows("SELECT b.*, e.title AS event_title, e.start_at, c.name AS cat_name, c.prefix, c.color,
@@ -44,7 +62,7 @@ function admin_gentickets(): void
 function admin_gen_categories_save(): void
 {
     require_can('events');
-    gentickets_ensure();
+    gentickets_ensure(); gen_ensure_cols();
     $errors = [];
     $clean = function (array $c, ?int $id) use (&$errors): ?array {
         $name = mb_substr(trim((string)($c['name'] ?? '')), 0, 80);
@@ -53,16 +71,17 @@ function admin_gen_categories_save(): void
         if ($name === '' || $prefix === '') return null;
         if (val('SELECT id FROM ticket_categories WHERE prefix = ? AND id <> ?', [$prefix, $id ?? 0])) { $errors[] = "The short code $prefix is already used by another category."; return null; }
         $color = preg_match('/^#[0-9a-fA-F]{6}$/', (string)($c['color'] ?? '')) ? strtoupper((string)$c['color']) : '#D96B27';
-        return [$name, $prefix, max(1, min(50, (int)($c['admits'] ?? 1))), max(0, (int)preg_replace('/\D+/', '', (string)($c['price'] ?? '0'))), $color, mb_substr(trim((string)($c['terms'] ?? '')), 0, 255), !empty($c['active']) ? 1 : 0];
+        return [$name, $prefix, max(1, min(50, (int)($c['admits'] ?? 1))), max(0, (int)preg_replace('/\D+/', '', (string)($c['price'] ?? '0'))), $color, mb_substr(trim((string)($c['terms'] ?? '')), 0, 255), implode("
+", gen_perks((string)($c['perks'] ?? ''))), !empty($c['active']) ? 1 : 0];
     };
     foreach ((array)($_POST['cat'] ?? []) as $id => $c) {
         $id = (int)$id; if (!$id) continue;
-        if ($d = $clean((array)$c, $id)) q('UPDATE ticket_categories SET name=?, prefix=?, admits=?, price=?, color=?, terms=?, active=? WHERE id=?', [...$d, $id]);
+        if ($d = $clean((array)$c, $id)) q('UPDATE ticket_categories SET name=?, prefix=?, admits=?, price=?, color=?, terms=?, perks=?, active=? WHERE id=?', [...$d, $id]);
     }
     $new = (array)($_POST['new'] ?? []);
     if (trim((string)($new['name'] ?? '')) !== '') {
         $new['active'] = 1;
-        if ($d = $clean($new, null)) { q('INSERT INTO ticket_categories (name, prefix, admits, price, color, terms, active, sort) VALUES (?,?,?,?,?,?,?,?)', [...$d, (int)val('SELECT COALESCE(MAX(sort),0)+1 FROM ticket_categories')]); }
+        if ($d = $clean($new, null)) { q('INSERT INTO ticket_categories (name, prefix, admits, price, color, terms, perks, active, sort) VALUES (?,?,?,?,?,?,?,?,?)', [...$d, (int)val('SELECT COALESCE(MAX(sort),0)+1 FROM ticket_categories')]); }
     }
     audit('gentickets.categories', 'ticket categories updated');
     flash($errors ? implode(' ', $errors) : 'Ticket categories saved.', $errors ? 'err' : 'ok');
@@ -206,4 +225,20 @@ function gen_print_page(array $items, string $layout): void
         echo '</div>';
     }
     echo '</body></html>';
+}
+
+/** See how a category's ticket looks (sample ticket for the next event), on screen or as a one-ticket PDF. */
+function admin_gen_preview(): void
+{
+    require_can('tickets');
+    gen_ensure_cols();
+    $c = row('SELECT * FROM ticket_categories WHERE id = ?', [(int)($_GET['cat'] ?? 0)]) ?? not_found();
+    $e = row("SELECT * FROM events WHERE id = ?", [(int)($_GET['event'] ?? 0)]) ?? row("SELECT * FROM events WHERE start_at >= NOW() ORDER BY start_at LIMIT 1") ?? row('SELECT * FROM events ORDER BY start_at DESC LIMIT 1') ?? not_found();
+    $t = gen_ticket_data(['number' => 1, 'token' => str_repeat('a', 24)], $e, $c);
+    if (!empty($_GET['pdf'])) {
+        $data = tickets_pdf([$t], 'a5', 'Sample ticket');
+        header('Content-Type: application/pdf'); header('Content-Disposition: attachment; filename="sample-' . strtolower((string)$c['prefix']) . '-ticket.pdf"'); header('Content-Length: ' . strlen($data));
+        echo $data; exit;
+    }
+    admin_view('gentickets_preview', ['title' => 'Ticket preview', 'c' => $c, 'e' => $e, 't' => $t, 'events' => rows("SELECT id, title, start_at FROM events WHERE status <> 'draft' ORDER BY start_at DESC LIMIT 40")]);
 }

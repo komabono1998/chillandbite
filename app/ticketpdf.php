@@ -48,6 +48,13 @@ final class MiniPdf
         $H = $this->pages[$this->i]['h'];
         $this->add('q ' . self::rgb($stroke) . ' RG ' . self::f($lw) . ' w ' . ($dash ? '[' . $dash . '] 0 d ' : '') . self::f($x1) . ' ' . self::f($H - $y1) . ' m ' . self::f($x2) . ' ' . self::f($H - $y2) . ' l S Q');
     }
+    /** A line through several points (used for check marks). */
+    public function poly(array $pts, string $stroke, float $lw): void
+    {
+        $H = $this->pages[$this->i]['h']; $path = '';
+        foreach ($pts as $k => $pt) $path .= self::f($pt[0]) . ' ' . self::f($H - $pt[1]) . ($k === 0 ? ' m ' : ' l ');
+        $this->add('q ' . self::rgb($stroke) . ' RG ' . self::f($lw) . ' w 1 J 1 j ' . $path . 'S Q');
+    }
     /** Text with its baseline at y (from the top). align: l, c or r (x is then the left, centre or right edge). */
     public function text(float $x, float $y, string $s, float $size, bool $bold = false, string $color = '#000000', string $align = 'l'): void
     {
@@ -96,59 +103,107 @@ final class MiniPdf
 }
 
 /* ---------- Ticket content ---------- */
-const TICKET_W_MM = 190, TICKET_H_MM = 88;
+const TICKET_W_MM = 190, TICKET_H_MM = 88, TICKET_W = 538.6, TICKET_H = 249.4;       // the design is drawn on a 538.6 x 249.4 pt canvas (190 x 88 mm)
 function gen_serial(array $cat, int $number): string { return strtoupper((string)$cat['prefix']) . '-' . str_pad((string)$number, 4, '0', STR_PAD_LEFT); }
 function gen_verify(string $token): string { return strtoupper(substr(hash_hmac('sha256', $token, app_secret()), 0, 4)); }
+/** The "what this ticket comes with" lines the admin wrote for a category (one per line, up to six). */
+function gen_perks(string $text): array
+{
+    $out = [];
+    foreach (preg_split('/\R/', $text) as $l) { $l = trim($l); if ($l !== '') $out[] = mb_substr($l, 0, 60); if (count($out) === 6) break; }
+    return $out;
+}
 /** Everything printed on one ticket. $g is a gen_tickets row; $e the event; $c the category. */
 function gen_ticket_data(array $g, array $e, array $c): array
 {
-    $admits = max(1, (int)$c['admits']);
-    return ['brand' => 'CHILL & BITE MEATINGS', 'event' => (string)$e['title'], 'when' => fmt_date($e['start_at'], 'D j M Y') . ' | ' . fmt_time($e['start_at']),
+    $admits = max(1, (int)$c['admits']); $ts = strtotime((string)$e['start_at']);
+    return ['brand' => 'CHILL & BITE MEATINGS', 'event' => (string)$e['title'], 'day' => date('j', $ts), 'mon' => strtoupper(date('M Y', $ts)), 'dow' => strtoupper(date('D', $ts)), 'time' => fmt_time($e['start_at']),
         'venue' => trim($e['venue'] . ', ' . $e['location'], ', '), 'cat' => (string)$c['name'], 'color' => (string)$c['color'] ?: '#D96B27',
-        'admits' => $admits === 1 ? 'ADMIT ONE' : 'ADMITS ' . $admits, 'price' => (int)$c['price'] > 0 ? money($c['price']) : '',
+        'admits' => $admits === 1 ? 'ADMIT ONE' : 'ADMITS ' . $admits, 'price' => (int)$c['price'] > 0 ? money($c['price']) : '', 'perks' => gen_perks((string)($c['perks'] ?? '')),
         'serial' => gen_serial($c, (int)$g['number']), 'verify' => gen_verify((string)$g['token']), 'qr' => abs_url('admin/checkin/' . $g['token']),
         'terms' => trim((string)$c['terms']) ?: 'Valid for one entry only. Not refundable. Keep this ticket safe: copies are rejected at the gate.'];
 }
-/** Draw one landscape ticket at (x, y) with width w points (height follows the 190 x 88 mm shape). */
+
+/**
+ * The ticket design as a list of drawing steps on the 538.6 x 249.4 pt canvas. The PDF and the on-screen/print version both draw from this list,
+ * so they always look the same. Steps: rect, frame, pill, line, text, poly, qr.
+ */
+function ticket_ops(array $t): array
+{
+    $W = TICKET_W; $H = TICKET_H; $mw = 0.735 * $W; $sw = $W - $mw; $hb = 44;
+    $dark = '#171717'; $gold = '#E6B65C'; $orange = '#B9561B'; $c = $t['color']; $cat = strtoupper($t['cat']);
+    $o = [['rect', 0, 0, $W, $H, '#ffffff']];
+    // header: brand band, gold rule, category colour over the stub
+    $o[] = ['rect', 0, 0, $mw, $hb, $dark]; $o[] = ['rect', 0, $hb, $mw, 2.4, $gold]; $o[] = ['rect', $mw, 0, $sw, $hb + 2.4, $c];
+    $o[] = ['text', 16, $hb * 0.66, $t['brand'], 16, true, $gold, 'l'];
+    $o[] = ['text', $mw - 14, $hb * 0.64, 'GULU CITY - UGANDA', 7.5, true, '#ffffff', 'r'];
+    $cs = 12; while (pdf_w($cat, $cs, true) > $sw - 16 && $cs > 6) $cs -= 0.5;
+    $o[] = ['text', $mw + $sw / 2, $hb * 0.64, $cat, $cs, true, '#ffffff', 'c'];
+    // date block
+    $bx = 16; $by = 54; $bw = 62; $bh = 58;
+    $o[] = ['rect', $bx, $by, $bw, 16, $dark]; $o[] = ['text', $bx + $bw / 2, $by + 11.5, $t['mon'], 9, true, $gold, 'c'];
+    $o[] = ['frame', $bx, $by, $bw, $bh, $dark, 1.2];
+    $o[] = ['text', $bx + $bw / 2, $by + 16 + 27, $t['day'], 27, true, $dark, 'c'];
+    $o[] = ['text', $bx + $bw / 2, $by + $bh - 5, trim($t['dow'] . ' ' . $t['time']), 7.5, true, '#555555', 'c'];
+    // event name (shrinks to fit two lines) and venue
+    $tx = $bx + $bw + 14; $tw = $mw - $tx - 16; $ts = 18;
+    do { $lines = pdf_wrap($t['event'], $tw, $ts, 3, true); $ok = count($lines) <= 2 && !str_ends_with((string)end($lines), '...'); } while (!$ok && --$ts >= 12);
+    if (count($lines) > 2) $lines = pdf_wrap($t['event'], $tw, 12, 2, true);
+    $last = $by + $ts * 0.95;
+    foreach ($lines as $i => $ln) { $last = $by + $ts * 0.95 + $i * ($ts + 3); $o[] = ['text', $tx, $last, $ln, $ts, true, $dark, 'l']; }
+    $o[] = ['text', $tx, $last + 15, pdf_wrap($t['venue'], $tw, 9.5, 1)[0], 9.5, false, '#444444', 'l'];
+    // category label, admits, rate
+    $bare = !$t['perks'];                                  // no perks: a bigger label, placed in the middle of the space
+    $py = $bare ? 132 : 122; $ph = $bare ? 30 : 22; $psz = $bare ? 15 : 12; $pw = pdf_w($cat, $psz, true) + 30;
+    if ($pw > $mw * 0.55) { $psz = 10; $pw = $mw * 0.55; }
+    $base = $py + $ph * 0.68;
+    $o[] = ['pill', 16, $py, $pw, $ph, 7, $c]; $o[] = ['text', 16 + $pw / 2, $base, $cat, $psz, true, '#ffffff', 'c'];
+    $asz = $bare ? 13 : 11; $prs = $bare ? 20 : 18; $priceW = $t['price'] !== '' ? pdf_w($t['price'], $prs, true) : 0;
+    $inline = 16 + $pw + 12 + pdf_w($t['admits'], $asz, true) + 16 <= $mw - 16 - $priceW;        // "ADMIT ONE" fits beside the label, otherwise it goes underneath
+    $o[] = $inline ? ['text', 16 + $pw + 12, $base, $t['admits'], $asz, true, $dark, 'l'] : ['text', 16, $py + $ph + 14, $t['admits'], 9.5, true, $dark, 'l'];
+    if ($t['price'] !== '') { $o[] = ['text', $mw - 16, $base + 1, $t['price'], $prs, true, $orange, 'r']; $o[] = ['text', $mw - 16, $py + $ph + 5, 'per ticket', 6.5, false, '#777777', 'r']; }
+    if ($bare) $o[] = ['text', 16, $py + $ph + ($inline ? 24 : 28), 'Present this ticket at the gate with the QR code facing up. One entry per ticket.', 8.5, false, '#555555', 'l'];
+    // what the ticket includes
+    if ($t['perks']) {
+        $o[] = ['text', 16, 160, 'THIS TICKET INCLUDES', 7, true, $orange, 'l'];
+        $colw = ($mw - 32) / 2;
+        foreach ($t['perks'] as $i => $pk) {
+            $px = 16 + ($i % 2) * $colw; $pb = 173 + intdiv($i, 2) * 12.5;
+            $o[] = ['poly', [[$px, $pb - 3.2], [$px + 2.6, $pb - 0.6], [$px + 7, $pb - 6.4]], '#2E9D57', 1.3];
+            $o[] = ['text', $px + 11, $pb, pdf_wrap($pk, $colw - 16, 8.5, 1)[0], 8.5, false, '#222222', 'l'];
+        }
+    }
+    // small print
+    $o[] = ['line', 16, $H - 42, $mw - 16, $H - 42, '#cccccc', 0.6, null];
+    foreach (pdf_wrap($t['terms'], $mw - 32, 6.8, 2) as $i => $ln) $o[] = ['text', 16, $H - 31 + $i * 9, $ln, 6.8, false, '#666666', 'l'];
+    // stub with QR code
+    $o[] = ['line', $mw, 0, $mw, $H, '#999999', 0.8, '4 3'];
+    $qs = min($sw - 24, 112); $qy = $hb + 14;
+    $o[] = ['qr', $t['qr'], $mw + ($sw - $qs) / 2, $qy, $qs];
+    $o[] = ['text', $mw + $sw / 2, $qy + $qs + 18, $t['serial'], 15, true, $dark, 'c'];
+    $o[] = ['text', $mw + $sw / 2, $qy + $qs + 30, 'Verify ' . $t['verify'], 8, true, '#555555', 'c'];
+    $o[] = ['text', $mw + $sw / 2, $H - 14, 'SCAN AT THE GATE', 6.5, true, '#888888', 'c'];
+    $o[] = ['rect', $mw, $H - 6, $sw, 6, $c];
+    // frames and punched notches
+    $o[] = ['frame', 3.5, 3.5, $W - 7, $H - 7, $gold, 0.5]; $o[] = ['frame', 0, 0, $W, $H, $dark, 1.4];
+    $o[] = ['pill', $mw - 6, -6, 12, 12, 6, '#ffffff']; $o[] = ['pill', $mw - 6, $H - 6, 12, 12, 6, '#ffffff'];
+    return $o;
+}
+/** Draw one landscape ticket into a PDF at (x, y), w points wide. */
 function ticket_pdf_draw(MiniPdf $p, float $x, float $y, float $w, array $t): void
 {
-    $s = $w / 538.6; $h = $w * TICKET_H_MM / TICKET_W_MM;
-    $mw = 0.735 * $w; $sw = $w - $mw; $hb = 52 * $s; $dark = '#171717'; $gold = '#E6B65C'; $orange = '#B9561B';
-    $p->rect($x, $y, $w, $h, '#ffffff');
-    $p->rect($x, $y, $mw, $hb, $dark);
-    $p->rect($x + $mw, $y, $sw, $hb, $t['color']);
-    $p->text($x + 16 * $s, $y + $hb * 0.64, $t['brand'], 17 * $s, true, $gold);
-    $p->text($x + $mw - 14 * $s, $y + $hb * 0.62, 'GULU CITY - UGANDA', 7.5 * $s, true, '#ffffff', 'r');
-    $cs = 12 * $s; $cat = strtoupper($t['cat']); while (pdf_w($cat, $cs, true) > $sw - 14 * $s && $cs > 6) $cs -= 0.5 * $s;
-    $p->text($x + $mw + $sw / 2, $y + $hb * 0.62, $cat, $cs, true, '#ffffff', 'c');
-    // event, date, venue
-    // the event name shrinks until it fits on two lines
-    $ts = 22;
-    do { $lines = pdf_wrap($t['event'], $mw - 32 * $s, $ts * $s, 3, true); $ok = count($lines) <= 2 && !str_ends_with(end($lines), '...'); } while (!$ok && --$ts >= 13);
-    if (count($lines) > 2) $lines = pdf_wrap($t['event'], $mw - 32 * $s, 13 * $s, 2, true);
-    $ty = $y + $hb + 30 * $s;
-    foreach ($lines as $ln) { $p->text($x + 16 * $s, $ty, $ln, $ts * $s, true, $dark); $ty += ($ts + 3) * $s; }
-    $p->text($x + 16 * $s, $ty + 2 * $s, $t['when'], 12.5 * $s, true, $orange);
-    $venue = pdf_wrap($t['venue'], $mw - 32 * $s, 10.5 * $s, 1)[0];
-    $p->text($x + 16 * $s, $ty + 19 * $s, $venue, 10.5 * $s, false, '#444444');
-    // category pill, admits and price
-    $py = $y + $h - 88 * $s; $ptxt = strtoupper($t['cat']); $psz = 15 * $s; $pw = pdf_w($ptxt, $psz, true) + 28 * $s;
-    if ($pw > $mw * 0.55) { $psz = 11 * $s; $pw = $mw * 0.55; }
-    $p->pill($x + 16 * $s, $py, $pw, 32 * $s, 8 * $s, $t['color']);
-    $p->text($x + 16 * $s + $pw / 2, $py + 21.5 * $s, $ptxt, $psz, true, '#ffffff', 'c');
-    $p->text($x + 16 * $s + $pw + 14 * $s, $py + 21 * $s, $t['admits'], 12 * $s, true, $dark);
-    if ($t['price'] !== '') $p->text($x + $mw - 16 * $s, $py + 23 * $s, $t['price'], 19 * $s, true, $orange, 'r');
-    // footer
-    $p->line($x + 16 * $s, $y + $h - 44 * $s, $x + $mw - 16 * $s, $y + $h - 44 * $s, '#cccccc', 0.6);
-    $ty = $y + $h - 32 * $s;
-    foreach (pdf_wrap($t['terms'], $mw - 32 * $s, 6.8 * $s, 2) as $ln) { $p->text($x + 16 * $s, $ty, $ln, 6.8 * $s, false, '#666666'); $ty += 9 * $s; }
-    // stub
-    $p->line($x + $mw, $y, $x + $mw, $y + $h, '#999999', 0.8, '4 3');
-    $qs = min($sw - 22 * $s, 118 * $s);
-    $p->qr($t['qr'], $x + $mw + ($sw - $qs) / 2, $y + $hb + 12 * $s, $qs);
-    $p->text($x + $mw + $sw / 2, $y + $hb + 12 * $s + $qs + 17 * $s, $t['serial'], 15 * $s, true, $dark, 'c');
-    $p->text($x + $mw + $sw / 2, $y + $hb + 12 * $s + $qs + 29 * $s, 'Verify ' . $t['verify'], 8 * $s, true, '#555555', 'c');
-    $p->frame($x, $y, $w, $h, $dark, 1.2);
+    $s = $w / TICKET_W;
+    foreach (ticket_ops($t) as $op) {
+        switch ($op[0]) {
+            case 'rect': $p->rect($x + $op[1] * $s, $y + $op[2] * $s, $op[3] * $s, $op[4] * $s, $op[5]); break;
+            case 'frame': $p->frame($x + $op[1] * $s, $y + $op[2] * $s, $op[3] * $s, $op[4] * $s, $op[5], $op[6] * $s); break;
+            case 'pill': $p->pill($x + $op[1] * $s, $y + $op[2] * $s, $op[3] * $s, $op[4] * $s, $op[5] * $s, $op[6]); break;
+            case 'line': $p->line($x + $op[1] * $s, $y + $op[2] * $s, $x + $op[3] * $s, $y + $op[4] * $s, $op[5], $op[6] * $s, $op[7]); break;
+            case 'text': $p->text($x + $op[1] * $s, $y + $op[2] * $s, $op[3], $op[4] * $s, $op[5], $op[6], $op[7]); break;
+            case 'poly': $p->poly(array_map(fn($pt) => [$x + $pt[0] * $s, $y + $pt[1] * $s], $op[1]), $op[2], $op[3] * $s); break;
+            case 'qr': $p->qr($op[1], $x + $op[2] * $s, $y + $op[3] * $s, $op[4] * $s); break;
+        }
+    }
 }
 /**
  * A PDF of many tickets. layout 'a4' = A4 portrait sheets with three landscape tickets and cut lines; 'a5' = one ticket per A5 landscape page.
@@ -174,28 +229,32 @@ function tickets_pdf(array $items, string $layout, string $title): string
     return $pdf->output();
 }
 
-/* ---------- The same ticket as HTML, for printing from the browser ---------- */
-function ticket_html(array $t): string
+/* ---------- The same ticket as vector graphics for the screen and the browser's print dialog ---------- */
+function ticket_svg(array $t): string
 {
-    $e = fn($v) => h((string)$v);
-    return '<div class="gt" style="--c:' . $e($t['color']) . '"><div class="gt-main"><div class="gt-band"><b>' . $e($t['brand']) . '</b><span>GULU CITY - UGANDA</span></div>'
-        . '<div class="gt-body"><h3 style="font-size:' . (mb_strlen($t['event']) <= 28 ? 22 : (mb_strlen($t['event']) <= 48 ? 18 : 15)) . 'pt">' . $e($t['event']) . '</h3><p class="gt-when">' . $e($t['when']) . '</p><p class="gt-venue">' . $e($t['venue']) . '</p></div>'
-        . '<div class="gt-mid"><span class="gt-pill">' . $e(strtoupper($t['cat'])) . '</span><b class="gt-admit">' . $e($t['admits']) . '</b>' . ($t['price'] !== '' ? '<b class="gt-price">' . $e($t['price']) . '</b>' : '') . '</div>'
-        . '<div class="gt-terms">' . $e($t['terms']) . '</div></div>'
-        . '<div class="gt-stub"><div class="gt-cat">' . $e(strtoupper($t['cat'])) . '</div><div class="gt-qr">' . qr_svg($t['qr'], 110) . '</div><b class="gt-serial">' . $e($t['serial']) . '</b><small>Verify ' . $e($t['verify']) . '</small></div></div>';
+    $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $n = fn($v) => rtrim(rtrim(number_format((float)$v, 2, '.', ''), '0'), '.') ?: '0';
+    $s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' . TICKET_W . ' ' . TICKET_H . '" width="' . TICKET_W_MM . 'mm" height="' . TICKET_H_MM . 'mm" font-family="Helvetica,Arial,sans-serif" role="img" aria-label="Ticket ' . $e($t['serial']) . '">';
+    foreach (ticket_ops($t) as $op) {
+        switch ($op[0]) {
+            case 'rect': $s .= '<rect x="' . $n($op[1]) . '" y="' . $n($op[2]) . '" width="' . $n($op[3]) . '" height="' . $n($op[4]) . '" fill="' . $e($op[5]) . '"/>'; break;
+            case 'frame': $s .= '<rect x="' . $n($op[1]) . '" y="' . $n($op[2]) . '" width="' . $n($op[3]) . '" height="' . $n($op[4]) . '" fill="none" stroke="' . $e($op[5]) . '" stroke-width="' . $n($op[6]) . '"/>'; break;
+            case 'pill': $s .= '<rect x="' . $n($op[1]) . '" y="' . $n($op[2]) . '" width="' . $n($op[3]) . '" height="' . $n($op[4]) . '" rx="' . $n($op[5]) . '" fill="' . $e($op[6]) . '"/>'; break;
+            case 'line': $s .= '<line x1="' . $n($op[1]) . '" y1="' . $n($op[2]) . '" x2="' . $n($op[3]) . '" y2="' . $n($op[4]) . '" stroke="' . $e($op[5]) . '" stroke-width="' . $n($op[6]) . '"' . ($op[7] ? ' stroke-dasharray="' . $e($op[7]) . '"' : '') . '/>'; break;
+            case 'text': $s .= '<text x="' . $n($op[1]) . '" y="' . $n($op[2]) . '" font-size="' . $n($op[4]) . '" font-weight="' . ($op[5] ? 700 : 400) . '" fill="' . $e($op[6]) . '" text-anchor="' . ['l' => 'start', 'c' => 'middle', 'r' => 'end'][$op[7]] . '">' . $e($op[3]) . '</text>'; break;
+            case 'poly': $s .= '<polyline points="' . implode(' ', array_map(fn($pt) => $n($pt[0]) . ',' . $n($pt[1]), $op[1])) . '" fill="none" stroke="' . $e($op[2]) . '" stroke-width="' . $n($op[3]) . '" stroke-linecap="round" stroke-linejoin="round"/>'; break;
+            case 'qr':
+                $m = qr_matrix($op[1]); $cnt = count($m); $d = '';
+                foreach ($m as $r => $row) { $c = 0; while ($c < $cnt) { if ($row[$c]) { $a = $c; while ($c < $cnt && $row[$c]) $c++; $d .= 'M' . ($a + 2) . ',' . ($r + 2) . 'h' . ($c - $a) . 'v1h-' . ($c - $a) . 'z'; } else $c++; } }
+                $k = $op[4] / ($cnt + 4);
+                $s .= '<g transform="translate(' . $n($op[2]) . ' ' . $n($op[3]) . ') scale(' . round($k, 5) . ')" shape-rendering="crispEdges"><rect width="' . ($cnt + 4) . '" height="' . ($cnt + 4) . '" fill="#fff"/><path d="' . $d . '" fill="#000"/></g>';
+                break;
+        }
+    }
+    return $s . '</svg>';
 }
+function ticket_html(array $t): string { return '<div class="gt">' . ticket_svg($t) . '</div>'; }
 function ticket_css(): string
 {
-    return '.gt{display:flex;width:190mm;height:88mm;border:1.2pt solid #171717;background:#fff;color:#171717;font-family:Helvetica,Arial,sans-serif;position:relative;box-sizing:border-box;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-        . '.gt-main{width:73.5%;display:flex;flex-direction:column;position:relative}.gt-band{height:18.4mm;background:#171717;display:flex;align-items:center;justify-content:space-between;padding:0 5.6mm}'
-        . '.gt-band b{color:#E6B65C;font-size:17pt;letter-spacing:.2px}.gt-band span{color:#fff;font-size:7.5pt;font-weight:700}'
-        . '.gt-body{padding:4mm 5.6mm 0}.gt-body h3{margin:0 0 2mm;font-size:22pt;line-height:1.08;font-weight:800;max-height:2.2em;overflow:hidden}'
-        . '.gt-when{margin:0;font-size:12.5pt;font-weight:700;color:#B9561B}.gt-venue{margin:1.2mm 0 0;font-size:10.5pt;color:#444}'
-        . '.gt-mid{position:absolute;left:5.6mm;right:5.6mm;bottom:15mm;display:flex;align-items:center;gap:4mm}'
-        . '.gt-pill{background:var(--c);color:#fff;font-weight:800;font-size:15pt;padding:2.4mm 5mm;border-radius:2.6mm;max-width:55%;white-space:nowrap;overflow:hidden}'
-        . '.gt-admit{font-size:12pt}.gt-price{margin-left:auto;font-size:19pt;color:#B9561B}'
-        . '.gt-terms{position:absolute;left:5.6mm;right:5.6mm;bottom:3mm;border-top:.6pt solid #ccc;padding-top:1.6mm;font-size:6.8pt;color:#666;line-height:1.3;max-height:2.7em;overflow:hidden}'
-        . '.gt-stub{width:26.5%;border-left:.8pt dashed #999;display:flex;flex-direction:column;align-items:center;position:relative}'
-        . '.gt-cat{align-self:stretch;height:18.4mm;background:var(--c);color:#fff;font-weight:800;font-size:12pt;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2mm}'
-        . '.gt-qr{margin-top:4mm;line-height:0}.gt-qr svg{width:36mm;height:36mm;display:block}.gt-serial{margin-top:2.5mm;font-size:15pt}.gt-stub small{margin-top:1mm;font-size:8pt;font-weight:700;color:#555}';
+    return '.gt{width:190mm;height:88mm;display:block;line-height:0;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}.gt svg{display:block;width:100%;height:100%}';
 }

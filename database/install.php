@@ -19,6 +19,18 @@ catch (PDOException $e) { echo "Using the existing database (could not create it
 db()->query('SELECT 1');   // fails early with a clear message when the DB name, user or password in .env is wrong
 echo "Database `$dbName` ready.\n";
 
+// Upgrade older databases before the schema seeds run: ticket categories get a perks column
+$tc = (int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ticket_categories'");
+if ($tc && !(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ticket_categories' AND COLUMN_NAME = 'perks'")) {
+    db()->exec("ALTER TABLE ticket_categories ADD COLUMN perks VARCHAR(500) NOT NULL DEFAULT '' AFTER terms");
+    q("UPDATE ticket_categories SET perks = ? WHERE prefix = 'VIP' AND perks = ''", ["Reserved seating
+Complimentary drink
+Fast-track entry"]);
+    q("UPDATE ticket_categories SET perks = ? WHERE prefix = 'VVIP' AND perks = ''", ["Front-row table
+Bottle service
+Meet the host
+Express entry"]);
+}
 $sql = file_get_contents("$root/database/schema.sql");
 $sql = preg_replace('/^--.*$/m', '', $sql);
 foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) db()->exec($stmt);
@@ -29,20 +41,7 @@ db()->exec("ALTER TABLE inquiries MODIFY type ENUM('contact','performance','adve
 $hasCol = fn(string $t, string $c) => (int)val('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$t, $c]);
 if (!$hasCol('users', 'must_change')) db()->exec('ALTER TABLE users ADD COLUMN must_change TINYINT(1) NOT NULL DEFAULT 0 AFTER active');
 if (!$hasCol('reservations', 'withdrawn_at')) db()->exec('ALTER TABLE reservations ADD COLUMN withdrawn_at DATETIME NULL AFTER checked_in_at, ADD COLUMN withdrawn_reason VARCHAR(255) NULL AFTER withdrawn_at');
-pay_ensure_schema();      // payment channels, payment tabs and payments that are not tied to a reservation
-if (!$hasCol('videos', 'file')) db()->exec('ALTER TABLE videos ADD COLUMN file VARCHAR(255) NULL AFTER url, ADD COLUMN poster VARCHAR(255) NULL AFTER file');
-db()->exec('ALTER TABLE videos MODIFY url VARCHAR(255) NULL');
-if (!$hasCol('djs', 'role')) db()->exec("ALTER TABLE djs ADD COLUMN role ENUM('dj','host') NOT NULL DEFAULT 'dj' AFTER name");
-if (!$hasCol('djs', 'photo_pos')) db()->exec('ALTER TABLE djs ADD COLUMN photo_pos TINYINT UNSIGNED NOT NULL DEFAULT 15 AFTER photo');
-if (!$hasCol('users', 'organization')) db()->exec('ALTER TABLE users ADD COLUMN organization VARCHAR(160) NULL AFTER role');
-db()->exec("ALTER TABLE articles MODIFY status ENUM('draft','pending','scheduled','published') NOT NULL DEFAULT 'draft'");
-if (!$hasCol('articles', 'source_name')) db()->exec('ALTER TABLE articles ADD COLUMN source_name VARCHAR(140) NULL AFTER sponsor_name');
-if (!$hasCol('articles', 'source_url')) db()->exec('ALTER TABLE articles ADD COLUMN source_url VARCHAR(500) NULL AFTER source_name');
-// Upgrade older databases: reservations.ticket_token column (unguessable ticket link / QR)
-if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reservations' AND COLUMN_NAME = 'ticket_token'")) {
-    db()->exec('ALTER TABLE reservations ADD COLUMN ticket_token VARCHAR(40) NULL AFTER package');
-    db()->exec('ALTER TABLE reservations ADD UNIQUE KEY uq_ticket_token (ticket_token)');
-}
+pay_ensure_schema();
 // Upgrade older databases: reservations.package column
 if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reservations' AND COLUMN_NAME = 'package'"))
     db()->exec('ALTER TABLE reservations ADD COLUMN package VARCHAR(80) NULL AFTER seating');
