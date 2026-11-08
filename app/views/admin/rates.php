@@ -28,6 +28,13 @@ $pastQ = $past ? '?past=1' : '';
   <a class="btn btn-ghost btn-sm" href="<?= url('admin/rates' . ($past ? '' : '?past=1')) ?>"><?= $past ? 'Show upcoming events' : 'Show past events' ?></a>
 </div>
 
+<form class="panel" method="post" action="<?= url('admin/rates/apply-all') ?>" onsubmit="return confirm('Replace the table packages on all <?= (int)$up_n ?> upcoming events with these?')"><?= csrf_field() ?>
+  <h2 style="margin:0 0 6px;font-size:1.05rem">⚡ Set table packages on all upcoming events</h2>
+  <p class="small muted" style="margin:0 0 10px">One package per line as <b>Name | price in UGX</b>. This replaces the table packages on all <b><?= (int)$up_n ?></b> upcoming events and saves them as the default for new events. Other ticket types are not touched.</p>
+  <textarea name="packages" rows="6" style="width:100%" placeholder="Silver | 200000&#10;Gold Pro | 300000"><?= h($cur_packages) ?></textarea>
+  <p style="margin-top:10px"><button class="btn btn-primary btn-sm">Apply to all upcoming events</button></p>
+</form>
+
 <details class="panel rates-ev" id="e0"<?= $has_template ? '' : ' open' ?>>
   <summary><span class="rv-title">⭐ Default rates for new events</span><span class="tag-soft"><?= $has_template ? 'saved' : 'not set' ?></span><span class="rv-sum">New events start with these prices, so you only adjust what is different. <?= $has_template ? h(rates_summary($template)) : '' ?></span></summary>
   <form class="rates-body" method="post" action="<?= url('admin/rates/0') ?>"><?= csrf_field() ?>

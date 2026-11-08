@@ -64,7 +64,9 @@ function admin_rates(): void
     $evs = rows($past ? "SELECT id, title, start_at, status FROM events WHERE start_at < CURDATE() ORDER BY start_at DESC LIMIT 60"
                       : "SELECT id, title, start_at, status FROM events WHERE start_at >= CURDATE() ORDER BY start_at ASC LIMIT 60");
     foreach ($evs as &$e) $e['rates'] = rates_of_event((int)$e['id']); unset($e);
-    admin_view('rates', ['title' => 'Ticket rates', 'events' => $evs, 'past' => $past, 'template' => rates_template() ?? ['opt' => [], 'packages' => ''],
+    $upN = (int)val("SELECT COUNT(*) FROM events WHERE start_at >= CURDATE() AND status <> 'cancelled'");
+    $cur = ''; foreach ($evs as $e0) if (trim($e0['rates']['packages']) !== '') { $cur = $e0['rates']['packages']; break; }
+    admin_view('rates', ['title' => 'Ticket rates', 'up_n' => $upN, 'cur_packages' => (rates_template()['packages'] ?? '') !== '' ? rates_template()['packages'] : $cur, 'events' => $evs, 'past' => $past, 'template' => rates_template() ?? ['opt' => [], 'packages' => ''],
         'has_template' => rates_template() !== null, 'others' => rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 80')]);
 }
 /** Save the rates of one event (id) or the default for new events (id 0). */
@@ -96,4 +98,41 @@ function admin_rates_copy(array $a): void
     if ($id === 0) { save_setting('rates_template', json_encode($src)); flash('Default rates copied.'); }
     else { $title = val('SELECT title FROM events WHERE id = ?', [$id]) ?? not_found(); rates_apply($id, $src); audit('rates.copy', "#$id from $from"); flash('Rates copied to ' . $title . '.'); }
     redirect('admin/rates' . (isset($_POST['past']) ? '?past=1' : '') . '#e' . $id);
+}
+
+/** Set the same table packages on every upcoming event at once (and keep them as the default for new events). */
+function rates_packages_clean(string $text): array
+{
+    $out = [];
+    foreach (preg_split('/\R/', $text) as $line) {
+        if (!str_contains($line, '|')) continue;
+        [$n, $p] = array_map('trim', explode('|', $line, 2));
+        $n = mb_substr($n, 0, 80); $p = (int)preg_replace('/\D+/', '', $p);
+        if ($n !== '' && $p >= 0) $out[$n] = $p;
+    }
+    return $out;
+}
+function admin_rates_apply_all(): void
+{
+    require_can('events');
+    $pk = rates_packages_clean((string)($_POST['packages'] ?? ''));
+    if (!$pk) { flash('Enter at least one package, one per line, like: Silver | 200000', 'err'); redirect('admin/rates'); }
+    $text = implode("\n", array_map(fn($n, $p) => $n . ' | ' . $p, array_keys($pk), $pk));
+    $ids = array_column(rows("SELECT id FROM events WHERE start_at >= CURDATE() AND status <> 'cancelled'"), 'id');
+    foreach ($ids as $id) {
+        $id = (int)$id;
+        q('DELETE FROM event_packages WHERE event_id = ?', [$id]);
+        $sort = 0;
+        foreach ($pk as $n => $p) q('INSERT IGNORE INTO event_packages (event_id, name, price, sort) VALUES (?,?,?,?)', [$id, (string)$n, $p, $sort++]);
+        // packages only show when the Table Reservation type is on
+        if (!val("SELECT id FROM event_reservation_options WHERE event_id = ? AND type = 'table'", [$id]))
+            q("INSERT INTO event_reservation_options (event_id, type, price_per_guest, min_guests, max_guests) VALUES (?, 'table', 0, 2, 15)", [$id]);
+    }
+    $t = rates_template() ?? ['opt' => [], 'packages' => ''];
+    $t['packages'] = $text;
+    if (!isset($t['opt']['table'])) $t['opt']['table'] = ['on' => 1, 'price' => 0, 'min' => 2, 'max' => 15];
+    save_setting('rates_template', json_encode($t));
+    audit('rates.apply_all', count($pk) . ' packages to ' . count($ids) . ' upcoming events');
+    flash('Applied ' . count($pk) . ' table packages to ' . count($ids) . ' upcoming event' . (count($ids) === 1 ? '' : 's') . ' and saved them as the default for new events.');
+    redirect('admin/rates');
 }

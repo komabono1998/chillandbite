@@ -89,6 +89,7 @@ $routes = [
     ['GET',  'admin/gen-tickets/batch/{id}', 'admin_gen_batch'],
     ['GET',  'admin/gen-tickets/download', 'admin_gen_download'],
     ['POST', 'admin/gen-tickets/ticket/{id}/{action}', 'admin_gen_ticket_action'],
+    ['POST', 'admin/rates/apply-all', 'admin_rates_apply_all'],
     ['POST', 'admin/rates/{id}',     'admin_rates_save'],
     ['POST', 'admin/rates/{id}/copy', 'admin_rates_copy'],
     ['GET',  'admin/collections/fees', 'admin_collections_fees'],
