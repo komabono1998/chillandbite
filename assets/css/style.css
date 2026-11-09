@@ -318,7 +318,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
 /* Developer credit */
 .credit{text-align:center;padding:14px 0 4px;margin-top:14px;border-top:1px dashed #2a2a2a}
 .credit p{margin:0;font-size:.8rem;color:var(--grey);letter-spacing:.03em}
-.credit strong{color:var(--cream);font-weight:600}
+.credit strong{color:var(--cream);font-weight:600}.credit strong a{color:var(--cream);text-decoration:none;border-bottom:1px dotted var(--grey)}.credit strong a:hover{color:var(--gold)}
 .credit-sep{color:var(--orange);margin:0 6px}
 .credit-org{color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.75rem}
 

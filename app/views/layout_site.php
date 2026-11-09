@@ -108,7 +108,10 @@ $pageDesc = $desc ?? setting('tagline');
     </div>
   </div>
   <div class="wrap footer-bottom"><span>© <?= date('Y') ?> Chill &amp; Bite MEATINGS · Owakabi &amp; The Geng</span><a href="<?= url('admin') ?>">Staff login</a></div>
-  <div class="wrap credit"><p>Designed &amp; maintained by <strong>Santos Jr</strong> <span class="credit-sep" aria-hidden="true">|</span> <span class="credit-org">BONO TECHNOLOGIES</span></p></div>
+  <?php if (setting('credit_on', '1') === '1'): $crP = setting('credit_prefix', 'Designed & maintained by'); $crN = setting('credit_name', 'Santos Jr'); $crO = setting('credit_org', 'BONO TECHNOLOGIES'); $crU = setting('credit_url');
+        if ($crP !== '' || $crN !== '' || $crO !== ''): ?>
+  <div class="wrap credit"><p><?php if ($crP !== ''): ?><?= h($crP) ?> <?php endif; ?><?php if ($crN !== ''): ?><strong><?= $crU !== '' && preg_match('#^https?://#i', $crU) ? '<a href="' . h($crU) . '" target="_blank" rel="noopener">' . h($crN) . '</a>' : h($crN) ?></strong><?php endif; ?><?php if ($crN !== '' && $crO !== ''): ?> <span class="credit-sep" aria-hidden="true">|</span> <?php endif; ?><?php if ($crO !== ''): ?><span class="credit-org"><?= h($crO) ?></span><?php endif; ?></p></div>
+  <?php endif; endif; ?>
 </footer>
 
 <div id="cookie" class="cookie" hidden>
