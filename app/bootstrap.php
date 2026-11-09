@@ -74,7 +74,9 @@ function url(string $path = ''): string { return BASE . '/' . ltrim($path, '/');
 function abs_url(string $path = ''): string
 {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . url($path);
+    $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+    if (str_starts_with(strtolower($host), 'www.')) $host = substr($host, 4);                  // one address: no www
+    return $scheme . '://' . $host . url($path);
 }
 function asset(string $path): string { return url('assets/' . ltrim($path, '/')); }
 function upload_url(?string $file): string

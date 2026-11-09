@@ -6,6 +6,13 @@
   foreach (['site_name' => 'Site name', 'tagline' => 'Tagline', 'venue' => 'Venue', 'location' => 'Location', 'contact_phone' => 'Contact phone', 'contact_email' => 'Contact email', 'whatsapp' => 'WhatsApp number (with country code)', 'whatsapp_group' => 'WhatsApp group invite link',
             'social_facebook' => 'Facebook URL', 'social_instagram' => 'Instagram URL', 'social_youtube' => 'YouTube URL', 'social_tiktok' => 'TikTok URL', 'social_x' => 'X URL'] as $k => $l) field($k, $l, ['value' => setting($k)]); ?></div>
   <?php field('host_bio', 'Host biography (homepage)', ['type' => 'textarea', 'rows' => 4, 'value' => setting('host_bio')]); ?>
+  <h2 id="seo" style="margin:24px 0 6px;font-size:1.1rem">Google and search engines</h2>
+  <p class="small muted" style="margin:0 0 10px">To appear in Google, add the site to <b>Google Search Console</b> (search.google.com/search-console), choose &ldquo;URL prefix&rdquo;, then &ldquo;HTML tag&rdquo;. Paste the code from the tag here and save, then press Verify in Search Console and submit the sitemap below.</p>
+  <div class="form-grid">
+    <?php field('google_verification', 'Google verification code', ['value' => setting('google_verification'), 'attrs' => 'maxlength="120" placeholder="paste the content value, or the whole meta tag"']);
+    field('bing_verification', 'Bing verification code (optional)', ['value' => setting('bing_verification'), 'attrs' => 'maxlength="120"']); ?>
+  </div>
+  <p class="small" style="margin:6px 0 4px"><b>Your sitemap to submit:</b> <a href="<?= h(abs_url('sitemap.xml')) ?>" target="_blank" rel="noopener"><?= h(abs_url('sitemap.xml')) ?></a></p>
   <h2 id="credit" style="margin:24px 0 6px;font-size:1.1rem">Footer credit line</h2>
   <p class="small muted" style="margin:0 0 10px">The small line at the very bottom of every page, for example &ldquo;Designed &amp; maintained by Santos Jr | BONO TECHNOLOGIES&rdquo;. Leave a box empty to leave that part out.</p>
   <label class="chk"><input type="checkbox" name="credit_on" value="1"<?= setting('credit_on', '1') === '1' ? ' checked' : '' ?>> Show the credit line</label>

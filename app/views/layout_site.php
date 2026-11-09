@@ -39,7 +39,9 @@ $pageDesc = $desc ?? setting('tagline');
 <style>:root{--hero-photo:url('<?= h($heroOverride !== '' ? $heroOverride : photo($heroPhoto)) ?>')}</style>
 <?php if (!empty($noindex)): ?><meta name="robots" content="noindex,nofollow"><?php endif; ?>
 <?php if (empty($noindex)) echo seo_schema($seg, ($seg === 'events' && isset($e['slug'])) ? $e : null, $packages ?? [], $pageTitle); ?>
-<meta name="theme-color" content="#171717">
+<?php if (setting('google_verification') !== ''): ?><meta name="google-site-verification" content="<?= h(setting('google_verification')) ?>">
+<?php endif; ?><?php if (setting('bing_verification') !== ''): ?><meta name="msvalidate.01" content="<?= h(setting('bing_verification')) ?>">
+<?php endif; ?><meta name="theme-color" content="#171717">
 <link rel="icon" type="image/png" href="<?= h(brand_favicon()) ?>"><link rel="apple-touch-icon" href="<?= h(brand_favicon()) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">

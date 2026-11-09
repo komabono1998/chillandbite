@@ -1,6 +1,10 @@
 Options -Indexes
 RewriteEngine On
 
+# One address only: send www.yourdomain to yourdomain, so Google sees a single website (not two copies)
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
 # Never serve internal files
 RewriteRule ^(app|database|storage|\.git)(/|$) - [F,L]
 RewriteRule ^\.env - [F,L]
