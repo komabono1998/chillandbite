@@ -4,7 +4,7 @@ $reserveUrl = $nextEv ? url('events/' . $nextEv['slug'] . '/reserve') : url('eve
 $nav = [
     'Home' => ['', url()], 'About' => ['about', url('about')], 'Events' => ['events', url('events')],
     'Reservations' => ['reserve', $reserveUrl], 'Laugh with Owakabi' => ['laugh', url('laugh')],
-    'Podium DJs' => ['djs', url('djs')], 'Advertise With Us' => ['advertise', url('advertise')],
+    'Podium DJs' => ['djs', url('djs')], 'Gallery' => ['gallery', url('gallery')], 'Advertise With Us' => ['advertise', url('advertise')],
 ];
 $cur = trim(substr(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), strlen(BASE)), '/');
 $active = fn($k) => ($k === '' ? $cur === '' : ($k === 'reserve' ? str_contains($cur, '/reserve') : str_starts_with($cur, $k) && !str_contains($cur, '/reserve'))) ? ' aria-current="page"' : '';

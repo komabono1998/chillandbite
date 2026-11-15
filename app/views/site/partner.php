@@ -40,7 +40,7 @@
       field('partnership_type', 'Type of partnership', ['required' => true, 'type' => 'select', 'options' => ['' => 'Choose...'] + array_combine(PARTNER_TYPES, PARTNER_TYPES)]); ?>
       <div class="field"><label for="f_logo">Company logo <span aria-hidden="true">*</span></label>
         <input id="f_logo" type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif" required>
-        <small>PNG, JPG, WebP or GIF, max 5MB. A clear logo on a transparent or plain background works best.</small>
+        <small>PNG, JPG, WebP or GIF, max <?= upload_max_mb() ?>MB. A clear logo on a transparent or plain background works best.</small>
         <img id="logo-preview" alt="Logo preview" hidden></div>
     </div>
     <?php field('about', 'About your business', ['type' => 'textarea', 'required' => true, 'rows' => 4, 'help' => 'What you do, who your customers are and how long you have operated.']);

@@ -315,12 +315,19 @@ function rate_limited(string $bucket, int $max, int $seconds): bool
 }
 
 /* ---------- Uploads ---------- */
+/** Largest picture the admin allows, in MB (Admin > Gallery). At least 10 by default, never above what the server itself accepts. */
+function upload_max_mb(): int { return max(1, min(100, (int)(setting('upload_max_mb', '10') ?: 10))); }
+function ini_bytes(string $v): int
+{
+    $n = (float)$v; $u = strtoupper(substr(trim($v), -1));
+    return (int)($u === 'G' ? $n * 1073741824 : ($u === 'M' ? $n * 1048576 : ($u === 'K' ? $n * 1024 : $n)));
+}
 function save_upload(string $field, string $dir = ''): ?string
 {
     if (empty($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) return null;
     $f = $_FILES[$field];
     if ($f['error'] !== UPLOAD_ERR_OK) throw new RuntimeException('Upload failed. Please try again.');
-    if ($f['size'] > 5 * 1024 * 1024) throw new RuntimeException('Images must be 5MB or smaller.');
+    if ($f['size'] > upload_max_mb() * 1048576) throw new RuntimeException('Images must be ' . upload_max_mb() . 'MB or smaller.');
     $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
     $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$mime] ?? null;
     if (!$ext) throw new RuntimeException('Only JPG, PNG, WebP or GIF images are allowed.');

@@ -12,6 +12,35 @@ function gallery_ensure_cols(): void
             db()->exec('ALTER TABLE gallery_images ADD COLUMN hero TINYINT(1) NOT NULL DEFAULT 0 AFTER featured, ADD COLUMN hidden TINYINT(1) NOT NULL DEFAULT 0 AFTER hero');
     } catch (PDOException $e) { error_log('gallery_ensure_cols: ' . $e->getMessage()); }
 }
+/** Small copy (900 px) of an uploaded photo so the website grid loads fast; the full photo is kept for the viewer and downloads. Needs the GD extension, otherwise the full photo is used. */
+function gallery_thumb(string $file): string
+{
+    if (!str_starts_with($file, 'gallery/')) return $file;
+    $t = 'gallery/t/' . pathinfo($file, PATHINFO_FILENAME) . '.jpg';
+    return is_file(ROOT . '/uploads/' . $t) ? $t : $file;
+}
+function gallery_make_thumb(string $file): void
+{
+    if (!function_exists('imagecreatetruecolor') || !str_starts_with($file, 'gallery/')) return;
+    $src = ROOT . '/uploads/' . $file; if (!is_file($src)) return;
+    try {
+        $info = @getimagesize($src); if (!$info) return;
+        [$w, $h] = $info; if ($w * $h > 90000000) return;                       // skip absurdly large images, GD would run out of memory
+        @ini_set('memory_limit', '512M');
+        $im = match ($info[2]) { IMAGETYPE_JPEG => @imagecreatefromjpeg($src), IMAGETYPE_PNG => @imagecreatefrompng($src), IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($src) : false, IMAGETYPE_GIF => @imagecreatefromgif($src), default => false };
+        if (!$im) return;
+        if ($info[2] === IMAGETYPE_JPEG && function_exists('exif_read_data') && ($ex = @exif_read_data($src)) && !empty($ex['Orientation'])) {
+            $rot = [3 => 180, 6 => -90, 8 => 90][(int)$ex['Orientation']] ?? 0;
+            if ($rot && ($r = imagerotate($im, $rot, 0))) { $im = $r; [$w, $h] = [imagesx($im), imagesy($im)]; }
+        }
+        $max = 900; $s = min(1, $max / max($w, $h));
+        $nw = max(1, (int)round($w * $s)); $nh = max(1, (int)round($h * $s));
+        $out = imagecreatetruecolor($nw, $nh); imagefill($out, 0, 0, imagecolorallocate($out, 255, 255, 255));
+        imagecopyresampled($out, $im, 0, 0, 0, 0, $nw, $nh, imagesx($im), imagesy($im));
+        $dir = ROOT . '/uploads/gallery/t'; if (!is_dir($dir)) mkdir($dir, 0755, true);
+        imagejpeg($out, $dir . '/' . pathinfo($file, PATHINFO_FILENAME) . '.jpg', 82);
+    } catch (Throwable $e) { error_log('gallery_make_thumb: ' . $e->getMessage()); }
+}
 function gallery_downloads_on(): bool { return setting('gallery_downloads', '1') === '1'; }
 
 /** Real file on disk for a stored gallery file name (bundled "img/..." or an upload). */
@@ -110,6 +139,7 @@ function admin_gallery(): void
         'images' => rows("SELECT i.*, a.name AS album FROM gallery_images i LEFT JOIN gallery_albums a ON a.id=i.album_id $where ORDER BY i.id DESC LIMIT 500"),
         'albums' => rows('SELECT a.*, (SELECT COUNT(*) FROM gallery_images i WHERE i.album_id = a.id) AS n FROM gallery_albums a ORDER BY a.id'),
         'total' => (int)val('SELECT COUNT(*) FROM gallery_images'),
+        'maxmb' => upload_max_mb(), 'ini' => ['upload' => ini_get('upload_max_filesize'), 'post' => ini_get('post_max_size'), 'files' => (int)ini_get('max_file_uploads'), 'gd' => function_exists('imagecreatetruecolor')],
     ]);
 }
 function admin_gallery_save(): void
@@ -149,18 +179,22 @@ function admin_gallery_save(): void
         q('UPDATE gallery_images SET album_id = NULL WHERE album_id = ?', [$id]); q('DELETE FROM gallery_albums WHERE id = ?', [$id]);
         audit('gallery.album_delete', '#' . $id); flash('Album deleted. Its photos are kept without an album.'); $back = 'admin/gallery';
     } elseif ($act === 'settings') {
-        save_setting('gallery_downloads', empty($_POST['gallery_downloads']) ? '0' : '1'); flash('Download setting saved.');
+        save_setting('gallery_downloads', empty($_POST['gallery_downloads']) ? '0' : '1');
+        save_setting('upload_max_mb', (string)max(1, min(100, (int)($_POST['upload_max_mb'] ?? 10))));
+        flash('Gallery settings saved.');
     } else {
-        $n = 0;
+        $n = 0; $errs = [];
         $album = (int)($_POST['album_id'] ?? 0) ?: null;
         $files = $_FILES['photos'] ?? null;
         if ($files && is_array($files['name'])) {
             foreach ($files['name'] as $i => $_) {
                 $_FILES['one'] = ['name' => $files['name'][$i], 'type' => $files['type'][$i], 'tmp_name' => $files['tmp_name'][$i], 'error' => $files['error'][$i], 'size' => $files['size'][$i]];
-                try { if ($f = save_upload('one', 'gallery')) { q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $f, post_str('caption', 190) ?: null]); $n++; } }
-                catch (RuntimeException $ex) { flash($files['name'][$i] . ': ' . $ex->getMessage(), 'err'); }
+                try { if ($f = save_upload('one', 'gallery')) { q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $f, post_str('caption', 190) ?: null]); gallery_make_thumb($f); $n++; } }
+                catch (RuntimeException $ex) { $errs[] = $files['name'][$i] . ': ' . $ex->getMessage(); }
             }
         }
+        if (!empty($_POST['ajax'])) { header('Content-Type: application/json'); echo json_encode(['ok' => $n, 'errors' => $errs]); exit; }   // the batch uploader
+        foreach ($errs as $e) flash($e, 'err');
         if ($n) { audit('gallery.upload', "$n photos"); flash("$n photo(s) uploaded."); }
     }
     redirect($back);

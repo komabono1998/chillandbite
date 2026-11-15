@@ -190,10 +190,10 @@ function photo_wall(array $images, int $rows = 3): void
         $tiles = ''; $dup = '';
         foreach ($items as $k => $img) {
             $w = $widths[($k + $r * 2) % count($widths)];
-            $src = h(upload_url($img['file']));
+            $src = h(upload_url($img['file'])); $th = h(upload_url(gallery_thumb($img['file'])));
             $alt = h($img['caption'] ?: 'Chill & Bite MEATINGS event photo');
-            $tiles .= '<a class="wall-item" style="--w:' . $w . 'px" href="' . $src . '" data-lightbox><img src="' . $src . '" alt="' . $alt . '" loading="lazy" decoding="async"></a>';
-            $dup .= '<a class="wall-item" style="--w:' . $w . 'px" href="' . $src . '" tabindex="-1" aria-hidden="true"><img src="' . $src . '" alt="" loading="lazy" decoding="async"></a>';
+            $tiles .= '<a class="wall-item" style="--w:' . $w . 'px" href="' . $src . '" data-lightbox><img src="' . $th . '" alt="' . $alt . '" loading="lazy" decoding="async"></a>';
+            $dup .= '<a class="wall-item" style="--w:' . $w . 'px" href="' . $src . '" tabindex="-1" aria-hidden="true"><img src="' . $th . '" alt="" loading="lazy" decoding="async"></a>';
         }
         echo '<div class="wall-row wall-' . ($r % 2 === 0 ? 'ltr' : 'rtl') . '" style="--r:' . $r . ';--dur:' . $durations[$r % count($durations)] . 's"><div class="wall-track">'
             . $tiles . '<span class="wall-dup" aria-hidden="true">' . $dup . '</span></div></div>';
