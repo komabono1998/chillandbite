@@ -58,6 +58,10 @@ function admin_migrate(): void
     ob_start();
     try { include ROOT . '/database/install.php'; $out = trim((string)ob_get_clean()); $ok = true; }
     catch (Throwable $e) { $out = trim((string)ob_get_clean() . ' ' . $e->getMessage()); $ok = false; }
+    if ($ok) {   // the 6 December 2026 flyer becomes that event's poster, unless a poster was already uploaded
+        try { q("UPDATE events SET poster = 'img/flyer-dec-2026.jpg' WHERE DATE(start_at) = '2026-12-06' AND (poster IS NULL OR poster = '')"); }
+        catch (Throwable $e) { error_log('flyer poster: ' . $e->getMessage()); }
+    }
     audit('system.migrate', $ok ? 'ok' : 'failed');
     flash($ok ? 'Database updated. All new tables and columns are in place.' : 'The update could not finish: ' . excerpt($out, 500), $ok ? 'ok' : 'err');
     redirect('admin/settings');
