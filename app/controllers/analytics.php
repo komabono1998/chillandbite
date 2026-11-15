@@ -58,7 +58,18 @@ function admin_migrate(): void
     ob_start();
     try { include ROOT . '/database/install.php'; $out = trim((string)ob_get_clean()); $ok = true; }
     catch (Throwable $e) { $out = trim((string)ob_get_clean() . ' ' . $e->getMessage()); $ok = false; }
-    if ($ok) {   // the 6 December 2026 flyer becomes that event's poster, unless a poster was already uploaded
+    if ($ok) {   // the 6 December 2026 event from the flyer: created if missing, and the flyer becomes its poster unless one was uploaded
+        try {
+            if (!val("SELECT COUNT(*) FROM events WHERE DATE(start_at) = '2026-12-06'")) {
+                $cat = val("SELECT id FROM event_categories WHERE slug = 'chill-bite-meatings'");
+                q("INSERT INTO events (category_id, title, slug, short_desc, description, poster, venue, location, start_at, status, booking_mode, featured)
+                   VALUES (?,?,?,?,?,?,?,?,?,'published','instant',1)", [
+                    $cat ?: null, 'Chill & Bite MEATINGS Returns - Sunday 6th December', unique_slug('events', 'chill-bite-meatings-returns-6th-december-2026'),
+                    'Chill & Bite MEATINGS returns Sunday 6th December at Gulu Revelation Cottages. Bottle Turn Up, powered by Johnnie Walker. 18+, drink responsibly.',
+                    "Chill & Bite MEATINGS returns on Sunday, 6th December 2026 at Gulu Revelation Cottages, Gulu City.\n\nGood food, great people, music, comedy and networking, hosted by MC Kash Owakabi. Bottle Turn Up, powered by Johnnie Walker.\n\nThis event is for guests aged 18 and above. Drink responsibly. Do not forward to persons under 18 years.\n\nFor more info: www.chillandbitemeating.com",
+                    'img/flyer-dec-2026.jpg', 'Revelation Cottages', 'Gulu City, Uganda', '2026-12-06 12:00:00']);
+            }
+        } catch (Throwable $e) { error_log('flyer event: ' . $e->getMessage()); }
         try { q("UPDATE events SET poster = 'img/flyer-dec-2026.jpg' WHERE DATE(start_at) = '2026-12-06' AND (poster IS NULL OR poster = '')"); }
         catch (Throwable $e) { error_log('flyer poster: ' . $e->getMessage()); }
     }
