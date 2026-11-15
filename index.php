@@ -24,6 +24,7 @@ require __DIR__ . '/app/qr.php';
 require __DIR__ . '/app/ticketpdf.php';
 require __DIR__ . '/app/controllers/gentickets.php';
 require __DIR__ . '/app/controllers/analytics.php';
+require __DIR__ . '/app/controllers/gallery.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -60,6 +61,8 @@ $routes = [
     ['GET',  'partner',              'page_partner'],
     ['POST', 'partner',              'post_partner'],
     ['GET',  'gallery',              'page_gallery'],
+    ['GET',  'gallery/zip',          'page_gallery_zip'],
+    ['GET',  'gallery/download/{id}', 'page_gallery_download'],
     ['GET',  'contact',              'page_contact'],
     ['POST', 'contact',              'post_contact'],
     ['GET',  'privacy',              'page_privacy'],

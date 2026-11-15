@@ -90,9 +90,9 @@ $ld = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_
     <a class="btn btn-primary btn-lg" href="<?= h($reserve) ?>"><?= cth('about.hero.btn_primary') ?></a>
   </div>
   <div class="ab-mosaic" data-reveal>
-    <img class="m1" src="<?= h(photo(41)) ?>" alt="DJ and crowd under the lights" loading="lazy" decoding="async">
-    <img class="m2" src="<?= h(photo(11)) ?>" alt="Guests playing games and networking" loading="lazy" decoding="async">
-    <img class="m3" src="<?= h(photo(30)) ?>" alt="Glazed chicken wings" loading="lazy" decoding="async">
+    <img class="m1" src="<?= h(cti('about.expect.photo1')) ?>" alt="The DJ stage at dusk at the last Chill &amp; Bite MEATINGS" loading="lazy" decoding="async">
+    <img class="m2" src="<?= h(cti('about.expect.photo2')) ?>" alt="Guests taking a selfie together" loading="lazy" decoding="async">
+    <img class="m3" src="<?= h(cti('about.expect.photo3')) ?>" alt="Guests dressed in white at the photo wall" loading="lazy" decoding="async">
   </div>
 </div></section>
 

@@ -46,7 +46,7 @@ function gcal_link(array $e): string
 /** Photos for the homepage wall: featured first, then the newest, mixed so neighbours differ. Mix changes daily. */
 function wall_photos(int $limit): array
 {
-    $rows = rows('SELECT * FROM gallery_images ORDER BY featured DESC, id DESC LIMIT ' . (int)$limit);
+    $rows = rows('SELECT * FROM gallery_images WHERE hidden = 0 ORDER BY featured DESC, id DESC LIMIT ' . (int)$limit);
     mt_srand(crc32(date('Y-m-d'))); shuffle($rows); mt_srand();
     return $rows;
 }
@@ -93,7 +93,8 @@ function page_home(): void
         'video' => row('SELECT * FROM videos ORDER BY featured DESC, id DESC LIMIT 1'),
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
         'gallery' => wall_photos(36),
-        'gallery_total' => (int)val('SELECT COUNT(*) FROM gallery_images'),
+        'gallery_total' => (int)val('SELECT COUNT(*) FROM gallery_images WHERE hidden = 0'),
+        'hero_photos' => array_column(rows('SELECT file FROM gallery_images WHERE hero = 1 AND hidden = 0 ORDER BY id DESC LIMIT 5'), 'file'),
         'comedy_events' => upcoming_events(2, 'laugh-with-owakabi-comedy-shows'),
     ]);
 }
@@ -151,18 +152,6 @@ function page_advertise(): void
         'title' => 'Advertise & Sponsor | Chill & Bite MEATINGS Gulu, Uganda',
         'desc' => 'Advertise your business or sponsor Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu. Banner ads, sponsored articles, brand activations and annual partnerships.',
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
-    ]);
-}
-function page_gallery(): void
-{
-    $album = preg_match('/^[a-z0-9-]+$/', $_GET['album'] ?? '') ? $_GET['album'] : null;
-    $sql = 'SELECT i.*, a.name AS album FROM gallery_images i LEFT JOIN gallery_albums a ON a.id = i.album_id';
-    $p = [];
-    if ($album) { $sql .= ' WHERE a.slug = ?'; $p[] = $album; }
-    render('site/gallery', [
-        'title' => 'Photo Gallery | Chill & Bite MEATINGS Events in Gulu',
-        'desc' => 'Photos from Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu City, Uganda.', 'album' => $album,
-        'images' => rows($sql . ' ORDER BY i.id DESC', $p), 'albums' => rows('SELECT * FROM gallery_albums ORDER BY id'),
     ]);
 }
 function page_contact(): void { render('site/contact', ['title' => 'Contact Chill & Bite MEATINGS | Owakabi & The Geng, Gulu', 'desc' => 'Contact Chill & Bite MEATINGS and Owakabi & The Geng in Gulu City, Uganda for bookings, partnerships and enquiries.']); }

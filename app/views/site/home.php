@@ -1,6 +1,6 @@
 <?php $reserve = $next ? url('events/' . $next['slug'] . '/reserve') : url('events'); ?>
 <section class="hero">
-  <div class="hero-slides" aria-hidden="true"><?php foreach ([44, 3, 6, 41, 18] as $i => $n): ?><div style="background-image:url('<?= h(photo($n)) ?>');animation-delay:<?= $i * 6 - 2 ?>s"></div><?php endforeach; ?></div>
+  <div class="hero-slides" aria-hidden="true"><?php $slides = !empty($hero_photos) ? array_map('upload_url', $hero_photos) : array_map('photo', [44, 3, 6, 41, 18]); foreach ($slides as $i => $src): ?><div style="background-image:url('<?= h($src) ?>');animation-delay:<?= $i * 6 - 2 ?>s"></div><?php endforeach; ?></div>
   <div class="wrap hero-in">
     <div class="hero-copy">
       <span class="eyebrow gold"><?= cth('home.hero.eyebrow') ?></span>

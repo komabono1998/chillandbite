@@ -86,7 +86,7 @@ function site_pages(): array
                     $f('tagline', 'Tagline', 'text', 'One Sunday. One Location. Endless Connections.'),
                     $f('text', 'Text', 'text', 'Join us at Revelation Cottages, Gulu City, for the next Chill & Bite MEATINGS experience.'),
                     $f('button', 'Button', 'text', 'Book your place today'),
-                    $f('photo', 'Background photo', 'image', 'img/photos/photo-53.jpg', 'A bright, wide photo works best. Text sits on a frosted panel so the picture stays visible.'),
+                    $f('photo', 'Background photo', 'image', 'img/last-edition/le-03.jpg', 'A bright, wide photo works best. Text sits on a frosted panel so the picture stays visible.'),
                 ]],
             ],
         ],
@@ -138,6 +138,9 @@ function site_pages(): array
                     $f('eyebrow', 'Small label', 'text', 'The experience'),
                     $f('heading', 'Heading', 'text', 'What to expect'),
                     $f('list', 'List (one per line)', 'lines', "Great food and drinks in a relaxed outdoor setting\nNetworking with people across industries\nLive music, comedy and entertainment\nOutdoor games and social experiences\nOpportunities for brands to connect with a lively audience"),
+                    $f('photo1', 'Photo 1 (large)', 'image', 'img/last-edition/le-12.jpg', 'Shown in the photo collage next to the list.'),
+                    $f('photo2', 'Photo 2', 'image', 'img/last-edition/le-07.jpg'),
+                    $f('photo3', 'Photo 3', 'image', 'img/last-edition/le-04.jpg'),
                 ]],
                 'team' => ['label' => 'Team & host', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'The people'),

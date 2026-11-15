@@ -58,6 +58,7 @@ function admin_migrate(): void
     ob_start();
     try { include ROOT . '/database/install.php'; $out = trim((string)ob_get_clean()); $ok = true; }
     catch (Throwable $e) { $out = trim((string)ob_get_clean() . ' ' . $e->getMessage()); $ok = false; }
+    if ($ok) { try { $ga = gallery_seed_last_edition(); } catch (Throwable $e) { error_log('gallery seed: ' . $e->getMessage()); } }
     if ($ok) {   // the 6 December 2026 event from the flyer: created if missing, and the flyer becomes its poster unless one was uploaded
         try {
             if (!val("SELECT COUNT(*) FROM events WHERE DATE(start_at) = '2026-12-06'")) {

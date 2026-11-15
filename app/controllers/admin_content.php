@@ -168,38 +168,6 @@ function admin_comedy_save(): void
 }
 
 /* ================= Gallery ================= */
-function admin_gallery(): void
-{
-    require_can('gallery');
-    admin_view('gallery', ['title' => 'Gallery', 'images' => rows('SELECT i.*, a.name AS album FROM gallery_images i LEFT JOIN gallery_albums a ON a.id=i.album_id ORDER BY i.id DESC LIMIT 300'), 'albums' => rows('SELECT * FROM gallery_albums ORDER BY id')]);
-}
-function admin_gallery_save(): void
-{
-    require_can('gallery');
-    $act = $_POST['action'] ?? '';
-    if ($act === 'delete') {
-        $f = val('SELECT file FROM gallery_images WHERE id = ?', [(int)$_POST['id']]);
-        q('DELETE FROM gallery_images WHERE id = ?', [(int)$_POST['id']]);
-        if ($f && preg_match('#^gallery/[a-f0-9]+\.(jpg|png|webp|gif)$#', $f)) @unlink(ROOT . '/uploads/' . $f);
-        audit('gallery.delete', '#' . (int)$_POST['id']); flash('Photo deleted.');
-    } elseif ($act === 'feature') {
-        q('UPDATE gallery_images SET featured = 1 - featured WHERE id = ?', [(int)$_POST['id']]); flash('Updated.');
-    } else {
-        $n = 0;
-        $album = (int)($_POST['album_id'] ?? 0) ?: null;
-        $files = $_FILES['photos'] ?? null;
-        if ($files && is_array($files['name'])) {
-            foreach ($files['name'] as $i => $_) {
-                $_FILES['one'] = ['name' => $files['name'][$i], 'type' => $files['type'][$i], 'tmp_name' => $files['tmp_name'][$i], 'error' => $files['error'][$i], 'size' => $files['size'][$i]];
-                try { if ($f = save_upload('one', 'gallery')) { q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $f, post_str('caption', 190) ?: null]); $n++; } }
-                catch (RuntimeException $ex) { flash($files['name'][$i] . ': ' . $ex->getMessage(), 'err'); }
-            }
-        }
-        if ($n) { audit('gallery.upload', "$n photos"); flash("$n photo(s) uploaded."); }
-    }
-    redirect('admin/gallery');
-}
-
 /* ================= Advertising / sponsors ================= */
 function admin_advertising(): void
 {

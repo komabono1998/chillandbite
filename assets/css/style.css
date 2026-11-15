@@ -1115,3 +1115,10 @@ body:has(.dj-player) .wa-fab{bottom:84px}
 .countdown-sub{margin:-.4em 0 .9em;font-size:.95rem;font-weight:700;color:#fff;opacity:.9}
 
 .panel-flyer{display:block;margin:0 0 1rem;border-radius:12px;overflow:hidden;border:1px solid #444;box-shadow:0 8px 24px rgba(0,0,0,.45)}.panel-flyer img{display:block;width:100%;height:auto}
+
+/* Gallery downloads */
+.gal-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 .9rem}
+.gallery-grid figure{position:relative}
+.gallery-grid .gal-dl{position:absolute;right:8px;top:8px;display:inline-block;background:rgba(23,23,23,.82);color:#fff!important;font-size:.72rem;font-weight:700;padding:6px 10px;border-radius:99px;text-decoration:none;box-shadow:none}
+.gallery-grid .gal-dl:hover{background:var(--orange)}
+.pills small{opacity:.7;font-weight:500}
