@@ -12,6 +12,8 @@
       </div>
     </div>
     <aside class="info-panel" aria-label="Event information">
+      <?php $flyer = !empty($next['poster']) ? $next['poster'] : (isset($next['start_at']) && substr((string)$next['start_at'], 0, 10) === '2026-12-06' ? 'img/flyer-dec-2026.jpg' : ''); ?>
+      <?php if ($flyer): ?><a class="panel-flyer" href="<?= url('events/' . h($next['slug'])) ?>"><img src="<?= h(upload_url($flyer)) ?>" alt="<?= h(($next['title'] ?? 'Event') . ' flyer') ?>" width="600" height="600" loading="eager"></a><?php endif; ?>
       <p class="eyebrow gold"><?= cth('home.panel.label') ?></p>
       <?php [$cdAt, $cdLabel, $cdCustom] = $cd ?? [$next_date, null, false]; ?>
       <p class="countdown-date"><?= $cdAt->format('l, j F Y') ?> · <?= $cdAt->format('g:i A') ?></p>

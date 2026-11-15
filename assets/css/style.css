@@ -1113,3 +1113,5 @@ body:has(.dj-player) .wa-fab{bottom:84px}
 .is-busy .pay-btn-spin,.pt-go.is-busy .pay-btn-spin{display:inline-block}
 @media(max-width:640px){.pt-amt{margin-left:0;text-align:left;flex-basis:100%}.pt-state .btn{width:100%}}
 .countdown-sub{margin:-.4em 0 .9em;font-size:.95rem;font-weight:700;color:#fff;opacity:.9}
+
+.panel-flyer{display:block;margin:0 0 1rem;border-radius:12px;overflow:hidden;border:1px solid #444;box-shadow:0 8px 24px rgba(0,0,0,.45)}.panel-flyer img{display:block;width:100%;height:auto}
