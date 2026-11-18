@@ -211,3 +211,13 @@
   }, { threshold: 0.12 });
   document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('reveal'); rv.observe(el); });
 })();
+
+// A picture that cannot load (for example a file lost from the server) is hidden, never shown as a broken box
+document.addEventListener('error', function (e) {
+  var t = e.target;
+  if (!t || t.tagName !== 'IMG' || t.dataset.broken) return;
+  t.dataset.broken = '1';
+  var box = t.closest('figure, .wall-item, .mosaic-item');
+  if (box && box.tagName !== 'ARTICLE') box.style.display = 'none'; else t.style.visibility = 'hidden';
+}, true);
+window.addEventListener('load', function () { document.querySelectorAll('img').forEach(function (i) { if (i.complete && i.naturalWidth === 0 && i.getAttribute('src')) i.dispatchEvent(new Event('error')); }); });

@@ -41,6 +41,11 @@ function gallery_make_thumb(string $file): void
         imagejpeg($out, $dir . '/' . pathinfo($file, PATHINFO_FILENAME) . '.jpg', 82);
     } catch (Throwable $e) { error_log('gallery_make_thumb: ' . $e->getMessage()); }
 }
+/** Keep only the photos whose file is really on the server (an uploads folder can be lost in a redeploy or a restore). */
+function gallery_existing(array $rows): array
+{
+    return array_values(array_filter($rows, fn($r) => gallery_path((string)$r['file']) !== null));
+}
 function gallery_downloads_on(): bool { return setting('gallery_downloads', '1') === '1'; }
 
 /** Real file on disk for a stored gallery file name (bundled "img/..." or an upload). */
@@ -71,6 +76,16 @@ function gallery_seed_last_edition(): int
     return $added;
 }
 
+/** Albums with the number of photos that can really be shown. */
+function gallery_album_counts(): array
+{
+    $count = [];
+    foreach (gallery_existing(rows('SELECT album_id, file FROM gallery_images WHERE hidden = 0')) as $r) $count[(int)$r['album_id']] = ($count[(int)$r['album_id']] ?? 0) + 1;
+    $albums = rows('SELECT * FROM gallery_albums ORDER BY id DESC');
+    foreach ($albums as &$a) $a['n'] = $count[(int)$a['id']] ?? 0;
+    return $albums;
+}
+
 /* ---------- public ---------- */
 function page_gallery(): void
 {
@@ -82,8 +97,8 @@ function page_gallery(): void
     render('site/gallery', [
         'title' => 'Photo Gallery | Chill & Bite MEATINGS Events in Gulu',
         'desc' => 'Photos from Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu City, Uganda. Browse every edition and download your favourites.', 'album' => $album,
-        'images' => rows($sql . ' ORDER BY i.featured DESC, i.id ASC', $p),
-        'albums' => rows('SELECT a.*, (SELECT COUNT(*) FROM gallery_images i WHERE i.album_id = a.id AND i.hidden = 0) AS n FROM gallery_albums a ORDER BY a.id DESC'),
+        'images' => gallery_existing(rows($sql . ' ORDER BY i.featured DESC, i.id ASC', $p)),
+        'albums' => gallery_album_counts(),
         'downloads' => gallery_downloads_on(), 'zip' => class_exists('ZipArchive'),
     ]);
 }
@@ -136,7 +151,7 @@ function admin_gallery(): void
     $where = $album > 0 ? 'WHERE i.album_id = ' . $album : ($album === -1 ? 'WHERE i.album_id IS NULL' : '');
     admin_view('gallery', [
         'title' => 'Gallery', 'filter' => $album, 'downloads' => gallery_downloads_on(),
-        'images' => rows("SELECT i.*, a.name AS album FROM gallery_images i LEFT JOIN gallery_albums a ON a.id=i.album_id $where ORDER BY i.id DESC LIMIT 500"),
+        'images' => array_map(fn($r) => $r + ['missing' => gallery_path((string)$r['file']) === null], rows("SELECT i.*, a.name AS album FROM gallery_images i LEFT JOIN gallery_albums a ON a.id=i.album_id $where ORDER BY i.id DESC LIMIT 500")),
         'albums' => rows('SELECT a.*, (SELECT COUNT(*) FROM gallery_images i WHERE i.album_id = a.id) AS n FROM gallery_albums a ORDER BY a.id'),
         'total' => (int)val('SELECT COUNT(*) FROM gallery_images'),
         'maxmb' => upload_max_mb(), 'ini' => ['upload' => ini_get('upload_max_filesize'), 'post' => ini_get('post_max_size'), 'files' => (int)ini_get('max_file_uploads'), 'gd' => function_exists('imagecreatetruecolor')],
@@ -169,6 +184,10 @@ function admin_gallery_save(): void
             audit('gallery.bulk_delete', count($ids) . ' photos'); flash(count($ids) . ' photo(s) deleted.');
         } elseif (in_array($do, ['hide', 'show'], true)) { foreach ($ids as $i) q('UPDATE gallery_images SET hidden = ? WHERE id = ?', [$do === 'hide' ? 1 : 0, $i]); flash(count($ids) . ' photo(s) updated.'); }
         elseif (str_starts_with((string)$do, 'move:')) { $to = (int)substr($do, 5) ?: null; foreach ($ids as $i) q('UPDATE gallery_images SET album_id = ? WHERE id = ?', [$to, $i]); flash(count($ids) . ' photo(s) moved.'); }
+    } elseif ($act === 'purge_missing') {
+        $n = 0;
+        foreach (rows('SELECT id, file FROM gallery_images') as $r) if (gallery_path((string)$r['file']) === null) { q('DELETE FROM gallery_images WHERE id = ?', [$r['id']]); $n++; }
+        audit('gallery.purge_missing', "$n records"); flash($n ? "$n photo record(s) with a missing file were removed." : 'Every photo file is in place.');
     } elseif ($act === 'album_add') {
         $name = post_str('name', 120);
         if ($name === '') flash('Give the album a name.', 'err'); else { q('INSERT INTO gallery_albums (name, slug) VALUES (?,?)', [$name, unique_slug('gallery_albums', $name)]); audit('gallery.album_add', $name); flash('Album created.'); }

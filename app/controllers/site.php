@@ -46,7 +46,7 @@ function gcal_link(array $e): string
 /** Photos for the homepage wall: featured first, then the newest, mixed so neighbours differ. Mix changes daily. */
 function wall_photos(int $limit): array
 {
-    $rows = rows('SELECT * FROM gallery_images WHERE hidden = 0 ORDER BY featured DESC, id DESC LIMIT ' . (int)$limit);
+    $rows = array_slice(gallery_existing(rows('SELECT * FROM gallery_images WHERE hidden = 0 ORDER BY featured DESC, id DESC LIMIT ' . ((int)$limit * 3))), 0, (int)$limit);
     mt_srand(crc32(date('Y-m-d'))); shuffle($rows); mt_srand();
     return $rows;
 }
@@ -151,8 +151,8 @@ function page_home(): void
         'video' => row('SELECT * FROM videos ORDER BY featured DESC, id DESC LIMIT 1'),
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
         'gallery' => wall_photos(36),
-        'gallery_total' => (int)val('SELECT COUNT(*) FROM gallery_images WHERE hidden = 0'),
-        'hero_photos' => array_column(rows('SELECT file FROM gallery_images WHERE hero = 1 AND hidden = 0 ORDER BY id DESC LIMIT 5'), 'file'),
+        'gallery_total' => count(gallery_existing(rows('SELECT file FROM gallery_images WHERE hidden = 0'))),
+        'hero_photos' => array_slice(array_column(gallery_existing(rows('SELECT file FROM gallery_images WHERE hero = 1 AND hidden = 0 ORDER BY id DESC LIMIT 15')), 'file'), 0, 5),
         'comedy_events' => upcoming_events(2, 'laugh-with-owakabi-comedy-shows'),
     ]);
 }
