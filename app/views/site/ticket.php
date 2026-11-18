@@ -26,8 +26,9 @@
         <div><dt>Gates open</dt><dd><?= fmt_time($r['start_at']) ?></dd></div>
         <div><dt>Venue</dt><dd><?= h($r['venue']) ?>, <?= h($r['location']) ?></dd></div>
         <div><dt>Guest</dt><dd><?= h($r['full_name']) ?><?= $r['company'] ? ' · ' . h($r['company']) : '' ?></dd></div>
-        <div><dt>Reservation</dt><dd><?= h(RES_TYPES[$r['type']]) ?><?= $r['package'] ? ' · ' . h($r['package']) . ' package' : '' ?></dd></div>
+        <div><dt>Reservation</dt><dd><?= h(RES_TYPES[$r['type']]) ?><?= $r['package'] ? ' · ' . h($r['package']) . (preg_match('/package$/i', $r['package']) ? '' : ' package') : '' ?></dd></div>
         <div><dt>Reference</dt><dd class="ticket-ref"><?= h($r['reference']) ?></dd></div>
+        <?php $perks = reservation_perks((int)$r['event_id'], $r['package']); if ($perks): ?><div class="ticket-perks"><dt>Includes</dt><dd><ul><?php foreach ($perks as $pk): ?><li><?= h($pk) ?></li><?php endforeach; ?></ul></dd></div><?php endif; ?>
       </dl>
       <div class="ticket-qr">
         <div id="qr" data-url="<?= h($checkin_url) ?>" role="img" aria-label="QR code for entry"></div>
@@ -58,7 +59,7 @@
       'ref' => $r['reference'], 'title' => $r['title'], 'guests' => (int)$r['guests'],
       'date' => fmt_date($r['start_at'], 'l, j F Y'), 'time' => fmt_time($r['start_at']),
       'venue' => $r['venue'] . ', ' . $r['location'], 'name' => $r['full_name'] . ($r['company'] ? ' · ' . $r['company'] : ''),
-      'type' => RES_TYPES[$r['type']] . ($r['package'] ? ' · ' . $r['package'] . ' package' : ''),
+      'type' => RES_TYPES[$r['type']] . ($r['package'] ? ' · ' . $r['package'] . (preg_match('/package$/i', $r['package']) ? '' : ' package') : ''), 'perks' => $perks ?? [],
       'logo' => brand_logo(), 'serial' => $serial, 'seal' => $seal,
   ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
   <script src="<?= h(asset('js/vendor/qrcode.min.js')) ?>"></script>
@@ -88,7 +89,8 @@
       var qr = holder.querySelector('canvas');
       var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
       return Promise.all([logoReady, sealReady, fonts]).then(function () {
-        var W = 1080, H = 1720, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        var perks = d.perks || [], pdy = perks.length ? 70 + perks.length * 44 : 0;
+        var W = 1080, H = 1720 + pdy, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
         var c = cv.getContext('2d'), F = 'Poppins, "Segoe UI", Arial, sans-serif';
         c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
         var g = c.createLinearGradient(0, 0, W, 300); g.addColorStop(0, '#171717'); g.addColorStop(1, '#3a2210');
@@ -105,6 +107,8 @@
         field('Date', d.date, 60, 400, 470); field('Gates open', d.time, 580, 400, 440);
         field('Venue', d.venue, 60, 520, 960, 2);
         field('Guest', d.name, 60, 660, 470, 2); field('Reservation', d.type, 580, 660, 440, 2);
+        if (perks.length) { c.textAlign = 'left'; c.fillStyle = '#8a8378'; c.font = '600 22px ' + F; c.fillText('INCLUDES', 60, 830); c.font = '600 30px ' + F; perks.forEach(function (p, i) { c.fillStyle = '#D96B27'; c.fillText('•', 60, 874 + i * 44); c.fillStyle = '#1d1b19'; c.fillText(p, 92, 874 + i * 44); }); }
+        c.save(); c.translate(0, pdy);
         c.strokeStyle = '#d8cfc0'; c.lineWidth = 4; c.setLineDash([14, 12]); c.beginPath(); c.moveTo(40, 800); c.lineTo(W - 40, 800); c.stroke(); c.setLineDash([]);
         roundRect(c, 236, 840, 608, 608, 28); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 6; c.strokeStyle = '#171717'; c.stroke();
         c.imageSmoothingEnabled = false; c.drawImage(qr, 260, 864, 560, 560); c.imageSmoothingEnabled = true;
@@ -113,6 +117,7 @@
         c.fillStyle = '#7a4d0c'; c.font = '700 28px "Courier New", monospace'; c.fillText('SERIAL ' + d.serial, W / 2, 1622);
         if (sealImg.naturalWidth) { c.save(); c.translate(135, 1150); c.rotate(-0.14); c.drawImage(sealImg, -100, -100, 200, 200); c.restore(); }
         c.fillStyle = '#6b6258'; c.font = '500 22px ' + F; c.fillText('Show this QR code at the entrance · Chill & Bite MEATINGS · valid for one entry', W / 2, 1676);
+        c.restore();
         return cv;
       });
     }

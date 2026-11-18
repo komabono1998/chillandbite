@@ -10,6 +10,18 @@ function booking_reference(): string
     } while (val('SELECT id FROM reservations WHERE reference = ?', [$ref]));
     return $ref;
 }
+/** What a package includes, as a list. Items are separated by + (as on the flyer), semicolons or new lines. */
+function pk_perk_list(?string $text): array
+{
+    return array_values(array_filter(array_map('trim', preg_split('/\s*\+\s*|\s*;\s*|\R/', (string)$text))));
+}
+/** The included items of the package a reservation bought. */
+function reservation_perks(int $eventId, ?string $package): array
+{
+    if (!$package) return [];
+    try { return pk_perk_list((string)val('SELECT perks FROM event_packages WHERE event_id = ? AND name = ?', [$eventId, $package])); }
+    catch (PDOException $e) { return []; }
+}
 function event_packages(int $eventId): array
 {
     return rows('SELECT * FROM event_packages WHERE event_id = ? ORDER BY sort, price', [$eventId]);
@@ -108,7 +120,7 @@ function reservation_notify(array $e, array $d, string $ref, int $rid, string $s
     if ($status === 'confirmed') { send_ticket($rid); return; }     // free + instant bookings get their ticket straight away
     if ($payingNow || !$d['email']) return;                          // a paying guest gets the ticket as soon as the payment lands
     send_mail($d['email'], "Chill & Bite booking $ref received", "Hello {$d['full_name']},\n\nYour table is reserved. Your booking number is $ref (keep it safe).\n\n" .
-        "Event: {$e['title']}\nWhen: " . fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\n" . ($d['package'] ? "Table package: {$d['package']}\n" : '') .
+        "Event: {$e['title']}\nWhen: " . fmt_date($e['start_at']) . ' ' . fmt_time($e['start_at']) . "\nWhere: {$e['venue']}, {$e['location']}\n" . ($d['package'] ? "Package: {$d['package']}\n" : '') . (($pl = reservation_perks((int)$e['id'], $d['package'])) ? 'Includes: ' . implode(' + ', $pl) . "\n" : '') .
         ($d['amount'] > 0 ? 'Amount due: ' . money($d['amount']) . "\n" : '') .
         "\nPay any time with MTN or Airtel and your ticket is issued straight away, or the team confirms it once your payment is recorded:\n" . abs_url('booking/' . $ref));
 }
@@ -215,7 +227,7 @@ function ticket_message(array $r): string
 {
     $line = "Hello {$r['full_name']},\n\nYour booking is CONFIRMED. Here is your ticket for {$r['title']}.\n\n";
     return $line . 'Date: ' . fmt_date($r['start_at'], 'l, j F Y') . ' at ' . fmt_time($r['start_at']) . "\nVenue: {$r['venue']}, {$r['location']}\n" .
-        'Reference: ' . $r['reference'] . "\n" . ($r['package'] ? "Table package: {$r['package']}\n" : '') . "Admits: {$r['guests']} guest(s)\n\n" .
+        'Reference: ' . $r['reference'] . "\n" . ($r['package'] ? "Package: {$r['package']}\n" : '') . (($pl = reservation_perks((int)$r['event_id'], $r['package'])) ? 'Includes: ' . implode(' + ', $pl) . "\n" : '') . "Admits: {$r['guests']} guest(s)\n\n" .
         'Open your ticket (show the QR code at the entrance): ' . ticket_url((int)$r['id']) . "\n\n" .
         "Lost this message? Track or download your ticket any time with reference {$r['reference']}: " . abs_url('track') . "\n";
 }

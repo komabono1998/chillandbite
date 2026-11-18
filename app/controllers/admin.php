@@ -124,8 +124,8 @@ function admin_event_save(): void
     // Table packages: one per line as "Name | price"
     q('DELETE FROM event_packages WHERE event_id = ?', [$id]);
     rates_ensure_cols();
-    foreach (rates_parse_packages((string)($_POST['packages'] ?? '')) as $i => [$pn, $pp, $ad])
-        q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, sort) VALUES (?,?,?,?,?)', [$id, $pn, $pp, $ad, $i]);
+    foreach (rates_parse_packages((string)($_POST['packages'] ?? '')) as $i => [$pn, $pp, $ad, $pk])
+        q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, perks, sort) VALUES (?,?,?,?,?,?)', [$id, $pn, $pp, $ad, $pk, $i]);
     events_ensure_countdown_cols();
     $cdAt = dt_in($_POST['countdown_at'] ?? '');
     q('UPDATE events SET countdown_at = ?, countdown_label = ? WHERE id = ?', [$cdAt, $cdAt ? (post_str('countdown_label', 80) ?: null) : null, $id]);

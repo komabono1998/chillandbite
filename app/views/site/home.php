@@ -34,6 +34,24 @@
   </div>
 </section>
 
+<?php $homePk = $next ? event_packages((int)$next['id']) : []; if ($homePk): ?>
+<section class="section section-dark rates-section" id="packages">
+  <div class="wrap rates-grid">
+    <a class="rates-flyer" href="<?= h(cti('home.packages.photo')) ?>" data-lightbox><img src="<?= h(cti('home.packages.photo')) ?>" alt="<?= h($next['title']) ?>: packages and rates" loading="lazy" decoding="async"></a>
+    <div class="rates-list">
+      <span class="eyebrow gold"><?= cth('home.packages.eyebrow') ?></span><h2><?= cth('home.packages.heading') ?></h2>
+      <p class="lead"><?= cth('home.packages.intro') ?></p>
+      <ul class="rates-pk"><?php foreach ($homePk as $p): $ad = (int)($p['admits'] ?? 0); ?>
+        <li><div class="rp-top"><b><?= h($p['name']) ?></b><span class="rp-price"><?= h(money($p['price'])) ?></span></div>
+          <small><?= $ad === 1 ? 'per person' : ($ad > 1 ? 'table of ' . $ad : 'per table') ?></small>
+          <?php if (($pl = pk_perk_list($p['perks'] ?? ''))): ?><p><?= h(implode(' + ', $pl)) ?></p><?php endif; ?>
+          <a class="btn btn-primary btn-sm" href="<?= h(url('events/' . $next['slug'] . '/reserve') . '?type=table&package=' . rawurlencode($p['name'])) ?>"><?= cth('home.packages.button') ?></a></li>
+      <?php endforeach; ?></ul>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
 <?php photo_strip(strip_nums(['crowd', 'people', 'stage'], 11, 16), 'Moments from our events', 'strip-hero'); ?>
 
 <section class="section">

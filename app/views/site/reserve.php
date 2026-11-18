@@ -8,7 +8,7 @@ $cards = [];
 $tableOpt = null; foreach ($options as $o) if ($o['type'] === 'table') $tableOpt = $o;
 if ($tableOpt && !empty($packages)) {
     foreach ($packages as $p) $cards[] = ['v' => 'pkg:' . $p['name'], 'title' => $p['name'], 'price' => (int)$p['price'], 'flat' => 1, 'min' => (int)$tableOpt['min_guests'], 'max' => (int)$tableOpt['max_guests'],
-        'sub' => 'per table' . ((int)($p['admits'] ?? 0) > 0 ? ' · admits ' . (int)$p['admits'] . ' people' : ''), 'icon' => '🪑'];
+        'sub' => ((int)($p['admits'] ?? 0) === 1 ? 'per person' : 'per table') . ((int)($p['admits'] ?? 0) > 1 ? ' · admits ' . (int)$p['admits'] . ' people' : ''), 'perks' => pk_perk_list($p['perks'] ?? ''), 'icon' => (int)($p['admits'] ?? 0) === 1 ? '🎟️' : '🪑'];
 }
 foreach ($options as $o) {
     if ($o['type'] === 'table' && !empty($packages)) continue;
@@ -50,7 +50,8 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
       <?php foreach ($cards as $c): ?>
         <label class="rs-pick"><input type="radio" name="choice" value="<?= h($c['v']) ?>" data-price="<?= $c['price'] ?>" data-flat="<?= $c['flat'] ?>" data-min="<?= $c['min'] ?>" data-max="<?= $c['max'] ?>" data-corp="<?= $c['v'] === 'type:corporate' ? 1 : 0 ?>" <?= $sel === $c['v'] ? 'checked' : '' ?> required>
           <span class="rs-pick-ic" aria-hidden="true"><?= $c['icon'] ?></span><span class="rs-pick-name"><?= h($c['title']) ?></span>
-          <b><?= $c['price'] > 0 ? h(money($c['price'])) : 'Free' ?></b><small><?= h($c['sub']) ?></small></label>
+          <b><?= $c['price'] > 0 ? h(money($c['price'])) : 'Free' ?></b><small><?= h($c['sub']) ?></small>
+          <?php if (!empty($c['perks'])): ?><ul class="rs-perks"><?php foreach ($c['perks'] as $pk): ?><li><?= h($pk) ?></li><?php endforeach; ?></ul><?php endif; ?></label>
       <?php endforeach; ?>
     </div>
 

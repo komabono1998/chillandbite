@@ -77,7 +77,7 @@ function event_countdown(?array $e, ?DateTimeImmutable $fallback = null): array
 /** The official 29 November 2026 edition from the flyer: created once (a setting remembers it, so deleting the event in the admin sticks), with both flyers added to the Gallery for download. */
 function events_seed_nov29(): void
 {
-    if (setting('seed_nov29', '') === '1') return;
+    if (setting('seed_nov29', '') === '1') { events_seed_nov29_packages(); return; }
     try {
         if (!(int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'events'")) return;
         $existing = val("SELECT id FROM events WHERE DATE(start_at) = '2026-11-29' ORDER BY id LIMIT 1");
@@ -86,9 +86,9 @@ function events_seed_nov29(): void
             q("INSERT INTO events (category_id, title, slug, short_desc, description, poster, venue, location, start_at, status, booking_mode, featured)
                VALUES (?,?,?,?,?,?,?,?,?,'published','instant',1)", [
                 $cat ?: null, 'Chill & Bite MEATINGS: Oldskool RnB - Soul Sing Along Edition', unique_slug('events', 'chill-bite-meatings-oldskool-rnb-soul-sing-along-edition'),
-                'Sunday 29th November at Lavington Park from 12 PM. Oldskool RnB and soul sing along. Dress code: denim jeans on white. Meat, music, fun and networking.',
-                "Owakabi & The Geng present Chill & Bite MEATINGS, the Oldskool RnB - Soul Sing Along Edition.\n\nSunday 29th November 2026 at Lavington Park. Doors open at midday sharp (12 PM).\n\nMeat, music, fun and networking. Dress code: denim jeans on white.\n\nHosted by MC Kash Owakabi, with Red Carpet Shakira. Music by DJ Big Val, DJ Joelfresh, DJ Drey and DJ Shad.\n\nReservations: www.chillandbitemeating.com or call 0392554488.",
-                'img/flyer-nov-2026.jpg', 'Lavington Park', 'Gulu City, Uganda', '2026-11-29 12:00:00']);
+                'Sunday 29th November at Lavington Park, Lira, from 12 PM. Oldskool RnB and soul sing along. Dress code: denim jeans on white. Meat, music, fun and networking.',
+                "Owakabi & The Geng present Chill & Bite MEATINGS, the Oldskool RnB - Soul Sing Along Edition.\n\nSunday 29th November 2026 at Lavington Park, Lira. Doors open at midday sharp (12 PM).\n\nMeat, music, fun and networking. Dress code: denim jeans on white.\n\nHosted by MC Kash Owakabi, with Red Carpet Shakira. Music by DJ Big Val, DJ Joelfresh, DJ Drey and DJ Shad.\n\nReservations: www.chillandbitemeating.com or call 0392554488.",
+                'img/flyer-nov-2026.jpg', 'Lavington Park', 'Lira, Uganda', '2026-11-29 12:00:00']);
         } else {
             q("UPDATE events SET poster = 'img/flyer-nov-2026.jpg' WHERE id = ? AND (poster IS NULL OR poster = '')", [$existing]);
         }
@@ -99,6 +99,36 @@ function events_seed_nov29(): void
             if (!val('SELECT id FROM gallery_images WHERE file = ?', [$file])) q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $file, $cap]);
         save_setting('seed_nov29', '1');
     } catch (Throwable $e) { error_log('events_seed_nov29: ' . $e->getMessage()); }
+    events_seed_nov29_packages();
+}
+/** Venue city and the reservation packages from the rates flyer (General, Silver, Silver Pro, Gold, Gold Pro, Platinum, Platinum Pro), created once. Admin edits (Events or Ticket rates) are never overwritten. */
+function events_seed_nov29_packages(): void
+{
+    if (setting('seed_nov29_pkgs', '') === '1') return;
+    try {
+        $id = (int)val("SELECT id FROM events WHERE DATE(start_at) = '2026-11-29' ORDER BY id LIMIT 1");
+        if (!$id) return;
+        rates_ensure_cols();
+        q("UPDATE events SET location = 'Lira, Uganda', short_desc = REPLACE(short_desc, 'Lavington Park from', 'Lavington Park, Lira, from'), description = REPLACE(description, 'at Lavington Park.', 'at Lavington Park, Lira.') WHERE id = ? AND location = 'Gulu City, Uganda'", [$id]);
+        if (!(int)val('SELECT COUNT(*) FROM event_packages WHERE event_id = ?', [$id])) {
+            $pk = [
+                ['General Package', 20000, 1, 'A stick of roasted meat + a bottle of beer'],
+                ['Silver Package', 200000, 4, 'Johnnie Walker Red Label 750ml + 4 bottles of water'],
+                ['Silver Pro Package', 300000, 4, 'Johnnie Walker Black Label 750ml + whole chicken + 10 bottles of water'],
+                ['Gold Package', 400000, 6, 'Johnnie Walker Double Black 1 litre + whole chicken + 6 bottles of water'],
+                ['Gold Pro Package', 500000, 6, 'Johnnie Walker Gold Reserve 750ml + whole chicken + 6 bottles of water'],
+                ['Platinum Package', 1000000, 8, 'Johnnie Walker Aged 18 750ml + 2 full roasted chickens + 8 bottles of water'],
+                ['Platinum Pro Package', 1500000, 10, 'Johnnie Walker Double Black 1 litre + full roasted goat + 10 bottles of water'],
+            ];
+            foreach ($pk as $i => [$n, $price, $ad, $perks]) q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, perks, sort) VALUES (?,?,?,?,?,?)', [$id, $n, $price, $ad, $perks, $i]);
+            if (!val("SELECT id FROM event_reservation_options WHERE event_id = ? AND type = 'table'", [$id]))
+                q("INSERT INTO event_reservation_options (event_id, type, price_per_guest, min_guests, max_guests) VALUES (?, 'table', 0, 1, 15)", [$id]);
+        }
+        $album = (int)val("SELECT id FROM gallery_albums WHERE slug = 'event-flyers'");
+        if ($album) foreach (['img/flyer-nov-2026-rates.jpg' => 'Packages and rates flyer: Sunday 29th November (post size)', 'img/flyer-nov-2026-rates-story.jpg' => 'Packages and rates flyer: Sunday 29th November (story size)'] as $file => $cap)
+            if (!val('SELECT id FROM gallery_images WHERE file = ?', [$file])) q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $file, $cap]);
+        save_setting('seed_nov29_pkgs', '1');
+    } catch (Throwable $e) { error_log('events_seed_nov29_packages: ' . $e->getMessage()); }
 }
 
 /* ================= Pages ================= */

@@ -13,6 +13,8 @@ function rates_ensure_cols(): void
     try {
         if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'event_packages' AND COLUMN_NAME = 'admits'"))
             db()->exec('ALTER TABLE event_packages ADD COLUMN admits TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER price');
+        if (!(int)val("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'event_packages' AND COLUMN_NAME = 'perks'"))
+            db()->exec("ALTER TABLE event_packages ADD COLUMN perks VARCHAR(400) NOT NULL DEFAULT '' AFTER admits");
     } catch (PDOException $e) { error_log('rates_ensure_cols: ' . $e->getMessage()); }
 }
 /** Package lines "Name | price | people it admits" (the last part is optional) as a list of [name, price, admits]. */
@@ -21,15 +23,16 @@ function rates_parse_packages(string $text): array
     $out = [];
     foreach (preg_split('/\R/', $text) as $line) {
         if (!str_contains($line, '|')) continue;
-        $p = array_map('trim', explode('|', $line, 3));
+        $p = array_map('trim', explode('|', $line, 4));
         $n = mb_substr($p[0], 0, 80); $price = (int)preg_replace('/\D+/', '', $p[1] ?? '0'); $ad = max(0, min(50, (int)preg_replace('/\D+/', '', $p[2] ?? '0')));
-        if ($n !== '') $out[$n] = [$n, $price, $ad];
+        $perks = mb_substr(str_replace('|', '/', $p[3] ?? ''), 0, 400);
+        if ($n !== '') $out[$n] = [$n, $price, $ad, $perks];
     }
     return array_values($out);
 }
 function rates_packages_text(array $rows): string
 {
-    return implode("\n", array_map(fn($p) => $p['name'] . ' | ' . (int)$p['price'] . ((int)($p['admits'] ?? 0) > 0 ? ' | ' . (int)$p['admits'] : ''), $rows));
+    return implode("\n", array_map(fn($p) => $p['name'] . ' | ' . (int)$p['price'] . ((int)($p['admits'] ?? 0) > 0 || trim((string)($p['perks'] ?? '')) !== '' ? ' | ' . (int)($p['admits'] ?? 0) : '') . (trim((string)($p['perks'] ?? '')) !== '' ? ' | ' . trim($p['perks']) : ''), $rows));
 }
 /** Saved default rates for new events: ['opt' => [type => [on, price, min, max]], 'packages' => "Name | price" lines] or null when none is saved. */
 function rates_template(): ?array
@@ -61,7 +64,8 @@ function rates_from_post(array $post): array
         foreach ($post['pk']['n'] as $i => $n) {
             $n = mb_substr(trim((string)$n), 0, 80); if ($n === '') continue;
             $p = (int)preg_replace('/\D+/', '', (string)($post['pk']['p'][$i] ?? '0')); $a = max(0, min(50, (int)preg_replace('/\D+/', '', (string)($post['pk']['a'][$i] ?? '0'))));
-            $lines[] = str_replace('|', '/', $n) . ' | ' . $p . ($a > 0 ? ' | ' . $a : '');
+            $pk = trim(str_replace(['|', "\r", "\n"], ['/', ' ', ' '], (string)($post['pk']['k'][$i] ?? '')));
+            $lines[] = str_replace('|', '/', $n) . ' | ' . $p . ($a > 0 || $pk !== '' ? ' | ' . $a : '') . ($pk !== '' ? ' | ' . $pk : '');
         }
         $packages = implode("\n", $lines);
     }
@@ -75,8 +79,8 @@ function rates_apply(int $eventId, array $r): void
         q('INSERT INTO event_reservation_options (event_id, type, price_per_guest, min_guests, max_guests) VALUES (?,?,?,?,?)', [$eventId, $t, (int)$o['price'], (int)$o['min'], (int)$o['max']]);
     rates_ensure_cols();
     q('DELETE FROM event_packages WHERE event_id = ?', [$eventId]);
-    foreach (rates_parse_packages((string)$r['packages']) as $i => [$pn, $pp, $ad])
-        q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, sort) VALUES (?,?,?,?,?)', [$eventId, $pn, $pp, $ad, $i]);
+    foreach (rates_parse_packages((string)$r['packages']) as $i => [$pn, $pp, $ad, $pk])
+        q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, perks, sort) VALUES (?,?,?,?,?,?)', [$eventId, $pn, $pp, $ad, $pk, $i]);
 }
 /** One line describing an event's prices, for the collapsed card. */
 function rates_summary(array $r): string
@@ -142,7 +146,7 @@ function admin_rates_copy(array $a): void
 function rates_packages_clean(string $text): array
 {
     $out = [];
-    foreach (rates_parse_packages($text) as [$n, $p, $ad]) $out[$n] = [$p, $ad];
+    foreach (rates_parse_packages($text) as [$n, $p, $ad, $pk]) $out[$n] = [$p, $ad, $pk];
     return $out;
 }
 function admin_rates_apply_all(): void
@@ -151,13 +155,13 @@ function admin_rates_apply_all(): void
     $pk = rates_packages_clean((string)($_POST['packages'] ?? ''));
     if (!$pk) { flash('Enter at least one package, one per line, like: Silver | 200000', 'err'); redirect('admin/rates'); }
     rates_ensure_cols();
-    $text = implode("\n", array_map(fn($n, $v) => $n . ' | ' . $v[0] . ($v[1] ? ' | ' . $v[1] : ''), array_keys($pk), $pk));
+    $text = implode("\n", array_map(fn($n, $v) => $n . ' | ' . $v[0] . ($v[1] || $v[2] !== '' ? ' | ' . $v[1] : '') . ($v[2] !== '' ? ' | ' . $v[2] : ''), array_keys($pk), $pk));
     $ids = array_column(rows("SELECT id FROM events WHERE start_at >= CURDATE() AND status <> 'cancelled'"), 'id');
     foreach ($ids as $id) {
         $id = (int)$id;
         q('DELETE FROM event_packages WHERE event_id = ?', [$id]);
         $sort = 0;
-        foreach ($pk as $n => $v) q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, sort) VALUES (?,?,?,?,?)', [$id, (string)$n, $v[0], $v[1], $sort++]);
+        foreach ($pk as $n => $v) q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, perks, sort) VALUES (?,?,?,?,?,?)', [$id, (string)$n, $v[0], $v[1], $v[2], $sort++]);
         // packages only show when the Table Reservation type is on
         if (!val("SELECT id FROM event_reservation_options WHERE event_id = ? AND type = 'table'", [$id]))
             q("INSERT INTO event_reservation_options (event_id, type, price_per_guest, min_guests, max_guests) VALUES (?, 'table', 0, 2, 15)", [$id]);

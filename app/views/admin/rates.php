@@ -3,15 +3,16 @@ if (!function_exists('rates_fields')) {
     /** The editable rates: a grid of table packages (type, price, people admitted), and the other ticket types tucked underneath. */
     function rates_fields(array $r): void {
         $rows = rates_parse_packages($r['packages']);
-        if (!$rows) $rows = [['', '', 0]];
+        if (!$rows) $rows = [['', '', 0, '']];
         $tr = function (array $row): string {
             return '<tr><td><input type="text" name="pk[n][]" value="' . h($row[0]) . '" maxlength="80" placeholder="e.g. Silver" aria-label="Table package type"></td>'
                 . '<td><input type="text" inputmode="numeric" name="pk[p][]" value="' . h($row[1] === '' ? '' : (string)$row[1]) . '" placeholder="e.g. 200000" aria-label="Price in UGX"></td>'
                 . '<td><input type="number" min="0" max="50" name="pk[a][]" value="' . ((int)$row[2] > 0 ? (int)$row[2] : '') . '" placeholder="e.g. 4" aria-label="People it admits"></td>'
+                . '<td><input type="text" name="pk[k][]" value="' . h((string)($row[3] ?? '')) . '" maxlength="400" placeholder="e.g. Red Label 750ml + 4 bottles of water" aria-label="What it includes"></td>'
                 . '<td style="text-align:right"><button type="button" class="btn btn-ghost btn-sm pk-del" title="Remove this package" aria-label="Remove this package">✕</button></td></tr>';
         }; ?>
       <div class="pk-wrap">
-        <div class="tbl-wrap"><table class="tbl pk-tbl"><thead><tr><th>Table package type</th><th>Price (UGX)</th><th>Admission (people it admits)</th><th></th></tr></thead>
+        <div class="tbl-wrap"><table class="tbl pk-tbl"><thead><tr><th>Table package type</th><th>Price (UGX)</th><th>Admission (people it admits)</th><th>What it includes (shown on the ticket)</th><th></th></tr></thead>
           <tbody><?php foreach ($rows as $row) echo $tr($row); ?></tbody></table></div>
         <button type="button" class="btn btn-ghost btn-sm pk-add" style="margin-top:8px">＋ Add a table package</button>
         <p class="small muted" style="margin:8px 0 0">Guests choose a package on the reserve page. One table admits the number of people you enter. The Table Reservation option is switched on for you while there is at least one package.</p>

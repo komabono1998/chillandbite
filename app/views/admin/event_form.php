@@ -33,7 +33,7 @@ $dtv = fn($k) => isset($old[$k]) ? $old[$k] : dt_out($e[$k] ?? null);
     <td><input type="number" min="1" name="opt[<?= $t ?>][max]" value="<?= (int)($o['max_guests'] ?? $old['opt'][$t]['max'] ?? ($t === 'individual' ? 1 : ($t === 'couple' ? 2 : 20))) ?>"></td></tr>
   <?php endforeach; ?></table></div>
   <h2>Table packages</h2>
-  <?php field('packages', 'One package per line as: Name | price in UGX', ['type' => 'textarea', 'rows' => 6, 'value' => $old['packages'] ?? $pkgText,
+  <?php field('packages', 'One package per line as: Name | price in UGX | people it admits | what it includes (for example: Silver | 200000 | 4 | Johnnie Walker Red Label 750ml + 4 bottles of water)', ['type' => 'textarea', 'rows' => 6, 'value' => $old['packages'] ?? $pkgText,
       'help' => 'Shown when guests choose "Table Reservation" (enable it above). Price is per table, not per guest. Example: Silver | 200000']); ?>
   <p><button class="btn btn-primary">Save event</button> <?php if ($e): ?><a class="btn btn-ghost" href="<?= url('events/' . h($e['slug'])) ?>" target="_blank">View public page</a><?php endif; ?></p>
 </form>

@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS event_packages (
   name VARCHAR(80) NOT NULL,
   price DECIMAL(12,0) NOT NULL DEFAULT 0,
   admits TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'people admitted per table, 0 = not set',
+  perks VARCHAR(400) NOT NULL DEFAULT '' COMMENT 'what the package includes',
   sort SMALLINT NOT NULL DEFAULT 0,
   UNIQUE KEY uq_event_pkg (event_id, name),
   CONSTRAINT fk_pkg_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE

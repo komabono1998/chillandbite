@@ -96,7 +96,7 @@ $steps = [
         <div><dt>Gates open</dt><dd><?= fmt_time($r['start_at']) ?></dd></div>
         <div><dt>Name</dt><dd><?= h($r['full_name']) ?></dd></div>
         <div><dt>Reservation</dt><dd><?= h(RES_TYPES[$r['type']]) ?></dd></div>
-        <?php if ($r['package']): ?><div><dt>Table package</dt><dd><?= h($r['package']) ?></dd></div><?php endif; ?>
+        <?php if ($r['package']): ?><div><dt>Package</dt><dd><?= h($r['package']) ?><?php if (($pl = reservation_perks((int)$r['event_id'], $r['package']))): ?><br><small class="muted">Includes: <?= h(implode(' + ', $pl)) ?></small><?php endif; ?></dd></div><?php endif; ?>
         <div><dt>Guests</dt><dd><?= (int)$r['guests'] ?></dd></div>
         <?php if ($dress): ?><div><dt>Dress code</dt><dd><?= h($dress) ?></dd></div><?php endif; ?>
       </dl>

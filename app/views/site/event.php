@@ -54,7 +54,8 @@
       <p class="muted">Reserve a table for your group. Prices are per table.</p>
       <div class="pkg-grid">
         <?php foreach ($packages as $p): ?>
-          <div class="pkg-card"><span class="pkg-name"><?= h($p['name']) ?></span><b><?= money($p['price']) ?></b><span class="pkg-unit">per table<?= (int)($p['admits'] ?? 0) > 0 ? ' · admits ' . (int)$p['admits'] . ' people' : '' ?></span>
+          <div class="pkg-card"><span class="pkg-name"><?= h($p['name']) ?></span><b><?= money($p['price']) ?></b><span class="pkg-unit"><?= (int)($p['admits'] ?? 0) === 1 ? 'per person' : 'per table' ?><?= (int)($p['admits'] ?? 0) > 1 ? ' · admits ' . (int)$p['admits'] . ' people' : '' ?></span>
+            <?php if (($pl = pk_perk_list($p['perks'] ?? ''))): ?><ul class="pkg-perks"><?php foreach ($pl as $x): ?><li><?= h($x) ?></li><?php endforeach; ?></ul><?php endif; ?>
             <?php if ($open): ?><a class="btn btn-primary btn-sm" href="<?= h($reserveHref) ?>?type=table&amp;package=<?= rawurlencode($p['name']) ?>">Reserve</a><?php endif; ?></div>
         <?php endforeach; ?>
       </div>
