@@ -23,10 +23,11 @@
       </div>
       <p class="live-note" id="live-note" hidden>Happening now! Come and join us.</p>
       <dl>
-        <dt>Event</dt><dd><?= cth('home.panel.event') ?></dd>
-        <dt>Venue</dt><dd><?= cth('home.panel.venue') ?></dd>
-        <dt>Schedule</dt><dd><?= cth('home.panel.schedule') ?></dd>
-        <dt>Starting time</dt><dd><?= cth('home.panel.time') ?></dd>
+        <?php $ev = !empty($next['title']); ?>
+        <dt>Event</dt><dd><?= $ev ? h($next['title']) : cth('home.panel.event') ?></dd>
+        <dt>Venue</dt><dd><?= $ev ? h($next['venue'] . ', ' . $next['location']) : cth('home.panel.venue') ?></dd>
+        <dt>Schedule</dt><dd><?= $ev && $next_date->format('j') > 7 ? h($next_date->format('l, j F Y') . ' (special edition)') : cth('home.panel.schedule') ?></dd>
+        <dt>Starting time</dt><dd><?= $ev ? h($next_date->format('g:i A')) : cth('home.panel.time') ?></dd>
         <dt>Host</dt><dd><?= cth('home.panel.host') ?></dd>
       </dl>
     </aside>

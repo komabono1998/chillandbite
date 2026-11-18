@@ -74,9 +74,37 @@ function event_countdown(?array $e, ?DateTimeImmutable $fallback = null): array
     return [$start, null, false];
 }
 
+/** The official 29 November 2026 edition from the flyer: created once (a setting remembers it, so deleting the event in the admin sticks), with both flyers added to the Gallery for download. */
+function events_seed_nov29(): void
+{
+    if (setting('seed_nov29', '') === '1') return;
+    try {
+        if (!(int)val("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'events'")) return;
+        $existing = val("SELECT id FROM events WHERE DATE(start_at) = '2026-11-29' ORDER BY id LIMIT 1");
+        if (!$existing) {
+            $cat = val("SELECT id FROM event_categories WHERE slug = 'chill-bite-meatings'");
+            q("INSERT INTO events (category_id, title, slug, short_desc, description, poster, venue, location, start_at, status, booking_mode, featured)
+               VALUES (?,?,?,?,?,?,?,?,?,'published','instant',1)", [
+                $cat ?: null, 'Chill & Bite MEATINGS: Oldskool RnB - Soul Sing Along Edition', unique_slug('events', 'chill-bite-meatings-oldskool-rnb-soul-sing-along-edition'),
+                'Sunday 29th November at Lavington Park from 12 PM. Oldskool RnB and soul sing along. Dress code: denim jeans on white. Meat, music, fun and networking.',
+                "Owakabi & The Geng present Chill & Bite MEATINGS, the Oldskool RnB - Soul Sing Along Edition.\n\nSunday 29th November 2026 at Lavington Park. Doors open at midday sharp (12 PM).\n\nMeat, music, fun and networking. Dress code: denim jeans on white.\n\nHosted by MC Kash Owakabi, with Red Carpet Shakira. Music by DJ Big Val, DJ Joelfresh, DJ Drey and DJ Shad.\n\nReservations: www.chillandbitemeating.com or call 0392554488.",
+                'img/flyer-nov-2026.jpg', 'Lavington Park', 'Gulu City, Uganda', '2026-11-29 12:00:00']);
+        } else {
+            q("UPDATE events SET poster = 'img/flyer-nov-2026.jpg' WHERE id = ? AND (poster IS NULL OR poster = '')", [$existing]);
+        }
+        gallery_ensure_cols();
+        $album = val("SELECT id FROM gallery_albums WHERE slug = 'event-flyers'");
+        if (!$album) { q("INSERT INTO gallery_albums (name, slug) VALUES ('Event flyers', 'event-flyers')"); $album = (int)val('SELECT LAST_INSERT_ID()'); }
+        foreach (['img/flyer-nov-2026.jpg' => 'Official flyer: Sunday 29th November (post size)', 'img/flyer-nov-2026-story.jpg' => 'Official flyer: Sunday 29th November (story size)'] as $file => $cap)
+            if (!val('SELECT id FROM gallery_images WHERE file = ?', [$file])) q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $file, $cap]);
+        save_setting('seed_nov29', '1');
+    } catch (Throwable $e) { error_log('events_seed_nov29: ' . $e->getMessage()); }
+}
+
 /* ================= Pages ================= */
 function page_home(): void
 {
+    events_seed_nov29();
     // Hero/featured card is the next monthly Chill & Bite; other upcoming events (any category) follow it.
     $events = upcoming_events(8);
     $monthly = upcoming_events(1, 'chill-bite-meatings')[0] ?? ($events[0] ?? null);
@@ -86,7 +114,7 @@ function page_home(): void
     render('site/home', [
         'title' => 'Chill & Bite MEATINGS | Monthly Event in Gulu by MC Kash Owakabi',
         'desc' => 'Chill & Bite MEATINGS is the Gulu City monthly food, music, comedy and networking event, hosted by MC Kash Owakabi and organized by Owakabi & The Geng. Reserve your table today.',
-        'next' => $next,
+        'next' => $next, 'og_image' => $next['poster'] ?? null,
         'next_date' => $next ? new DateTimeImmutable($next['start_at']) : next_first_sunday(),
         'cd' => event_countdown($next),
         'others' => array_slice($events, 1),
