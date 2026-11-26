@@ -37,7 +37,7 @@ function admin_collections(): void
     $rep = collections_report($from, $to, $event);
     $isAdmin = can('withdraw');
     admin_view('collections', ['title' => 'Collections', 'r' => $rep, 'range' => $range, 'event' => $event, 'all_events' => rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 100'),
-        'wgap' => wallet_gap(), 'wallet' => $isAdmin || can('collections') ? (daraza_enabled() ? daraza_wallet(isset($_GET['refresh'])) : null) : null, 'can_withdraw' => $isAdmin && daraza_enabled(), 'daraza_on' => daraza_enabled()]);
+        'wgap' => wallet_gap(), 'wcand' => wallet_candidates(), 'wallet' => $isAdmin || can('collections') ? (daraza_enabled() ? daraza_wallet(isset($_GET['refresh'])) : null) : null, 'can_withdraw' => $isAdmin && daraza_enabled(), 'daraza_on' => daraza_enabled()]);
 }
 /** Fee preview for the withdraw form. */
 function admin_collections_fees(): void
@@ -61,6 +61,33 @@ function wallet_gap(): ?array
     try { $out = (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status IN ('success','pending','unconfirmed')"); } catch (Throwable $e) { $out = 0; }
     $bal = (int)$w['balance'];
     return ['balance' => $bal, 'recorded' => $in, 'withdrawn' => $out, 'gap' => max(0, $bal - ($in - $out))];
+}
+/** Online payment attempts that may be the money sitting in the wallet: never answered or marked failed, newest first. */
+function wallet_candidates(int $limit = 40): array
+{
+    try {
+        return rows("SELECT a.id, a.amount, a.phone, a.status, a.message, a.created_at, a.payer_name, r.reference, r.full_name, r.package, e.title ev_title, t.title tab_title
+                     FROM pay_attempts a LEFT JOIN reservations r ON r.id = a.reservation_id LEFT JOIN events e ON e.id = r.event_id LEFT JOIN payment_tabs t ON t.id = a.tab_id
+                     WHERE a.direction = 'collect' AND a.status IN ('pending','unconfirmed','failed') AND a.created_at >= (NOW() - INTERVAL 90 DAY)
+                     ORDER BY (a.status = 'failed'), a.id DESC LIMIT " . (int)$limit);
+    } catch (Throwable $e) { return []; }
+}
+/** The wallet received this attempt's money: file it against the booking or payment tab it was made for. */
+function admin_pay_match(array $a): void
+{
+    require_can('payments');
+    $back = ($_POST['back'] ?? '') === 'dash' ? 'admin' : 'admin/collections';
+    $fail = function (string $m) use ($back): never { flash($m, 'err'); redirect($back); };
+    $at = row("SELECT * FROM pay_attempts WHERE id = ? AND direction = 'collect'", [(int)$a['id']]) ?? not_found();
+    if (!in_array($at['status'], ['pending', 'unconfirmed', 'failed'], true)) $fail('That payment is already recorded.');
+    $g = wallet_gap();
+    if (!$g) $fail('The wallet balance could not be read, so nothing was recorded.');
+    if ((int)$at['amount'] > $g['gap']) $fail('The wallet only holds ' . money($g['gap']) . ' that is not recorded yet, which is less than this payment (' . money((int)$at['amount']) . '). Refresh the balance, or choose another payment.');
+    if ($at['status'] !== 'unconfirmed') q("UPDATE pay_attempts SET status = 'unconfirmed' WHERE id = ?", [(int)$at['id']]);
+    daraza_settle((int)$at['id'], 'success', 'Matched to money in the Daraza wallet by ' . (current_user()['name'] ?? 'staff'), null, (int)current_user()['id']);
+    audit('pay.wallet_match', '#' . $at['id'] . ' ' . money((int)$at['amount']) . ' ' . $at['phone']);
+    flash('Recorded ' . money((int)$at['amount']) . ' against the booking or payment page it was made for.');
+    redirect($back);
 }
 /** Record money that is already in the wallet, with the payer's name and phone. */
 function admin_record_wallet(): void

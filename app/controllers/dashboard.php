@@ -200,7 +200,7 @@ function admin_dashboard(): void
             $d['outstanding'] = (int)val("SELECT COALESCE(SUM(GREATEST(r.amount_due - COALESCE((SELECT SUM(amount) FROM payments p WHERE p.reservation_id=r.id),0),0)),0) FROM reservations r WHERE r.status IN ('pending','confirmed')");
             $d['ev_totals'] = array_slice(dash_event_totals(), 0, 6);
             $d['pay_health'] = dash_pay_health();
-            $d['wgap'] = wallet_gap();
+            $d['wgap'] = wallet_gap(); $d['wcand'] = $d['wgap'] && $d['wgap']['gap'] > 0 ? wallet_candidates() : [];
             try { $d['att_attention'] = (int)val("SELECT COUNT(*) FROM pay_attempts WHERE status = 'unconfirmed' AND direction = 'collect'"); $d['att_failed_today'] = (int)val("SELECT COUNT(*) FROM pay_attempts WHERE status = 'failed' AND created_at >= CURDATE()"); }
             catch (PDOException $e) { $d['att_attention'] = $d['att_failed_today'] = 0; }
         }
