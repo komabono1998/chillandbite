@@ -6,9 +6,9 @@ function collections_report(string $from, string $to, int $event = 0, int $limit
 {
     pay_ensure_schema();
     $w = 'p.created_at >= ? AND p.created_at < DATE_ADD(?, INTERVAL 1 DAY)'; $p = [$from, $to];
-    if ($event) { $w .= ' AND r.event_id = ?'; $p[] = $event; }
-    $j = 'FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id LEFT JOIN events e ON e.id = r.event_id LEFT JOIN payment_tabs t ON t.id = p.tab_id';
-    $jEv = 'FROM payments p JOIN reservations r ON r.id = p.reservation_id JOIN events e ON e.id = r.event_id';
+    if ($event) { $w .= ' AND COALESCE(r.event_id, p.event_id) = ?'; $p[] = $event; }
+    $j = 'FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id LEFT JOIN events e ON e.id = COALESCE(r.event_id, p.event_id) LEFT JOIN payment_tabs t ON t.id = p.tab_id';
+    $jEv = 'FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id JOIN events e ON e.id = COALESCE(r.event_id, p.event_id)';
     $ch = 'COALESCE(p.channel, p.method)';
     $by = [];
     foreach (rows("SELECT $ch ch, COUNT(*) n, SUM(p.amount) amt $j WHERE $w GROUP BY $ch", $p) as $x) $by[$x['ch']] = ['n' => (int)$x['n'], 'amt' => (int)$x['amt']];
@@ -79,9 +79,12 @@ function admin_record_wallet(): void
     if ($amt > $g['gap']) $fail('That is more than the unrecorded wallet money (' . money($g['gap']) . '). Nothing was recorded.');
     $rid = null; $ref = strtoupper(trim((string)($_POST['reference'] ?? '')));
     if ($ref !== '') { $rid = val('SELECT id FROM reservations WHERE reference = ?', [$ref]); if (!$rid) $fail('No booking has the reference ' . $ref . '.'); $rid = (int)$rid; }
+    $eid = (int)($_POST['event_id'] ?? 0);
+    if ($rid) $eid = (int)val('SELECT event_id FROM reservations WHERE id = ?', [$rid]);
+    if (!$eid || !val('SELECT id FROM events WHERE id = ?', [$eid])) $fail('Choose the event this payment is for.');
     $note = 'Received in Daraza wallet, recorded by ' . current_user()['name'] . ': ' . $name . ', ' . $phone;
-    q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by, payer_name, payer_phone) VALUES (?,?,?,?,?,?,?,?)',
-        [$rid, $amt, 'mobile_money', 'daraza_' . daraza_network($phone), mb_substr($note, 0, 255), current_user()['id'], $name, $phone]);
+    q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by, payer_name, payer_phone, event_id) VALUES (?,?,?,?,?,?,?,?,?)',
+        [$rid, $amt, 'mobile_money', 'daraza_' . daraza_network($phone), mb_substr($note, 0, 255), current_user()['id'], $name, $phone, $eid]);
     $msg = 'Recorded ' . money($amt) . ' from ' . $name . '.';
     if ($rid) {
         $r = row('SELECT status, amount_due FROM reservations WHERE id = ?', [$rid]);

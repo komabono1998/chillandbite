@@ -127,6 +127,7 @@ function pay_ensure_schema(): void
     if (!$has('payments', 'channel')) { db()->exec('ALTER TABLE payments ADD COLUMN channel VARCHAR(20) NULL AFTER method'); pay_backfill_channels(); }
     if (!$has('payments', 'tab_id')) db()->exec('ALTER TABLE payments ADD COLUMN tab_id INT UNSIGNED NULL AFTER reservation_id, ADD KEY idx_pay_tab (tab_id)');
     if (!$has('payments', 'payer_name')) db()->exec('ALTER TABLE payments ADD COLUMN payer_name VARCHAR(140) NULL, ADD COLUMN payer_phone VARCHAR(30) NULL');
+    if (!$has('payments', 'event_id')) db()->exec('ALTER TABLE payments ADD COLUMN event_id INT UNSIGNED NULL, ADD KEY idx_pay_event (event_id)');
     if (!$nullable('payments', 'reservation_id')) db()->exec('ALTER TABLE payments MODIFY reservation_id INT UNSIGNED NULL');
     daraza_ensure_table();
     if (!$has('pay_attempts', 'tab_id'))

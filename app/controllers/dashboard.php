@@ -24,7 +24,7 @@ function dash_event_totals(int $only = 0): array
     $out = [];
     foreach ($ev as $e) $out[(int)$e['id']] = $e + ['paid' => 0, 'refunded' => 0, 'by_ch' => [], 'res' => [], 'guests' => 0, 'due' => 0, 'att' => ['success' => 0, 'failed' => 0, 'pending' => 0, 'unconfirmed' => 0], 'pkg' => []];
     $w = $only ? ' WHERE r.event_id = ' . (int)$only : '';
-    foreach (rows("SELECT r.event_id, COALESCE(p.channel, p.method) ch, COUNT(*) n, SUM(p.amount) amt FROM payments p JOIN reservations r ON r.id = p.reservation_id$w GROUP BY r.event_id, ch") as $x)
+    foreach (rows("SELECT COALESCE(r.event_id, p.event_id) event_id, COALESCE(p.channel, p.method) ch, COUNT(*) n, SUM(p.amount) amt FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id WHERE COALESCE(r.event_id, p.event_id) IS NOT NULL" . ($only ? ' AND COALESCE(r.event_id, p.event_id) = ' . (int)$only : '') . " GROUP BY event_id, ch") as $x)
         if (isset($out[$x['event_id']])) { $o = &$out[$x['event_id']]; $o['by_ch'][$x['ch']] = ['n' => (int)$x['n'], 'amt' => (int)$x['amt']]; if ($x['amt'] >= 0) $o['paid'] += (int)$x['amt']; else $o['refunded'] += -(int)$x['amt']; unset($o); }
     foreach (rows("SELECT event_id, status, COUNT(*) n, COALESCE(SUM(guests),0) g, COALESCE(SUM(amount_due),0) due FROM reservations r$w GROUP BY event_id, status") as $x)
         if (isset($out[$x['event_id']])) { $o = &$out[$x['event_id']]; $o['res'][$x['status']] = ['n' => (int)$x['n'], 'g' => (int)$x['g']]; if (in_array($x['status'], ['pending', 'confirmed'], true)) { $o['guests'] += (int)$x['g']; $o['due'] += (int)$x['due']; } unset($o); }
@@ -40,7 +40,7 @@ function dash_event_totals(int $only = 0): array
 }
 function dash_event_payments(int $eventId, int $limit = 300): array
 {
-    return rows('SELECT p.*, COALESCE(p.channel, p.method) ch, r.reference, r.full_name, r.phone, r.package, u.name by_name FROM payments p JOIN reservations r ON r.id = p.reservation_id LEFT JOIN users u ON u.id = p.recorded_by WHERE r.event_id = ? ORDER BY p.created_at DESC, p.id DESC LIMIT ' . (int)$limit, [$eventId]);
+    return rows('SELECT p.*, COALESCE(p.channel, p.method) ch, r.reference, COALESCE(r.full_name, p.payer_name) full_name, COALESCE(r.phone, p.payer_phone) phone, r.package, u.name by_name FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id LEFT JOIN users u ON u.id = p.recorded_by WHERE COALESCE(r.event_id, p.event_id) = ? ORDER BY p.created_at DESC, p.id DESC LIMIT ' . (int)$limit, [$eventId]);
 }
 function dash_event_attempts(int $eventId, int $limit = 200): array
 {
@@ -87,11 +87,11 @@ function dash_trail(array $f, int $per = 40): array
                           'title' => 'Reservation made', 'detail' => trim(RES_TYPES[$r['type']] . ($r['package'] ? ' · ' . $r['package'] : '') . ' · ' . (int)$r['guests'] . ' guest(s)'), 'status' => $r['status'], 'by' => 'Guest (online)'];
     }
     if (in_array($kind, ['all', 'payment'], true)) {
-        $p = []; $w = 'WHERE 1=1' . ($ev ? ' AND r.event_id = ?' : '') . $range('p.created_at', $p);
+        $p = []; $w = 'WHERE 1=1' . ($ev ? ' AND COALESCE(r.event_id, p.event_id) = ?' : '') . $range('p.created_at', $p);
         if ($ev) array_unshift($p, $ev);
         if ($q !== '') { $w .= ' AND (r.reference LIKE ? OR r.full_name LIKE ? OR r.phone LIKE ? OR p.note LIKE ?)'; array_push($p, $like, $like, $like, $like); }
         foreach (rows("SELECT p.*, COALESCE(p.channel, p.method) ch, r.reference, r.full_name, r.phone, r.id rid, e.title ev_title, t.title tab_title, u.name by_name
-                       FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id LEFT JOIN events e ON e.id = r.event_id LEFT JOIN payment_tabs t ON t.id = p.tab_id LEFT JOIN users u ON u.id = p.recorded_by $w ORDER BY p.created_at DESC, p.id DESC LIMIT $need", $p) as $r)
+                       FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id LEFT JOIN events e ON e.id = COALESCE(r.event_id, p.event_id) LEFT JOIN payment_tabs t ON t.id = p.tab_id LEFT JOIN users u ON u.id = p.recorded_by $w ORDER BY p.created_at DESC, p.id DESC LIMIT $need", $p) as $r)
             $rowsOut[] = ['ts' => $r['created_at'], 'kind' => 'payment', 'ev' => $r['ev_title'] ?: ($r['tab_title'] ? 'Pay tab: ' . $r['tab_title'] : ''), 'rid' => (int)$r['rid'], 'ref' => $r['reference'] ?: '', 'who' => $r['full_name'] ?: (string)$r['payer_name'], 'phone' => $r['phone'] ?: (string)$r['payer_phone'], 'amount' => (int)$r['amount'],
                           'title' => $r['amount'] < 0 ? 'Refund' : 'Payment received', 'detail' => dash_channel($r['ch']) . ($r['note'] ? ' · ' . $r['note'] : ''), 'status' => $r['amount'] < 0 ? 'refund' : 'paid', 'by' => $r['by_name'] ?: ($r['channel'] ? 'Online (automatic)' : 'Staff')];
     }

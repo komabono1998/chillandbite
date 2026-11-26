@@ -10,7 +10,7 @@ function event_stats(string $where = '1=1', array $params = [], string $order = 
             (SELECT COALESCE(SUM(guests),0) FROM reservations r WHERE r.event_id=e.id AND r.status='confirmed') AS confirmed,
             (SELECT COALESCE(SUM(guests),0) FROM reservations r WHERE r.event_id=e.id AND r.status='pending') AS pending,
             (SELECT COALESCE(SUM(guests),0) FROM reservations r WHERE r.event_id=e.id AND r.status='confirmed' AND r.checked_in_at IS NOT NULL) AS checked,
-            (SELECT COALESCE(SUM(p.amount),0) FROM payments p JOIN reservations r ON r.id=p.reservation_id WHERE r.event_id=e.id) AS revenue,
+            (SELECT COALESCE(SUM(p.amount),0) FROM payments p LEFT JOIN reservations r ON r.id=p.reservation_id WHERE COALESCE(r.event_id,p.event_id)=e.id) AS revenue,
             (SELECT COALESCE(SUM(GREATEST(r.amount_due - COALESCE((SELECT SUM(amount) FROM payments p WHERE p.reservation_id=r.id),0),0)),0)
                FROM reservations r WHERE r.event_id=e.id AND r.status IN ('pending','confirmed')) AS outstanding
         FROM events e LEFT JOIN event_categories c ON c.id = e.category_id WHERE $where ORDER BY $order LIMIT " . (int)$limit, $params);

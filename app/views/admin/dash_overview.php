@@ -68,6 +68,7 @@ $maxRev = isset($rev_events) && $rev_events ? max(1, max(array_column($rev_event
       <span class="ev-card-f"><span><?= (int)($e['res']['confirmed']['n'] ?? 0) + (int)($e['res']['pending']['n'] ?? 0) ?> bookings · <?= (int)$e['guests'] ?> guests</span><span><?= $e['outstanding'] ? h(money($e['outstanding'])) . ' owing' : 'Paid up' ?></span></span>
     </a>
   <?php endforeach; ?></div>
+  <?php if (!empty($wgap) && $wgap['gap'] > 0): ?><p class="ph-warn" style="margin:12px 0 0"><b><?= h(money($wgap['gap'])) ?></b> is in the Daraza wallet but not yet given to an event, so it is not in the totals above. Use the <i>Daraza wallet and who paid</i> panel above to record who paid and pick the event.</p><?php endif; ?>
 </div>
 <?php endif; ?>
 <?php if (!empty($att_attention) || !empty($att_failed_today) || !empty($stat_pending)): ?>

@@ -8,10 +8,11 @@
     <div><b style="color:<?= $wgap['gap'] > 0 ? '#d9534f' : '#1f8a4c' ?>"><?= h(money($wgap['gap'])) ?></b><span>in the wallet but not recorded yet</span></div>
   </div>
   <?php if ($wgap['gap'] > 0): ?>
-  <p class="ph-warn">This money reached your wallet without going through a booking or payment page here, so the system does not know who sent it. Enter each person's name and phone (from your Daraza statement or the MoMo message) and it is added to the collections and the dashboard.</p>
+  <p class="ph-warn">This money reached your wallet without going through a booking or payment page here, so the system does not know who sent it. Enter each person's name and phone (from your Daraza statement or the MoMo message) and it is added to that event's collections and the dashboard.</p>
   <form method="post" action="<?= url('admin/collections/record-wallet') ?>" class="form-grid"><?= csrf_field() ?><input type="hidden" name="back" value="<?= h($back) ?>">
     <label>Name of payer<input name="payer_name" required maxlength="140" autocomplete="off"></label>
     <label>Phone of payer<input name="payer_phone" required placeholder="0772 123 456" inputmode="tel" autocomplete="off"></label>
+    <label>Which event is it for?<select name="event_id" required><?php foreach (rows('SELECT id, title, start_at FROM events ORDER BY ABS(DATEDIFF(start_at, NOW())) ASC LIMIT 20') as $ev): ?><option value="<?= (int)$ev['id'] ?>"><?= h(fmt_date($ev['start_at'], 'j M Y')) ?> · <?= h(excerpt($ev['title'], 50)) ?></option><?php endforeach; ?></select></label>
     <label>Amount (UGX)<input name="amount" required inputmode="numeric" value="<?= (int)$wgap['gap'] ?>" autocomplete="off"></label>
     <label>Booking reference (optional)<input name="reference" placeholder="CB-XXXXXX" autocomplete="off"></label>
     <div><button class="btn btn-primary">Record payment</button></div>
