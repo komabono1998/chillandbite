@@ -37,7 +37,7 @@ function admin_collections(): void
     $rep = collections_report($from, $to, $event);
     $isAdmin = can('withdraw');
     admin_view('collections', ['title' => 'Collections', 'r' => $rep, 'range' => $range, 'event' => $event, 'all_events' => rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 100'),
-        'wallet' => $isAdmin || can('collections') ? (daraza_enabled() ? daraza_wallet(isset($_GET['refresh'])) : null) : null, 'can_withdraw' => $isAdmin && daraza_enabled(), 'daraza_on' => daraza_enabled()]);
+        'wgap' => wallet_gap(), 'wallet' => $isAdmin || can('collections') ? (daraza_enabled() ? daraza_wallet(isset($_GET['refresh'])) : null) : null, 'can_withdraw' => $isAdmin && daraza_enabled(), 'daraza_on' => daraza_enabled()]);
 }
 /** Fee preview for the withdraw form. */
 function admin_collections_fees(): void
@@ -50,6 +50,46 @@ function admin_collections_fees(): void
     echo json_encode($f ? ['ok' => true] + $f : ['ok' => false, 'error' => 'Could not get the fee from Daraza.']);
 }
 
+/** Wallet balance against what is recorded here: money that reached Daraza but has no name and number on file yet. */
+function wallet_gap(): ?array
+{
+    if (!daraza_enabled() || !(can('withdraw') || can('collections') || can('payments'))) return null;
+    pay_ensure_schema();
+    $w = daraza_wallet(isset($_GET['refresh']));
+    if (!$w || $w['balance'] === null) return null;
+    $in = (int)val("SELECT COALESCE(SUM(amount),0) FROM payments WHERE channel IN ('daraza_mtn','daraza_airtel','daraza_refund')");
+    try { $out = (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status IN ('success','pending','unconfirmed')"); } catch (Throwable $e) { $out = 0; }
+    $bal = (int)$w['balance'];
+    return ['balance' => $bal, 'recorded' => $in, 'withdrawn' => $out, 'gap' => max(0, $bal - ($in - $out))];
+}
+/** Record money that is already in the wallet, with the payer's name and phone. */
+function admin_record_wallet(): void
+{
+    require_can('payments');
+    $back = ($_POST['back'] ?? '') === 'dash' ? 'admin' : 'admin/collections';
+    $fail = function (string $m) use ($back): never { flash($m, 'err'); redirect($back); };
+    $g = wallet_gap();
+    if (!$g) $fail('The wallet balance could not be read, so nothing was recorded.');
+    $name = trim(mb_substr((string)($_POST['payer_name'] ?? ''), 0, 140));
+    $phone = daraza_phone((string)($_POST['payer_phone'] ?? ''));
+    $amt = (int)preg_replace('/\D+/', '', (string)($_POST['amount'] ?? '0'));
+    if ($name === '') $fail('Enter the name of the person who paid.');
+    if (!$phone) $fail('Enter the phone number of the person who paid.');
+    if ($amt < 1) $fail('Enter the amount.');
+    if ($amt > $g['gap']) $fail('That is more than the unrecorded wallet money (' . money($g['gap']) . '). Nothing was recorded.');
+    $rid = null; $ref = strtoupper(trim((string)($_POST['reference'] ?? '')));
+    if ($ref !== '') { $rid = val('SELECT id FROM reservations WHERE reference = ?', [$ref]); if (!$rid) $fail('No booking has the reference ' . $ref . '.'); $rid = (int)$rid; }
+    $note = 'Received in Daraza wallet, recorded by ' . current_user()['name'] . ': ' . $name . ', ' . $phone;
+    q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by, payer_name, payer_phone) VALUES (?,?,?,?,?,?,?,?)',
+        [$rid, $amt, 'mobile_money', 'daraza_' . daraza_network($phone), mb_substr($note, 0, 255), current_user()['id'], $name, $phone]);
+    $msg = 'Recorded ' . money($amt) . ' from ' . $name . '.';
+    if ($rid) {
+        $r = row('SELECT status, amount_due FROM reservations WHERE id = ?', [$rid]);
+        if ($r && $r['status'] === 'pending' && res_paid($rid) >= (float)$r['amount_due']) { q("UPDATE reservations SET status='confirmed' WHERE id = ?", [$rid]); try { send_ticket($rid); } catch (Throwable $e) {} $msg .= ' Booking confirmed and ticket issued.'; }
+    }
+    audit('payment.wallet_record', money($amt) . ' ' . $name . ' ' . $phone);
+    flash($msg); redirect($back);
+}
 /** Withdrawals started from the dashboard Withdraw tab return there. */
 function wd_back(): string { return ($_POST['back'] ?? '') === 'dash' ? 'admin?tab=withdraw' : 'admin/collections#withdraw'; }
 

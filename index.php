@@ -105,6 +105,7 @@ $routes = [
     ['POST', 'admin/rates/{id}/copy', 'admin_rates_copy'],
     ['GET',  'admin/collections/fees', 'admin_collections_fees'],
     ['POST', 'admin/collections/withdraw', 'admin_withdraw'],
+    ['POST', 'admin/collections/record-wallet', 'admin_record_wallet'],
     ['POST', 'admin/withdrawals/{id}/resolve', 'admin_withdraw_resolve'],
     ['POST', 'admin/system/migrate', 'admin_migrate'],
     ['GET',  'admin/checkin',        'admin_checkin_desk'],

@@ -40,6 +40,7 @@ $maxRev = isset($rev_events) && $rev_events ? max(1, max(array_column($rev_event
   <?php endforeach; ?>
 </div><?php endif; ?>
 
+<?php $back = 'dash'; include __DIR__ . '/_wallet_record.php'; ?>
 <?php if (!empty($pay_health)): $ph = $pay_health; $att = $ph['att']; $tried = array_sum($att); ?>
 <div class="panel pay-health">
   <div class="panel-head"><h2>💳 Online payment check</h2><a class="small" href="<?= url('admin?tab=trail&kind=attempt') ?>">See every attempt →</a></div>

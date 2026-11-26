@@ -126,6 +126,7 @@ function pay_ensure_schema(): void
     $nullable = fn(string $t, string $c) => val("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?", [$t, $c]) === 'YES';
     if (!$has('payments', 'channel')) { db()->exec('ALTER TABLE payments ADD COLUMN channel VARCHAR(20) NULL AFTER method'); pay_backfill_channels(); }
     if (!$has('payments', 'tab_id')) db()->exec('ALTER TABLE payments ADD COLUMN tab_id INT UNSIGNED NULL AFTER reservation_id, ADD KEY idx_pay_tab (tab_id)');
+    if (!$has('payments', 'payer_name')) db()->exec('ALTER TABLE payments ADD COLUMN payer_name VARCHAR(140) NULL, ADD COLUMN payer_phone VARCHAR(30) NULL');
     if (!$nullable('payments', 'reservation_id')) db()->exec('ALTER TABLE payments MODIFY reservation_id INT UNSIGNED NULL');
     daraza_ensure_table();
     if (!$has('pay_attempts', 'tab_id'))
@@ -221,13 +222,14 @@ function daraza_settle(int $attemptId, string $outcome, string $msg, ?string $re
             $ref = $a['request_id'] ? ' (ref ' . $a['request_id'] . ')' : '';
             if ($a['tab_id']) {        // a payment made through a page's payment tab
                 $tab = row('SELECT title FROM payment_tabs WHERE id = ?', [$a['tab_id']]);
-                q('INSERT INTO payments (reservation_id, tab_id, amount, method, channel, note, recorded_by) VALUES (NULL,?,?,?,?,?,NULL)',
+                q('INSERT INTO payments (reservation_id, tab_id, amount, method, channel, note, recorded_by, payer_name, payer_phone) VALUES (NULL,?,?,?,?,?,NULL,?,?)',
                     [$a['tab_id'], (int)$a['amount'], 'mobile_money', 'daraza_' . daraza_network((string)$a['phone']),
-                     mb_substr(($tab['title'] ?? 'Payment tab') . ': ' . $a['payer_name'] . ', ' . $a['phone'] . ($a['payer_note'] ? ', ' . $a['payer_note'] : '') . $ref, 0, 255)]);
+                     mb_substr(($tab['title'] ?? 'Payment tab') . ': ' . $a['payer_name'] . ', ' . $a['phone'] . ($a['payer_note'] ? ', ' . $a['payer_note'] : '') . $ref, 0, 255), mb_substr((string)$a['payer_name'], 0, 140), $a['phone']]);
             } else {
-                q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by) VALUES (?,?,?,?,?,?)',
+                $rn = (string)val('SELECT full_name FROM reservations WHERE id = ?', [$a['reservation_id']]);
+                q('INSERT INTO payments (reservation_id, amount, method, channel, note, recorded_by, payer_name, payer_phone) VALUES (?,?,?,?,?,?,?,?)',
                     [$a['reservation_id'], $refund ? -(int)$a['amount'] : (int)$a['amount'], $refund ? 'refund' : 'mobile_money', $refund ? 'daraza_refund' : 'daraza_' . daraza_network((string)$a['phone']),
-                     mb_substr(($refund ? 'Refund sent via Daraza to ' : 'Paid online via Daraza from ') . $a['phone'] . $ref, 0, 255), $userId ?? $a['started_by']]);
+                     mb_substr(($refund ? 'Refund sent via Daraza to ' : 'Paid online via Daraza from ') . $a['phone'] . $ref, 0, 255), $userId ?? $a['started_by'], mb_substr($rn ?: (string)$a['payer_name'], 0, 140), $a['phone']]);
                 if (!$refund) {
                     $r = row('SELECT status, amount_due FROM reservations WHERE id = ?', [$a['reservation_id']]);
                     $confirmNow = $r && $r['status'] === 'pending' && res_paid((int)$a['reservation_id']) >= (float)$r['amount_due'];

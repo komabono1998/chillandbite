@@ -92,7 +92,7 @@ function dash_trail(array $f, int $per = 40): array
         if ($q !== '') { $w .= ' AND (r.reference LIKE ? OR r.full_name LIKE ? OR r.phone LIKE ? OR p.note LIKE ?)'; array_push($p, $like, $like, $like, $like); }
         foreach (rows("SELECT p.*, COALESCE(p.channel, p.method) ch, r.reference, r.full_name, r.phone, r.id rid, e.title ev_title, t.title tab_title, u.name by_name
                        FROM payments p LEFT JOIN reservations r ON r.id = p.reservation_id LEFT JOIN events e ON e.id = r.event_id LEFT JOIN payment_tabs t ON t.id = p.tab_id LEFT JOIN users u ON u.id = p.recorded_by $w ORDER BY p.created_at DESC, p.id DESC LIMIT $need", $p) as $r)
-            $rowsOut[] = ['ts' => $r['created_at'], 'kind' => 'payment', 'ev' => $r['ev_title'] ?: ($r['tab_title'] ? 'Pay tab: ' . $r['tab_title'] : ''), 'rid' => (int)$r['rid'], 'ref' => $r['reference'] ?: '', 'who' => $r['full_name'] ?: '', 'phone' => $r['phone'] ?: '', 'amount' => (int)$r['amount'],
+            $rowsOut[] = ['ts' => $r['created_at'], 'kind' => 'payment', 'ev' => $r['ev_title'] ?: ($r['tab_title'] ? 'Pay tab: ' . $r['tab_title'] : ''), 'rid' => (int)$r['rid'], 'ref' => $r['reference'] ?: '', 'who' => $r['full_name'] ?: (string)$r['payer_name'], 'phone' => $r['phone'] ?: (string)$r['payer_phone'], 'amount' => (int)$r['amount'],
                           'title' => $r['amount'] < 0 ? 'Refund' : 'Payment received', 'detail' => dash_channel($r['ch']) . ($r['note'] ? ' · ' . $r['note'] : ''), 'status' => $r['amount'] < 0 ? 'refund' : 'paid', 'by' => $r['by_name'] ?: ($r['channel'] ? 'Online (automatic)' : 'Staff')];
     }
     if (in_array($kind, ['all', 'attempt'], true)) {
@@ -200,6 +200,7 @@ function admin_dashboard(): void
             $d['outstanding'] = (int)val("SELECT COALESCE(SUM(GREATEST(r.amount_due - COALESCE((SELECT SUM(amount) FROM payments p WHERE p.reservation_id=r.id),0),0)),0) FROM reservations r WHERE r.status IN ('pending','confirmed')");
             $d['ev_totals'] = array_slice(dash_event_totals(), 0, 6);
             $d['pay_health'] = dash_pay_health();
+            $d['wgap'] = wallet_gap();
             try { $d['att_attention'] = (int)val("SELECT COUNT(*) FROM pay_attempts WHERE status = 'unconfirmed' AND direction = 'collect'"); $d['att_failed_today'] = (int)val("SELECT COUNT(*) FROM pay_attempts WHERE status = 'failed' AND created_at >= CURDATE()"); }
             catch (PDOException $e) { $d['att_attention'] = $d['att_failed_today'] = 0; }
         }

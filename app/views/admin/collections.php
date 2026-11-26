@@ -154,12 +154,13 @@ $chip = fn($c) => '<span class="ch-chip" style="--c:' . (PAY_CHANNELS[$c][1] ?? 
       <button class="btn btn-primary btn-sm" name="choice" value="received" onclick="return confirm('Only choose this if the money really appears in your Daraza statement.')">Money moved</button> <button class="btn btn-ghost btn-sm" name="choice" value="dismiss">Nothing moved</button></form></td></tr><?php endforeach; ?></table></div>
 </div>
 <?php endif; ?>
+<?php $back = 'collections'; include __DIR__ . '/_wallet_record.php'; ?>
 <div class="panel">
   <div class="panel-head"><h2>Latest payments</h2><span class="muted small">newest first (the export has them all)</span></div>
-  <?php if ($r['recent']): ?><div class="tbl-wrap"><table class="tbl"><thead><tr><th>When</th><th>Channel</th><th>Guest</th><th>Event</th><th>Amount</th></tr></thead><tbody>
+  <?php if ($r['recent']): ?><div class="tbl-wrap"><table class="tbl"><thead><tr><th>When</th><th>Channel</th><th>Guest / payer</th><th>Phone</th><th>Event</th><th>Amount</th></tr></thead><tbody>
     <?php foreach ($r['recent'] as $x): ?><tr><td><?= fmt_date($x['created_at'], 'j M H:i') ?></td><td><?= $chip($x['ch']) ?></td>
-      <?php if ($x['rid']): ?><td><a href="<?= url('admin/reservations/' . (int)$x['rid']) ?>"><?= h($x['full_name']) ?></a><br><span class="muted small"><?= h($x['reference']) ?></span></td><td><?= h(excerpt((string)$x['title'], 38)) ?></td>
-      <?php else: ?><td><b>Page payment</b><br><span class="muted small"><?= h(excerpt(preg_replace('/^[^:]*:\s*/', '', (string)$x['note']), 60)) ?></span></td><td><?= h((string)$x['tab_title']) ?></td><?php endif; ?>
+      <?php if ($x['rid']): ?><td><a href="<?= url('admin/reservations/' . (int)$x['rid']) ?>"><?= h($x['full_name']) ?></a><br><span class="muted small"><?= h($x['reference']) ?></span></td><td><?= h((string)($x['payer_phone'] ?: '')) ?></td><td><?= h(excerpt((string)$x['title'], 38)) ?></td>
+      <?php else: ?><td><b><?= h($x['payer_name'] ?: 'Page payment') ?></b><br><span class="muted small"><?= h(excerpt(preg_replace('/^[^:]*:\s*/', '', (string)$x['note']), 60)) ?></span></td><td><?= h((string)($x['payer_phone'] ?: '')) ?></td><td><?= h((string)($x['tab_title'] ?: 'Wallet')) ?></td><?php endif; ?>
       <td><b style="<?= $x['amount'] < 0 ? 'color:#b3261e' : '' ?>"><?= h(money($x['amount'])) ?></b></td></tr><?php endforeach; ?>
   </tbody></table></div><?php else: ?><div class="empty">No payments in this period.</div><?php endif; ?>
 </div>
