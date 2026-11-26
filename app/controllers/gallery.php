@@ -76,6 +76,34 @@ function gallery_seed_last_edition(): int
     return $added;
 }
 
+/** The seven flyers of the 29 November edition become the "Headline advert" album (once). Afterwards the admin owns it: add, hide, delete or caption flyers under Gallery. */
+function advert_seed(): void
+{
+    if (setting('seed_advert', '') === '1') return;
+    try {
+        gallery_ensure_cols();
+        $items = [
+            'adv-01.jpg' => 'Official flyer - Table packages and rates', 'adv-02.webp' => 'MC Kash Owakabi - Your host', 'adv-03.webp' => 'DJ Joelfresh - On the decks',
+            'adv-04.webp' => 'DJ Shad - On the decks', 'adv-05.webp' => 'DJ Big Val - On the decks', 'adv-06.webp' => 'Shakira - Red Carpet', 'adv-07.webp' => 'DJ Drey - On the decks',
+        ];
+        $album = (int)val("SELECT id FROM gallery_albums WHERE slug = 'headline-advert'");
+        if (!$album) { q("INSERT INTO gallery_albums (name, slug) VALUES ('Headline advert (homepage)', 'headline-advert')"); $album = (int)val('SELECT LAST_INSERT_ID()'); }
+        foreach ($items as $f => $cap) {
+            $file = 'img/advert/' . $f;
+            if (is_file(ROOT . '/assets/' . $file) && !val('SELECT id FROM gallery_images WHERE file = ?', [$file])) q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $file, $cap]);
+        }
+        save_setting('seed_advert', '1');
+    } catch (Throwable $e) { error_log('advert_seed: ' . $e->getMessage()); }
+}
+/** Flyers for the running headline advert on the homepage, in the order they were added. */
+function advert_slides(): array
+{
+    gallery_ensure_cols();
+    $rows = gallery_existing(rows("SELECT i.id, i.file, i.caption FROM gallery_images i JOIN gallery_albums a ON a.id = i.album_id WHERE a.slug = 'headline-advert' AND i.hidden = 0 ORDER BY i.id ASC LIMIT 12"));
+    foreach ($rows as &$r) { $p = explode(' - ', (string)$r['caption'], 2); $r['name'] = trim($p[0]) ?: 'Chill & Bite MEATINGS'; $r['sub'] = trim($p[1] ?? ''); }
+    return $rows;
+}
+
 /** Albums with the number of photos that can really be shown. */
 function gallery_album_counts(): array
 {

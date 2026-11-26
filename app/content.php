@@ -75,12 +75,18 @@ function site_pages(): array
                     $f('btn_proposal', 'Button 1', 'text', 'Request an advertising proposal'),
                     $f('btn_partner', 'Button 2', 'text', 'Become a partner'),
                 ]],
+                'advert' => ['label' => 'Headline advert (running flyers)', 'fields' => [
+                    $f('eyebrow', 'Small label', 'text', 'Now showing'),
+                    $f('heading', 'Heading', 'text', 'Sunday 29th November at Lavington Park, Lira'),
+                    $f('ticker', 'Running headline (one message per line)', 'lines', "OLDSKOOL RNB - SOUL SING ALONG EDITION\nSUN 29 NOV - GATES OPEN 12 PM\nLAVINGTON PARK, LIRA\nDRESS CODE: DENIM JEANS ON WHITE\nHOSTED BY MC KASH OWAKABI\nRESERVATIONS: 0392554488 / 0768202585", 'Scrolls across the top of the advert. The flyers themselves are managed in Admin > Gallery, album "Headline advert (homepage)".'),
+                    $f('button', 'Button', 'text', 'Reserve your table'),
+                ]],
                 'packages' => ['label' => 'Packages and rates (second section)', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Packages & rates'),
                     $f('heading', 'Heading', 'text', 'Pick your package'),
                     $f('intro', 'Intro line', 'text', 'Reserve your table or grab a general ticket. Pay with MTN or Airtel and your ticket arrives straight away.'),
                     $f('button', 'Button', 'text', 'Reserve now'),
-                    $f('photo', 'Rates flyer', 'image', 'img/flyer-nov-2026-rates.jpg', 'The packages and rates flyer shown beside the package list.'),
+                    $f('photo', 'Rates flyer', 'image', 'img/advert/adv-01.jpg', 'The packages and rates flyer shown beside the package list.'),
                 ]],
                 'gallery' => ['label' => 'Gallery preview', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Gallery'),

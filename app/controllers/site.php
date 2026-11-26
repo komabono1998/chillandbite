@@ -104,7 +104,7 @@ function events_seed_nov29(): void
 /** Venue city and the reservation packages from the rates flyer (General, Silver, Silver Pro, Gold, Gold Pro, Platinum, Platinum Pro), created once. Admin edits (Events or Ticket rates) are never overwritten. */
 function events_seed_nov29_packages(): void
 {
-    if (setting('seed_nov29_pkgs', '') === '1') return;
+    if (setting('seed_nov29_pkgs', '') === '1') { events_seed_nov29_pkgs_v2(); return; }
     try {
         $id = (int)val("SELECT id FROM events WHERE DATE(start_at) = '2026-11-29' ORDER BY id LIMIT 1");
         if (!$id) return;
@@ -113,28 +113,41 @@ function events_seed_nov29_packages(): void
         if (!(int)val('SELECT COUNT(*) FROM event_packages WHERE event_id = ?', [$id])) {
             $pk = [
                 ['General Package', 20000, 1, 'A stick of roasted meat + a bottle of beer'],
-                ['Silver Package', 200000, 4, 'Johnnie Walker Red Label 750ml + 4 bottles of water'],
+                ['Silver Package', 200000, 4, 'Johnnie Walker Red Label 750ml + whole chicken + 4 bottles of water'],
                 ['Silver Pro Package', 300000, 4, 'Johnnie Walker Black Label 750ml + whole chicken + 10 bottles of water'],
                 ['Gold Package', 400000, 6, 'Johnnie Walker Double Black 1 litre + whole chicken + 6 bottles of water'],
                 ['Gold Pro Package', 500000, 6, 'Johnnie Walker Gold Reserve 750ml + whole chicken + 6 bottles of water'],
-                ['Platinum Package', 1000000, 8, 'Johnnie Walker Aged 18 750ml + 2 full roasted chickens + 8 bottles of water'],
-                ['Platinum Pro Package', 1500000, 10, 'Johnnie Walker Double Black 1 litre + full roasted goat + 10 bottles of water'],
+                ['Platinum Package', 1000000, 6, 'Johnnie Walker Aged 18 750ml + whole chicken + 6 bottles of water'],
             ];
             foreach ($pk as $i => [$n, $price, $ad, $perks]) q('INSERT IGNORE INTO event_packages (event_id, name, price, admits, perks, sort) VALUES (?,?,?,?,?,?)', [$id, $n, $price, $ad, $perks, $i]);
             if (!val("SELECT id FROM event_reservation_options WHERE event_id = ? AND type = 'table'", [$id]))
                 q("INSERT INTO event_reservation_options (event_id, type, price_per_guest, min_guests, max_guests) VALUES (?, 'table', 0, 1, 15)", [$id]);
         }
-        $album = (int)val("SELECT id FROM gallery_albums WHERE slug = 'event-flyers'");
-        if ($album) foreach (['img/flyer-nov-2026-rates.jpg' => 'Packages and rates flyer: Sunday 29th November (post size)', 'img/flyer-nov-2026-rates-story.jpg' => 'Packages and rates flyer: Sunday 29th November (story size)'] as $file => $cap)
-            if (!val('SELECT id FROM gallery_images WHERE file = ?', [$file])) q('INSERT INTO gallery_images (album_id, file, caption) VALUES (?,?,?)', [$album, $file, $cap]);
-        save_setting('seed_nov29_pkgs', '1');
+        save_setting('seed_nov29_pkgs', '1'); save_setting('seed_nov29_pkgs2', '1');
     } catch (Throwable $e) { error_log('events_seed_nov29_packages: ' . $e->getMessage()); }
+}
+/** The final rates flyer: every table package includes a whole chicken, Platinum is a table of 6, there is no Platinum Pro, and a second reservations number. Runs once, on sites that were seeded from the earlier flyers. */
+function events_seed_nov29_pkgs_v2(): void
+{
+    if (setting('seed_nov29_pkgs2', '') === '1') return;
+    try {
+        $id = (int)val("SELECT id FROM events WHERE DATE(start_at) = '2026-11-29' ORDER BY id LIMIT 1");
+        if (!$id) return;
+        rates_ensure_cols();
+        $final = ['Silver Package' => [4, 'Johnnie Walker Red Label 750ml + whole chicken + 4 bottles of water'], 'Platinum Package' => [6, 'Johnnie Walker Aged 18 750ml + whole chicken + 6 bottles of water']];
+        foreach ($final as $name => [$ad, $perks]) q('UPDATE event_packages SET admits = ?, perks = ? WHERE event_id = ? AND name = ?', [$ad, $perks, $id, $name]);
+        if (!(int)val('SELECT COUNT(*) FROM reservations WHERE event_id = ? AND package = ?', [$id, 'Platinum Pro Package'])) q('DELETE FROM event_packages WHERE event_id = ? AND name = ?', [$id, 'Platinum Pro Package']);
+        q("DELETE FROM gallery_images WHERE file IN ('img/flyer-nov-2026-rates.jpg', 'img/flyer-nov-2026-rates-story.jpg')");    // the older rates flyers no longer match the prices
+        q("UPDATE events SET description = REPLACE(description, 'call 0392554488.', 'call 0392554488 or 0768202585.') WHERE id = ? AND description NOT LIKE '%0768202585%'", [$id]);
+        save_setting('seed_nov29_pkgs2', '1');
+    } catch (Throwable $e) { error_log('events_seed_nov29_pkgs_v2: ' . $e->getMessage()); }
 }
 
 /* ================= Pages ================= */
 function page_home(): void
 {
     events_seed_nov29();
+    advert_seed();
     // Hero/featured card is the next monthly Chill & Bite; other upcoming events (any category) follow it.
     $events = upcoming_events(8);
     $monthly = upcoming_events(1, 'chill-bite-meatings')[0] ?? ($events[0] ?? null);
@@ -152,6 +165,7 @@ function page_home(): void
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
         'gallery' => wall_photos(36),
         'gallery_total' => count(gallery_existing(rows('SELECT file FROM gallery_images WHERE hidden = 0'))),
+        'advert' => advert_slides(),
         'hero_photos' => array_slice(array_column(gallery_existing(rows('SELECT file FROM gallery_images WHERE hero = 1 AND hidden = 0 ORDER BY id DESC LIMIT 15')), 'file'), 0, 5),
         'comedy_events' => upcoming_events(2, 'laugh-with-owakabi-comedy-shows'),
     ]);

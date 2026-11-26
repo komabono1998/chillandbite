@@ -34,6 +34,34 @@
   </div>
 </section>
 
+<?php if (!empty($advert)): $ticker = ctl('home.advert.ticker'); $shareUrl = abs_url(''); $dlOn = gallery_downloads_on(); ?>
+<section class="advert" id="advert" aria-label="Featured flyers">
+  <div class="advert-ticker" aria-hidden="true"><div class="advert-track"><?php for ($rep = 0; $rep < 4; $rep++) foreach ($ticker as $t): ?><span><?= h($t) ?></span><i>&#9733;</i><?php endforeach; ?></div></div>
+  <div class="wrap advert-stage">
+    <div class="advert-head"><span class="eyebrow gold"><span class="live-dot" aria-hidden="true"></span> <?= cth('home.advert.eyebrow') ?></span><h2><?= cth('home.advert.heading') ?></h2></div>
+    <div class="cf" data-cf data-interval="4500">
+      <button class="cf-nav cf-prev" type="button" aria-label="Previous flyer">&#8249;</button>
+      <div class="cf-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Event flyers">
+        <?php foreach ($advert as $i => $s): $src = upload_url($s['file']); ?>
+          <a class="cf-slide" href="<?= h($src) ?>" data-lightbox data-name="<?= h($s['name']) ?>" data-sub="<?= h($s['sub']) ?>" data-id="<?= (int)$s['id'] ?>" aria-label="<?= h($s['name']) ?>">
+            <img src="<?= h($src) ?>" alt="<?= h($s['name'] . ($s['sub'] ? ', ' . $s['sub'] : '') . ' - Chill & Bite MEATINGS flyer') ?>" width="763" height="1080" <?= $i < 3 ? '' : 'loading="lazy" ' ?>decoding="async" draggable="false">
+          </a>
+        <?php endforeach; ?>
+      </div>
+      <button class="cf-nav cf-next" type="button" aria-label="Next flyer">&#8250;</button>
+    </div>
+    <div class="cf-info" aria-live="polite"><b class="cf-title"></b><span class="cf-sub"></span></div>
+    <div class="cf-progress" aria-hidden="true"><i></i></div>
+    <div class="cf-chips" role="tablist" aria-label="Choose a flyer"><?php foreach ($advert as $i => $s): ?><button type="button" role="tab" data-go="<?= $i ?>"><?= h($s['name']) ?></button><?php endforeach; ?></div>
+    <div class="btn-row cf-actions">
+      <a class="btn btn-primary btn-lg" href="<?= h($reserve) ?>"><?= cth('home.advert.button') ?></a>
+      <a class="btn btn-outline btn-lg cf-share" target="_blank" rel="noopener" href="#" data-share-url="<?= h($shareUrl) ?>">Share on WhatsApp</a>
+      <?php if ($dlOn): ?><a class="btn btn-ghost btn-lg cf-dl" href="#" data-dl="<?= h(url('gallery/download/')) ?>">Download flyer</a><?php endif; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
 <?php $homePk = $next ? event_packages((int)$next['id']) : []; if ($homePk): ?>
 <section class="section section-dark rates-section" id="packages">
   <div class="wrap rates-grid">

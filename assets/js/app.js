@@ -139,7 +139,7 @@
     var a = ev.target.closest('a[data-lightbox]');
     if (!a) return;
     ev.preventDefault();
-    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer, .wall') || document;
+    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer, .wall, .cf-viewport') || document;
     items = Array.prototype.slice.call(scope.querySelectorAll('a[data-lightbox]'));
     idx = items.indexOf(a);
     box = document.createElement('div');
@@ -221,3 +221,56 @@ document.addEventListener('error', function (e) {
   if (box && box.tagName !== 'ARTICLE') box.style.display = 'none'; else t.style.visibility = 'hidden';
 }, true);
 window.addEventListener('load', function () { document.querySelectorAll('img').forEach(function (i) { if (i.complete && i.naturalWidth === 0 && i.getAttribute('src')) i.dispatchEvent(new Event('error')); }); });
+
+// Running headline advert: 3D flyer carousel (auto-play, swipe, arrows, keyboard, name chips, share and download)
+(function () {
+  'use strict';
+  var root = document.querySelector('[data-cf]'); if (!root) return;
+  var vp = root.querySelector('.cf-viewport'), slides = [].slice.call(vp.querySelectorAll('.cf-slide'));
+  var chips = [].slice.call(document.querySelectorAll('.cf-chips button')), n = slides.length; if (!n) return;
+  var title = document.querySelector('.cf-title'), sub = document.querySelector('.cf-sub'), bar = document.querySelector('.cf-progress i');
+  var share = document.querySelector('.cf-share'), dl = document.querySelector('.cf-dl');
+  var active = 0, timer = null, paused = false, interval = parseInt(root.dataset.interval, 10) || 4500;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function layout() {
+    var narrow = vp.clientWidth < 640, step = narrow ? 0.52 : 0.68;
+    slides.forEach(function (s, i) {
+      var o = i - active; if (o > n / 2) o -= n; if (o < -n / 2) o += n;
+      var a = Math.abs(o), hide = a > 2;
+      s.style.transform = 'translateX(calc(-50% + ' + (o * step * 100) + '%)) translateZ(' + (-a * 90) + 'px) rotateY(' + (-o * 24) + 'deg) scale(' + (1 - a * 0.14) + ')';
+      s.style.zIndex = String(10 - a); s.style.opacity = hide ? '0' : String(1 - a * 0.28); s.style.pointerEvents = hide ? 'none' : 'auto';
+      s.classList.toggle('is-active', o === 0); s.tabIndex = o === 0 ? 0 : -1;
+    });
+    chips.forEach(function (c, i) { c.classList.toggle('on', i === active); c.setAttribute('aria-selected', i === active ? 'true' : 'false'); });
+    var cur = slides[active];
+    title.textContent = cur.dataset.name || ''; sub.textContent = cur.dataset.sub || '';
+    var txt = 'Chill & Bite MEATINGS: ' + (cur.dataset.name || '') + '. Sunday 29 November, Lavington Park, Lira, 12 PM. ' + (share ? share.dataset.shareUrl : '');
+    if (share) share.href = 'https://wa.me/?text=' + encodeURIComponent(txt);
+    if (dl) dl.href = dl.dataset.dl + cur.dataset.id;
+    var strip = chips[active]; if (strip && strip.parentNode.scrollTo) strip.parentNode.scrollTo({ left: strip.offsetLeft - strip.parentNode.clientWidth / 2 + strip.clientWidth / 2, behavior: reduce ? 'auto' : 'smooth' });
+  }
+  function go(i) { active = (i + n) % n; layout(); restart(); }
+  function restart() {
+    clearTimeout(timer); if (bar) { bar.style.transition = 'none'; bar.style.width = '0'; }
+    if (reduce || paused) return;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { if (bar) { bar.style.transition = 'width ' + interval + 'ms linear'; bar.style.width = '100%'; } }); });
+    timer = setTimeout(function () { go(active + 1); }, interval);
+  }
+  function pause(p) { paused = p; if (p) { clearTimeout(timer); if (bar) { bar.style.transition = 'none'; bar.style.width = '0'; } } else restart(); }
+  root.querySelector('.cf-prev').addEventListener('click', function () { go(active - 1); });
+  root.querySelector('.cf-next').addEventListener('click', function () { go(active + 1); });
+  chips.forEach(function (c, i) { c.addEventListener('click', function () { go(i); }); });
+  slides.forEach(function (s, i) { s.addEventListener('click', function (e) { if (dragged) { e.preventDefault(); e.stopPropagation(); return; } if (i !== active) { e.preventDefault(); e.stopPropagation(); go(i); } }); });
+  vp.addEventListener('keydown', function (e) { if (e.key === 'ArrowRight') { go(active + 1); e.preventDefault(); } else if (e.key === 'ArrowLeft') { go(active - 1); e.preventDefault(); } });
+  // swipe / drag
+  var x0 = null, dragged = false;
+  vp.addEventListener('pointerdown', function (e) { x0 = e.clientX; dragged = false; pause(true); });
+  vp.addEventListener('pointermove', function (e) { if (x0 !== null && Math.abs(e.clientX - x0) > 12) dragged = true; });
+  function end(e) { if (x0 === null) return; var dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 40) go(active + (dx < 0 ? 1 : -1)); setTimeout(function () { dragged = false; }, 50); pause(false); }
+  vp.addEventListener('pointerup', end); vp.addEventListener('pointercancel', function () { x0 = null; pause(false); });
+  root.addEventListener('mouseenter', function () { pause(true); }); root.addEventListener('mouseleave', function () { pause(false); });
+  root.addEventListener('focusin', function () { pause(true); }); root.addEventListener('focusout', function () { pause(false); });
+  document.addEventListener('visibilitychange', function () { pause(document.hidden); });
+  window.addEventListener('resize', layout);
+  layout(); restart();
+})();
