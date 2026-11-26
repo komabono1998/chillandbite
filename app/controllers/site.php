@@ -173,8 +173,8 @@ function page_home(): void
     $events = $next ? array_merge([$next], array_values(array_filter($events, fn($e) => $e['id'] !== $next['id']))) : [];
     $events = array_slice($events, 0, 4);
     render('site/home', [
-        'title' => 'Chill & Bite MEATINGS | Monthly Event in Gulu by MC Kash Owakabi',
-        'desc' => 'Chill & Bite MEATINGS is the Gulu City monthly food, music, comedy and networking event, hosted by MC Kash Owakabi and organized by Owakabi & The Geng. Reserve your table today.',
+        'title' => 'Chill & Bite MEATINGS | Monthly Event in Gulu & Lira by MC Kash Owakabi',
+        'desc' => 'Chill & Bite MEATINGS is the monthly food, music, comedy and networking event for Gulu and Lira, hosted by MC Kash Owakabi and organized by Owakabi & The Geng. Reserve your table today.',
         'next' => $next, 'og_image' => $next['poster'] ?? null,
         'next_date' => $next ? new DateTimeImmutable($next['start_at']) : next_first_sunday(),
         'cd' => event_countdown($next),
@@ -212,8 +212,8 @@ function page_events(): void
     if ($cat) { $sql .= ' AND c.slug = ?'; $p[] = $cat; }
     $events = rows($sql . ' ORDER BY e.start_at', $p);
     render('site/events', [
-        'title' => 'Events in Gulu | Chill & Bite MEATINGS Calendar & Reservations',
-        'desc' => 'See upcoming Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu City, Uganda, and reserve your table or tickets online.', 'events' => $events, 'month' => $month, 'cat' => $cat, 'view' => $view,
+        'title' => 'Events in Gulu & Lira | Chill & Bite MEATINGS Calendar & Reservations',
+        'desc' => 'See upcoming Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu and Lira, Uganda, and reserve your table or tickets online.', 'events' => $events, 'month' => $month, 'cat' => $cat, 'view' => $view,
         'categories' => rows('SELECT * FROM event_categories ORDER BY id'),
         'upcoming' => $view === 'list' && !isset($_GET['month']) ? upcoming_events(12, $cat) : null,
     ]);

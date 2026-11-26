@@ -33,7 +33,7 @@
     ?>
     <div class="about-event">
       <span class="eyebrow">About this event</span>
-      <h2><?= $isComedy ? 'An unforgettable night of laughter' : 'Where Gulu connects, shares and grows' ?></h2>
+      <h2><?= $isComedy ? 'An unforgettable night of laughter' : 'Where Gulu and Lira connect, share and grow' ?></h2>
       <div class="about-lead"><?= paragraphs($e['description']) ?></div>
       <?php if ($e['video_url'] && ($id = youtube_id($e['video_url']))): video_embed(['url' => $e['video_url'], 'title' => 'Event video']); endif; ?>
 

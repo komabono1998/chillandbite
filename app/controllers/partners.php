@@ -12,7 +12,7 @@ function page_partner(): void
 {
     render('site/partner', [
         'title' => 'Become a Partner | Chill & Bite MEATINGS Gulu',
-        'desc' => "Apply to partner with Chill & Bite MEATINGS and put your brand in front of Gulu City's professionals, entrepreneurs and creatives.",
+        'desc' => "Apply to partner with Chill & Bite MEATINGS and put your brand in front of the professionals of Gulu and Lira, entrepreneurs and creatives.",
         'partners' => approved_partners(),
     ]);
 }

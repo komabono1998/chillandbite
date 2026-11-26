@@ -52,7 +52,7 @@ function seo_schema(string $seg, ?array $event, array $packages, string $title):
     $org = ['@type' => ['Organization', 'LocalBusiness'], '@id' => $home . '#org', 'name' => SEO_BRAND, 'alternateName' => ['Chill and Bite MEATINGS', 'Chill & Bite Gulu', 'Chill and Bite Meating'],
         'url' => $home, 'logo' => $logo, 'image' => $logo, 'description' => setting('tagline'),
         'address' => ['@type' => 'PostalAddress', 'addressLocality' => 'Gulu', 'addressCountry' => 'UG'],
-        'areaServed' => 'Gulu City, Northern Uganda', 'founder' => ['@id' => $home . '#host']];
+        'areaServed' => ['Gulu City', 'Lira City', 'Northern Uganda'], 'founder' => ['@id' => $home . '#host']];
     if (setting('contact_phone')) $org['telephone'] = setting('contact_phone');
     if (setting('contact_email')) $org['email'] = setting('contact_email');
     if ($same = seo_same_as()) $org['sameAs'] = $same;

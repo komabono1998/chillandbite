@@ -25,10 +25,10 @@ function site_pages(): array
             'related' => [['Events', 'admin/events', 'events'], ['Gallery', 'admin/gallery', 'gallery'], ['Sponsors', 'admin/advertising', 'advertising']],
             'sections' => [
                 'hero' => ['label' => 'Hero banner', 'fields' => [
-                    $f('eyebrow', 'Small label above the headline', 'text', 'Gulu City · Every first Sunday'),
+                    $f('eyebrow', 'Small label above the headline', 'text', 'Gulu & Lira · Monthly experience'),
                     $f('headline', 'Headline', 'text', 'Good Food. Great People.'),
                     $f('accent', 'Headline (gold second line)', 'text', 'Unforgettable Connections.'),
-                    $f('intro', 'Introduction', 'textarea', "Welcome to Chill & Bite MEATINGS, Gulu City's monthly lifestyle and corporate networking experience. Join MC Kash Owakabi and Owakabi & The Geng for an exciting blend of food, music, entertainment, outdoor games, and meaningful connections."),
+                    $f('intro', 'Introduction', 'textarea', "Welcome to Chill & Bite MEATINGS, the monthly lifestyle and corporate networking experience for Gulu and Lira. Join MC Kash Owakabi and Owakabi & The Geng for an exciting blend of food, music, entertainment, outdoor games, and meaningful connections."),
                     $f('btn_reserve', 'Main button', 'text', 'Reserve your spot'),
                     $f('btn_events', 'Second button', 'text', 'Explore upcoming events'),
                 ]],
@@ -97,7 +97,7 @@ function site_pages(): array
                 'cta' => ['label' => 'Final call to action', 'fields' => [
                     $f('heading', 'Heading', 'text', 'Your Next Great Connection Starts Here!'),
                     $f('tagline', 'Tagline', 'text', 'One Sunday. One Location. Endless Connections.'),
-                    $f('text', 'Text', 'text', 'Join us at Revelation Cottages, Gulu City, for the next Chill & Bite MEATINGS experience.'),
+                    $f('text', 'Text', 'text', 'Join us in Gulu and Lira for the next Chill & Bite MEATINGS experience.'),
                     $f('button', 'Button', 'text', 'Book your place today'),
                     $f('photo', 'Background photo', 'image', 'img/last-edition/le-03.jpg', 'A bright, wide photo works best. Text sits on a frosted panel so the picture stays visible.'),
                 ]],
@@ -117,12 +117,12 @@ function site_pages(): array
                     $photo(),
                 ]],
                 'stats' => ['label' => 'Key facts bar', 'fields' => [
-                    $f('items', 'Facts (one per line: value | label)', 'lines', "Every 1st Sunday | Monthly experience\n12 PM | Gates open\nGulu City | Revelation Cottages\n2026 | 1st Anniversary edition", 'Numbers such as 2026 count up when they appear.'),
+                    $f('items', 'Facts (one per line: value | label)', 'lines', "Every 1st Sunday | Monthly experience\n12 PM | Gates open\nGulu & Lira | Two cities, one experience\n2026 | 1st Anniversary edition", 'Numbers such as 2026 count up when they appear.'),
                 ]],
                 'story' => ['label' => 'Our story', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Our story'),
                     $f('heading', 'Heading', 'text', 'The story of Chill & Bite MEATINGS'),
-                    $f('p1', 'Paragraph 1', 'textarea', 'Chill & Bite MEATINGS is a premium lifestyle and entertainment experience held every first Sunday of the month at Revelation Cottages, Gulu City. It brings together professionals, entrepreneurs, creatives, businesses and entertainment lovers for food, music, comedy, outdoor games and real conversations.'),
+                    $f('p1', 'Paragraph 1', 'textarea', 'Chill & Bite MEATINGS is a premium lifestyle and entertainment experience held monthly in Gulu and Lira, with the main edition on the first Sunday of the month at Revelation Cottages, Gulu City. It brings together professionals, entrepreneurs, creatives, businesses and entertainment lovers for food, music, comedy, outdoor games and real conversations.'),
                     $f('p2', 'Paragraph 2', 'textarea', 'It is hosted by MC Kash Owakabi and organized by Owakabi & The Geng, a team passionate about building opportunities for Northern Uganda through shared experiences.'),
                     $f('quote', 'Highlighted line', 'text', 'Good food. Great people. Unforgettable connections.'),
                     $f('photo', 'Main photo', 'image', 'img/photos/photo-10.jpg'),
@@ -174,7 +174,7 @@ function site_pages(): array
                     $f('eyebrow', 'Small label', 'text', 'FAQ'),
                     $f('heading', 'Heading', 'text', 'Frequently asked questions'),
                     $f('items', 'Questions (one per line: Question | Answer)', 'lines',
-                        "When and where does Chill & Bite MEATINGS take place? | Usually on the first Sunday of every month at Revelation Cottages, Gulu City. Gates open at 12:00 PM. Special editions may fall on other Sundays, so check the Events page for exact dates.\n" .
+                        "When and where does Chill & Bite MEATINGS take place? | Usually on the first Sunday of every month at Revelation Cottages, Gulu City, with special editions in Lira (for example at Lavington Park). Gates open at 12:00 PM. Check the Events page for exact dates and places.\n" .
                         "How do I book a place or a table? | Open the event page and choose Reserve now. Pick a reservation type or a table package, enter your details and confirm. Your booking is approved by our team and your QR ticket is issued.\n" .
                         "How do I get my ticket? | Once your booking is confirmed we send your ticket by email or WhatsApp. You can also enter your booking reference on the Track your booking page to view or download it at any time.\n" .
                         "Can my company sponsor or exhibit? | Yes. Brands come to network and market their events, products and services. Apply on the Become a partner page or request an advertising proposal.\n" .
@@ -183,7 +183,7 @@ function site_pages(): array
                 ]],
                 'cta' => ['label' => 'Closing call to action', 'fields' => [
                     $f('heading', 'Heading', 'text', 'Ready to be part of the next one?'),
-                    $f('text', 'Text', 'text', 'Reserve your place, bring your team, or showcase your brand to Gulu City.'),
+                    $f('text', 'Text', 'text', 'Reserve your place, bring your team, or showcase your brand to Gulu and Lira.'),
                     $f('btn1', 'Button 1', 'text', 'Reserve your place'),
                     $f('btn2', 'Button 2', 'text', 'Partner with us'),
                 ]],
@@ -220,7 +220,7 @@ function site_pages(): array
                 'host' => ['label' => 'Meet the host', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Meet the host'),
                     $f('heading', 'Heading', 'text', 'MC Kash Owakabi'),
-                    $f('bio', 'Paragraph 1', 'textarea', 'MC Kash Owakabi is the voice and face of Chill & Bite MEATINGS in Gulu City. He is a charismatic master of ceremonies and stand-up comedian who keeps a room laughing, relaxed and fully involved.'),
+                    $f('bio', 'Paragraph 1', 'textarea', 'MC Kash Owakabi is the voice and face of Chill & Bite MEATINGS in Gulu and Lira. He is a charismatic master of ceremonies and stand-up comedian who keeps a room laughing, relaxed and fully involved.'),
                     $f('bio2', 'Paragraph 2', 'textarea', 'He is the founder of Owakabi & The Geng, the creative team behind Chill & Bite MEATINGS, and Laugh with Owakabi. Whether it is a packed outdoor crowd or a boardroom dinner, he adapts the humour to the audience.'),
                     $f('points', 'Highlights (one per line)', 'lines', "Charismatic host and master of ceremonies\nStand-up comedy and live audience engagement\nClean, audience-friendly humour that suits corporate and family events\nFounder of Owakabi & The Geng"),
                     $f('photo', 'Host photo', 'image', 'img/host-mc-kash-crown.jpg'),
@@ -388,7 +388,7 @@ Annual Partnerships | Longer-term promotional partnerships."),
                 'hero' => ['label' => 'Page header', 'fields' => [
                     $f('eyebrow', 'Small label', 'text', 'Partner with us'),
                     $f('heading', 'Heading', 'text', 'Grow your brand with Chill & Bite'),
-                    $f('lead', 'Subtitle', 'textarea', "Join the companies putting their name in front of Gulu City's professionals, entrepreneurs, creatives and entertainment lovers, every month."),
+                    $f('lead', 'Subtitle', 'textarea', "Join the companies putting their name in front of the professionals, entrepreneurs, creatives and entertainment lovers of Gulu and Lira, every month."),
                     $f('btn_apply', 'Button 1', 'text', 'Apply to partner'),
                     $f('btn_partners', 'Button 2', 'text', 'See our partners'),
                     $photo(),
