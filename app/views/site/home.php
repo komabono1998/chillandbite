@@ -54,7 +54,7 @@
       <button class="cf-nav cf-prev" type="button" aria-label="Previous flyer">&#8249;</button>
       <div class="cf-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Event flyers">
         <?php foreach ($advert as $i => $s): $src = upload_url($s['file']); ?>
-          <a class="cf-slide" href="<?= h($src) ?>" data-lightbox data-name="<?= h($s['name']) ?>" data-sub="<?= h($s['sub']) ?>" data-id="<?= (int)$s['id'] ?>" aria-label="<?= h($s['name']) ?>">
+          <a class="cf-slide" href="<?= h($src) ?>" data-lightbox data-name="<?= h($s['name']) ?>" data-sub="<?= h($s['sub']) ?>" data-id="<?= (int)$s['id'] ?>" data-link="<?= $s['link'] !== '' ? '1' : '' ?>" aria-label="<?= h($s['name']) ?>">
             <img src="<?= h($src) ?>" alt="<?= h($s['name'] . ($s['sub'] ? ', ' . $s['sub'] : '') . ' - Chill & Bite MEATINGS flyer') ?>" width="763" height="1080" <?= $i < 3 ? '' : 'loading="lazy" ' ?>decoding="async" draggable="false">
           </a>
         <?php endforeach; ?>
@@ -67,7 +67,8 @@
     <div class="btn-row cf-actions">
       <a class="btn btn-primary btn-lg" href="<?= h($reserve) ?>"><?= cth('home.advert.button') ?></a>
       <a class="btn btn-outline btn-lg cf-share" target="_blank" rel="noopener" href="#" data-share-url="<?= h($shareUrl) ?>">Share on WhatsApp</a>
-      <?php if ($dlOn): ?><a class="btn btn-ghost btn-lg cf-dl" href="#" data-dl="<?= h(url('gallery/download/')) ?>">Download flyer</a><?php endif; ?>
+      <a class="btn btn-ghost btn-lg cf-more" href="#" data-more="<?= h(url('ad/')) ?>" target="_blank" rel="noopener" hidden>Learn more</a>
+      <?php if ($dlOn): ?><a class="btn btn-ghost btn-lg cf-dl" href="#" data-dl="<?= h(url('ad/')) ?>">Download flyer</a><?php endif; ?>
     </div>
   </div>
 </section>

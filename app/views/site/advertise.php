@@ -1,6 +1,15 @@
 <section class="page-hero hero-dark"><div class="wrap"><span class="eyebrow gold"><?= cth('advertise.hero.eyebrow') ?></span><h1><?= cth('advertise.hero.heading') ?></h1>
   <p class="lead"><?= cth('advertise.hero.lead') ?></p>
   <a class="btn btn-primary btn-lg" href="#proposal"><?= cth('advertise.hero.btn_proposal') ?></a> <a class="btn btn-outline btn-lg" href="<?= url('partner') ?>"><?= cth('advertise.hero.btn_partner') ?></a></div></section>
+<?php if (!empty($adverts)): ?><section class="section section-dark ad-showcase-sec" id="adverts"><div class="wrap">
+  <div class="section-head center"><span class="eyebrow gold"><span class="live-dot" aria-hidden="true"></span> Adverts running now</span><h2>See your brand in lights</h2><p class="lead narrow">These adverts are running on our website right now: on the homepage and across our pages. Tap one to see it full size.</p></div>
+  <div class="ad-showcase"><?php foreach ($adverts as $ad): $isLink = !empty($ad['link']); ?>
+    <a class="ad-tile" href="<?= h($isLink ? url('ad/' . (int)$ad['id']) : upload_url($ad['image'])) ?>"<?= $isLink ? ' target="_blank" rel="noopener"' : ' data-lightbox' ?>>
+      <img src="<?= h(upload_url($ad['image'])) ?>" alt="<?= h($ad['title']) ?> advert" loading="lazy" decoding="async">
+      <span class="ad-cap"><b><?= h($ad['title']) ?></b><?= $ad['subtitle'] ? '<small>' . h($ad['subtitle']) . '</small>' : '' ?></span></a>
+  <?php endforeach; ?></div>
+  <p class="center" style="margin-top:1.4rem"><a class="btn btn-primary btn-lg" href="#proposal">Run your advert here</a></p>
+</div></section><?php endif; ?>
 <?php if ($sponsors): ?><section class="section section-dark"><div class="wrap center"><h2><?= cth('advertise.partners.heading') ?></h2><ul class="sponsor-row"><?php foreach ($sponsors as $s) sponsor_item($s); ?></ul></div></section><?php endif; ?>
 <?php
 $groups = [

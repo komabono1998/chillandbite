@@ -165,7 +165,6 @@ function page_home(): void
 {
     events_seed_nov29();
     events_flyer_swap();
-    advert_seed();
     // Hero/featured card is the next monthly Chill & Bite; other upcoming events (any category) follow it.
     $events = upcoming_events(8);
     $monthly = upcoming_events(1, 'chill-bite-meatings')[0] ?? ($events[0] ?? null);
@@ -242,6 +241,7 @@ function page_advertise(): void
         'title' => 'Advertise & Sponsor | Chill & Bite MEATINGS Gulu, Uganda',
         'desc' => 'Advertise your business or sponsor Chill & Bite MEATINGS and Laugh with Owakabi events in Gulu. Banner ads, sponsored articles, brand activations and annual partnerships.',
         'sponsors' => rows('SELECT * FROM sponsors WHERE active = 1 ORDER BY FIELD(tier,"title","gold","silver","partner"), name'),
+        'adverts' => adverts_running('all', 30),
     ]);
 }
 function page_contact(): void { render('site/contact', ['title' => 'Contact Chill & Bite MEATINGS | Owakabi & The Geng, Gulu', 'desc' => 'Contact Chill & Bite MEATINGS and Owakabi & The Geng in Gulu City, Uganda for bookings, partnerships and enquiries.']); }

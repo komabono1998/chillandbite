@@ -25,6 +25,7 @@ require __DIR__ . '/app/ticketpdf.php';
 require __DIR__ . '/app/controllers/gentickets.php';
 require __DIR__ . '/app/controllers/analytics.php';
 require __DIR__ . '/app/controllers/gallery.php';
+require __DIR__ . '/app/controllers/adverts.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
@@ -61,6 +62,8 @@ $routes = [
     ['GET',  'partner',              'page_partner'],
     ['POST', 'partner',              'post_partner'],
     ['GET',  'gallery',              'page_gallery'],
+    ['GET',  'ad/{id}',              'page_advert_click'],
+    ['GET',  'ad/{id}/download',     'page_advert_download'],
     ['GET',  'gallery/zip',          'page_gallery_zip'],
     ['GET',  'gallery/download/{id}', 'page_gallery_download'],
     ['GET',  'contact',              'page_contact'],
@@ -145,6 +148,7 @@ $routes = [
     ['POST', 'admin/gallery',        'admin_gallery_save'],
     ['GET',  'admin/advertising',    'admin_advertising'],
     ['POST', 'admin/advertising',    'admin_advertising_save'],
+    ['POST', 'admin/adverts',        'admin_adverts_save'],
     ['GET',  'admin/inquiries',      'admin_inquiries'],
     ['POST', 'admin/inquiries/{id}', 'admin_inquiry_update'],
     ['GET',  'admin/partners',       'admin_partners'],

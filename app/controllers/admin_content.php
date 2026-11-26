@@ -173,7 +173,7 @@ function admin_advertising(): void
 {
     require_can('advertising');
     admin_view('advertising', ['title' => 'Sponsors & advertising', 'sponsors' => rows('SELECT * FROM sponsors ORDER BY active DESC, FIELD(tier,"title","gold","silver","partner"), name'),
-        'inq' => rows("SELECT * FROM inquiries WHERE type='advertising' ORDER BY id DESC LIMIT 100")]);
+        'inq' => rows("SELECT * FROM inquiries WHERE type='advertising' ORDER BY id DESC LIMIT 100"), 'adverts' => admin_adverts_data()]);
 }
 function admin_advertising_save(): void
 {

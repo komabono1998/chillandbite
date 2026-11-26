@@ -84,6 +84,15 @@ $pageDesc = $desc ?? setting('tagline');
 <?php if ($cur !== '' && !in_array($seg, ['gallery', 'ticket'], true) && http_response_code() === 200): ?>
 <?php photo_strip(strip_nums($stripSets[$seg] ?? ['crowd', 'people'], crc32($seg), 14), 'Moments from Chill & Bite', 'strip-dark'); ?>
 <?php endif; ?>
+<?php if ($cur !== '' && !in_array($seg, ['ticket', 'booking', 'track', 'setup', 'admin', 'advertise'], true) && http_response_code() === 200 && ($stripAds = adverts_running('pages', 12))): ?>
+<section class="ad-strip" aria-label="Adverts"><div class="wrap">
+  <p class="ad-strip-h"><span class="live-dot" aria-hidden="true"></span> <b>Now running</b> <a href="<?= url('advertise') ?>">Advertise here</a></p>
+  <div class="ad-strip-row"><?php foreach ($stripAds as $ad): $isLink = !empty($ad['link']); ?>
+    <a class="ad-card" href="<?= h($isLink ? url('ad/' . (int)$ad['id']) : upload_url($ad['image'])) ?>"<?= $isLink ? ' target="_blank" rel="noopener"' : ' data-lightbox' ?> title="<?= h($ad['title']) ?>">
+      <img src="<?= h(upload_url($ad['image'])) ?>" alt="<?= h($ad['title'] . ($ad['subtitle'] ? ', ' . $ad['subtitle'] : '')) ?>" loading="lazy" decoding="async"><span><b><?= h($ad['title']) ?></b><?= $ad['subtitle'] ? '<small>' . h($ad['subtitle']) . '</small>' : '' ?></span></a>
+  <?php endforeach; ?></div>
+</div></section>
+<?php endif; ?>
 </main>
 
 <footer class="site-footer">

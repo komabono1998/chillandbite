@@ -139,7 +139,7 @@
     var a = ev.target.closest('a[data-lightbox]');
     if (!a) return;
     ev.preventDefault();
-    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer, .wall, .cf-viewport, .pf-col') || document;
+    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer, .wall, .cf-viewport, .pf-col, .ad-strip-row, .ad-showcase') || document;
     items = Array.prototype.slice.call(scope.querySelectorAll('a[data-lightbox]'));
     idx = items.indexOf(a);
     box = document.createElement('div');
@@ -246,7 +246,8 @@ window.addEventListener('load', function () { document.querySelectorAll('img').f
     title.textContent = cur.dataset.name || ''; sub.textContent = cur.dataset.sub || '';
     var txt = 'Chill & Bite MEATINGS: ' + (cur.dataset.name || '') + '. Sunday 29 November, Lavington Park, Lira, 12 PM. ' + (share ? share.dataset.shareUrl : '');
     if (share) share.href = 'https://wa.me/?text=' + encodeURIComponent(txt);
-    if (dl) dl.href = dl.dataset.dl + cur.dataset.id;
+    if (dl) dl.href = dl.dataset.dl + cur.dataset.id + '/download';
+    var more = document.querySelector('.cf-more'); if (more) { more.hidden = !cur.dataset.link; more.href = more.dataset.more + cur.dataset.id; }
     var strip = chips[active]; if (strip && strip.parentNode.scrollTo) strip.parentNode.scrollTo({ left: strip.offsetLeft - strip.parentNode.clientWidth / 2 + strip.clientWidth / 2, behavior: reduce ? 'auto' : 'smooth' });
   }
   function go(i) { active = (i + n) % n; layout(); restart(); }
