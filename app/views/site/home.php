@@ -1,7 +1,8 @@
 <?php $reserve = $next ? url('events/' . $next['slug'] . '/reserve') : url('events'); ?>
+<?php $flyer = !empty($next['poster']) ? $next['poster'] : ($next_date->format('Y-m-d') === '2026-12-06' ? 'img/flyer-dec-2026.jpg' : ''); ?>
 <section class="hero">
   <div class="hero-slides" aria-hidden="true"><?php $slides = !empty($hero_photos) ? array_map('upload_url', $hero_photos) : array_map('photo', [44, 3, 6, 41, 18]); foreach ($slides as $i => $src): ?><div style="background-image:url('<?= h($src) ?>');animation-delay:<?= $i * 6 - 2 ?>s"></div><?php endforeach; ?></div>
-  <div class="wrap hero-in">
+  <div class="wrap hero-in<?= $flyer ? ' has-pf' : '' ?>">
     <div class="hero-copy">
       <span class="eyebrow gold"><?= cth('home.hero.eyebrow') ?></span>
       <h1><?= cth('home.hero.headline') ?> <span><?= cth('home.hero.accent') ?></span></h1>
@@ -11,9 +12,18 @@
         <a class="btn btn-outline btn-lg" href="<?= url('events') ?>"><?= cth('home.hero.btn_events') ?></a>
       </div>
     </div>
-    <aside class="info-panel" aria-label="Event information">
-      <?php $flyer = !empty($next['poster']) ? $next['poster'] : ($next_date->format('Y-m-d') === '2026-12-06' ? 'img/flyer-dec-2026.jpg' : ''); ?>
-      <?php if ($flyer): ?><a class="panel-flyer" href="<?= url(!empty($next['slug']) ? 'events/' . h($next['slug']) : 'events') ?>"><img src="<?= h(upload_url($flyer)) ?>" alt="<?= h(($next['title'] ?? 'Chill & Bite MEATINGS') . ' flyer') ?>" width="600" height="600" loading="eager"></a><?php endif; ?>
+    <aside class="info-panel<?= $flyer ? ' info-pf' : '' ?>" aria-label="Event information">
+      <?php if ($flyer): $evUrl = url(!empty($next['slug']) ? 'events/' . $next['slug'] : 'events'); $evName = $next['title'] ?? 'Chill & Bite MEATINGS';
+            $waText = $evName . ' - ' . $next_date->format('l, j F Y') . ' at ' . $next_date->format('g:i A') . (!empty($next['venue']) ? ', ' . $next['venue'] . ', ' . $next['location'] : '') . '. ' . ($evUrl ? abs_url(!empty($next['slug']) ? 'events/' . $next['slug'] : 'events') : ''); ?>
+      <div class="pf-col">
+        <a class="panel-flyer pf-tilt" href="<?= h(upload_url($flyer)) ?>" data-lightbox aria-label="Enlarge the official flyer">
+          <img src="<?= h(upload_url($flyer)) ?>" alt="<?= h($evName . ' official flyer') ?>" loading="eager" decoding="async" draggable="false">
+          <span class="pf-shine" aria-hidden="true"></span><span class="pf-badge"><i aria-hidden="true">&#10530;</i> Tap to enlarge</span>
+        </a>
+        <div class="pf-actions"><a href="<?= h($evUrl) ?>">Event details</a><a target="_blank" rel="noopener" href="https://wa.me/?text=<?= rawurlencode($waText) ?>">Share on WhatsApp</a></div>
+      </div>
+      <?php endif; ?>
+      <div class="pf-body">
       <p class="eyebrow gold"><?= cth('home.panel.label') ?></p>
       <?php [$cdAt, $cdLabel, $cdCustom] = $cd ?? [$next_date, null, false]; ?>
       <p class="countdown-date"><?= $cdAt->format('l, j F Y') ?> · <?= $cdAt->format('g:i A') ?></p>
@@ -30,6 +40,7 @@
         <dt>Starting time</dt><dd><?= $ev ? h($next_date->format('g:i A')) : cth('home.panel.time') ?></dd>
         <dt>Host</dt><dd><?= cth('home.panel.host') ?></dd>
       </dl>
+      </div>
     </aside>
   </div>
 </section>

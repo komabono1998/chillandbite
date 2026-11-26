@@ -139,7 +139,7 @@
     var a = ev.target.closest('a[data-lightbox]');
     if (!a) return;
     ev.preventDefault();
-    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer, .wall, .cf-viewport') || document;
+    var scope = a.closest('.strip, .mosaic, .gallery-grid, .flyer, .wall, .cf-viewport, .pf-col') || document;
     items = Array.prototype.slice.call(scope.querySelectorAll('a[data-lightbox]'));
     idx = items.indexOf(a);
     box = document.createElement('div');
@@ -273,4 +273,18 @@ window.addEventListener('load', function () { document.querySelectorAll('img').f
   document.addEventListener('visibilitychange', function () { pause(document.hidden); });
   window.addEventListener('resize', layout);
   layout(); restart();
+})();
+
+// Hero flyer: 3D tilt that follows the pointer, with a moving shine (mouse only; touch gets a gentle float)
+(function () {
+  'use strict';
+  var el = document.querySelector('.pf-tilt'); if (!el) return;
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  el.addEventListener('pointermove', function (e) {
+    if (e.pointerType && e.pointerType !== 'mouse') return;
+    var r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    el.style.setProperty('--ry', ((x - 0.5) * 14).toFixed(2) + 'deg'); el.style.setProperty('--rx', ((0.5 - y) * 14).toFixed(2) + 'deg');
+    el.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); el.style.setProperty('--my', (y * 100).toFixed(1) + '%'); el.classList.add('is-tilting');
+  });
+  el.addEventListener('pointerleave', function () { el.classList.remove('is-tilting'); el.style.removeProperty('--ry'); el.style.removeProperty('--rx'); });
 })();
