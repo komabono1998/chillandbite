@@ -12,6 +12,7 @@ function dash_tabs(): array
     if (can_any(['payments', 'reports', 'collections', 'reservations'])) $t['events'] = ['Collections by event', '💰'];
     if (can_any(['reservations', 'reports', 'collections'])) $t['trail'] = ['Activity trail', '🧾'];
     if (can('analytics')) $t['visitors'] = ['Visitors', '📈'];
+    if (can('withdraw')) $t['withdraw'] = ['Withdraw money', '📲'];
     return $t;
 }
 
@@ -134,6 +135,21 @@ function admin_dashboard(): void
         $f = ['event' => (int)($_GET['event'] ?? 0), 'kind' => in_array($_GET['kind'] ?? '', ['booking', 'payment', 'attempt', 'admin'], true) ? $_GET['kind'] : 'all', 'q' => (string)($_GET['q'] ?? ''), 'from' => $_GET['from'] ?? '', 'to' => $_GET['to'] ?? '', 'page' => (int)($_GET['page'] ?? 1)];
         $d['f'] = $f; $d['trail'] = dash_trail($f);
         $d['all_events'] = rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 40');
+    } elseif ($tab === 'withdraw') {
+        pay_ensure_schema();
+        $on = daraza_enabled();
+        $d['daraza_on'] = $on;
+        $d['wallet'] = $on ? daraza_wallet(isset($_GET['refresh'])) : null;
+        $d['online_in'] = (int)val("SELECT COALESCE(SUM(amount),0) FROM payments WHERE channel IN ('daraza_mtn','daraza_airtel')");
+        $d['online_refunds'] = (int)val("SELECT COALESCE(-SUM(amount),0) FROM payments WHERE channel = 'daraza_refund'");
+        try {
+            dw_expire_stale();
+            $d['withdrawn'] = (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status = 'success'");
+            $d['wd_pending'] = (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status IN ('pending','unconfirmed')");
+            $d['wds'] = rows('SELECT w.*, u.name by_name FROM daraza_withdrawals w LEFT JOIN users u ON u.id = w.user_id ORDER BY w.id DESC LIMIT 40');
+            $d['recent_numbers'] = array_column(rows("SELECT phone, MAX(id) m FROM daraza_withdrawals WHERE status = 'success' GROUP BY phone ORDER BY m DESC LIMIT 4"), 'phone');
+        } catch (Throwable $e) { $d['withdrawn'] = $d['wd_pending'] = 0; $d['wds'] = []; $d['recent_numbers'] = []; }
+        $d['cash_in'] = (int)val("SELECT COALESCE(SUM(amount),0) FROM payments WHERE channel IS NULL AND amount > 0");
     } elseif ($tab === 'visitors') {
         [$from, $to, $range] = analytics_range();
         $d['v'] = analytics_report($from, $to); $d['range'] = $range; $d['from'] = $from; $d['to'] = $to;

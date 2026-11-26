@@ -50,12 +50,15 @@ function admin_collections_fees(): void
     echo json_encode($f ? ['ok' => true] + $f : ['ok' => false, 'error' => 'Could not get the fee from Daraza.']);
 }
 
+/** Withdrawals started from the dashboard Withdraw tab return there. */
+function wd_back(): string { return ($_POST['back'] ?? '') === 'dash' ? 'admin?tab=withdraw' : 'admin/collections#withdraw'; }
+
 /** Take money out of the Daraza wallet to a mobile money number. Administrator only, with password re-entry. */
 function admin_withdraw(): void
 {
     require_can('withdraw');
     $u = current_user();
-    $fail = function (string $m): never { flash($m, 'err'); redirect('admin/collections#withdraw'); };
+    $fail = function (string $m): never { flash($m, 'err'); redirect(wd_back()); };
     if (!daraza_enabled()) $fail('Daraza is not set up on this site.');
     $phone = daraza_phone((string)($_POST['phone'] ?? ''));
     if (!$phone) $fail('Enter the mobile money number to send the money to.');
@@ -74,18 +77,18 @@ function admin_withdraw(): void
     $id = dw_start($amount, $phone, (int)$u['id']);
     audit('withdraw.start', money($amount) . ' to ' . $phone);
     flash('Withdrawal of ' . money($amount) . ' to ' . $phone . ' is being sent. Refresh in a moment to see the result.');
-    daraza_respond_then([], fn() => dw_run($id), url('admin/collections#withdraw'));
+    daraza_respond_then([], fn() => dw_run($id), url(wd_back()));
 }
 /** A person decides what happened to a withdrawal Daraza never answered. */
 function admin_withdraw_resolve(array $a): void
 {
     require_can('withdraw');
     $w = row('SELECT * FROM daraza_withdrawals WHERE id = ?', [(int)$a['id']]) ?? not_found();
-    if ($w['status'] !== 'unconfirmed') { flash('That withdrawal is no longer waiting for a decision.', 'err'); redirect('admin/collections#withdraw'); }
+    if ($w['status'] !== 'unconfirmed') { flash('That withdrawal is no longer waiting for a decision.', 'err'); redirect(wd_back()); }
     $who = current_user()['name'] ?? 'admin';
     if (($_POST['choice'] ?? '') === 'received') { dw_settle((int)$w['id'], 'success', 'Confirmed by ' . $who . ' from the Daraza statement'); audit('withdraw.resolve_sent', '#' . $w['id']); flash('Marked as sent.'); }
     else { dw_settle((int)$w['id'], 'failed', 'Dismissed by ' . $who . ': no money moved'); audit('withdraw.resolve_dismissed', '#' . $w['id']); flash('Dismissed. Nothing was recorded as sent.'); }
-    redirect('admin/collections#withdraw');
+    redirect(wd_back());
 }
 
 /** Export of every payment in the chosen period with its channel. */
