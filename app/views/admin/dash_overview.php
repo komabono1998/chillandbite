@@ -40,6 +40,22 @@ $maxRev = isset($rev_events) && $rev_events ? max(1, max(array_column($rev_event
   <?php endforeach; ?>
 </div><?php endif; ?>
 
+<?php if (!empty($pay_health)): $ph = $pay_health; $att = $ph['att']; $tried = array_sum($att); ?>
+<div class="panel pay-health">
+  <div class="panel-head"><h2>💳 Online payment check</h2><a class="small" href="<?= url('admin?tab=trail&kind=attempt') ?>">See every attempt →</a></div>
+  <?php if ($ph['mode'] === 'off'): ?><p class="ph-bad"><b>Online payment is OFF.</b> The server has no <code>DARAZA_API_KEY</code> in its <code>.env</code> file, so guests cannot pay online and nothing is recorded automatically. Add the key (the Daraza key from your Daraza dashboard), or record each payment by hand: open the booking and use <i>Record payment</i>.</p>
+  <?php elseif ($ph['mode'] === 'sandbox'): ?><p class="ph-bad"><b>Payment is in TEST mode</b> (<code>DARAZA_SANDBOX=1</code>). Guests see a payment prompt, but it is pretend and no real money moves. Set it to 0 in <code>.env</code> to take real payments.</p>
+  <?php else: ?><p class="ph-ok"><b>Online payment is <?= $ph['mode'] === 'mock' ? 'in local mock mode' : 'ON (live)' ?>.</b></p><?php endif; ?>
+  <div class="ph-grid">
+    <div><b><?= (int)$tried ?></b><span>payment attempts, last 14 days</span></div><div><b style="color:#1f8a4c"><?= (int)$att['success'] ?></b><span>successful</span></div>
+    <div><b style="color:#d9534f"><?= (int)$att['failed'] ?></b><span>failed</span></div><div><b style="color:#7a5cc7"><?= (int)($att['pending'] + $att['unconfirmed']) ?></b><span>waiting / unconfirmed</span></div>
+    <div><b><?= (int)$ph['recorded'] ?></b><span>payments recorded<?= $ph['last_payment'] ? ' · last ' . h(fmt_date($ph['last_payment'], 'j M, g:i A')) : '' ?></span></div>
+  </div>
+  <?php if ($ph['mode'] !== 'off' && $tried === 0): ?><p class="ph-warn">No guest has started an online payment in the last 14 days. If people say they paid, they may have paid some other way (for example straight to a phone number). Those payments are not in the system until you <b>record them on the booking</b>.</p><?php endif; ?>
+  <?php if ($ph['wallet'] !== null && $ph['wallet'] - $ph['expected'] > 1000): ?><p class="ph-bad">⚠️ The Daraza wallet holds <b><?= h(money($ph['wallet'] - $ph['expected'])) ?></b> more than the online payments recorded here. Some payments may have reached Daraza without being recorded. Check the wallet statement in your Daraza dashboard against <a href="<?= url('admin?tab=trail&kind=attempt') ?>">the attempts list</a>.</p><?php endif; ?>
+  <?php if ($ph['fails']): ?><details class="ph-fails"><summary>Latest failed or unconfirmed attempts</summary><ul><?php foreach ($ph['fails'] as $f): ?><li><?= h(fmt_date($f['created_at'], 'j M, g:i A')) ?> · <?= h($f['phone']) ?> · <?= h((string)$f['message']) ?></li><?php endforeach; ?></ul></details><?php endif; ?>
+</div>
+<?php endif; ?>
 <?php if (!empty($ev_totals)): ?>
 <div class="panel dash-ev">
   <div class="panel-head"><h2>💰 Collections by event</h2><a class="small" href="<?= url('admin?tab=events') ?>">All events &amp; records →</a></div>

@@ -419,3 +419,6 @@ dialog.pic-picker::backdrop{background:rgba(15,15,15,.7)}
 .wd-bal span{display:block;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}.wd-bal b{display:block;font-size:2.3rem;line-height:1.15;font-weight:800}.wd-bal small{opacity:.85}.wd-bal a{color:#cdf3da}
 .wd-stats{display:flex;gap:26px;flex-wrap:wrap}.wd-stats b{display:block;font-size:1.15rem}.wd-stats span{font-size:.74rem;opacity:.85}
 .wd-big label{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:.82rem}.wd-nums{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:400}.wd-nums button{cursor:pointer;border:0}
+
+.pay-health p{margin:.3rem 0 .8rem}.ph-ok{color:#1f6b3f}.ph-bad{background:#fdecea;border:1px solid #f3b8b0;color:#8a2a20;padding:10px 12px;border-radius:10px}.ph-warn{background:#fff6e0;border:1px solid #f1d28a;color:#7a4b0a;padding:10px 12px;border-radius:10px}
+.ph-grid{display:flex;flex-wrap:wrap;gap:8px 28px;margin:6px 0 10px}.ph-grid b{display:block;font-size:1.3rem}.ph-grid span{font-size:.74rem;color:var(--muted)}.ph-fails{font-size:.82rem}.ph-fails ul{margin:.4rem 0 0;padding-left:1.1rem}

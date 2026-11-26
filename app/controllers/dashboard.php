@@ -115,6 +115,29 @@ function dash_trail(array $f, int $per = 40): array
     return ['rows' => array_slice($rowsOut, ($page - 1) * $per, $per), 'more' => count($rowsOut) > $page * $per, 'page' => $page];
 }
 
+/** Is online payment switched on, are guests trying it, and does the Daraza wallet agree with what is recorded here? */
+function dash_pay_health(): array
+{
+    $on = daraza_enabled();
+    $h = ['mode' => !$on ? 'off' : (daraza_mock() ? 'mock' : (env('DARAZA_SANDBOX', '0') === '1' ? 'sandbox' : 'live')), 'att' => ['success' => 0, 'failed' => 0, 'pending' => 0, 'unconfirmed' => 0], 'last' => null, 'fails' => [], 'recorded' => 0, 'last_payment' => null, 'wallet' => null, 'expected' => null];
+    try {
+        foreach (rows("SELECT status, COUNT(*) n FROM pay_attempts WHERE direction = 'collect' AND created_at >= (NOW() - INTERVAL 14 DAY) GROUP BY status") as $x) $h['att'][$x['status']] = (int)$x['n'];
+        $h['last'] = row("SELECT created_at, status, message FROM pay_attempts WHERE direction = 'collect' ORDER BY id DESC LIMIT 1");
+        $h['fails'] = rows("SELECT created_at, message, phone FROM pay_attempts WHERE direction = 'collect' AND status IN ('failed','unconfirmed') ORDER BY id DESC LIMIT 3");
+    } catch (PDOException $e) { /* attempts table not created yet */ }
+    $h['recorded'] = (int)val('SELECT COUNT(*) FROM payments WHERE amount > 0');
+    $h['last_payment'] = val('SELECT MAX(created_at) FROM payments WHERE amount > 0');
+    if ($on && can('withdraw')) {
+        $w = daraza_wallet();
+        if ($w && $w['balance'] !== null) {
+            $in = (int)val("SELECT COALESCE(SUM(amount),0) FROM payments WHERE channel IN ('daraza_mtn','daraza_airtel','daraza_refund')");
+            try { $out = (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status = 'success'"); } catch (PDOException $e) { $out = 0; }
+            $h['wallet'] = (int)$w['balance']; $h['expected'] = $in - $out;
+        }
+    }
+    return $h;
+}
+
 function admin_dashboard(): void
 {
     require_can('dashboard');
@@ -176,6 +199,7 @@ function admin_dashboard(): void
             $d['collected_today'] = (int)val('SELECT COALESCE(SUM(amount),0) FROM payments WHERE created_at >= CURDATE() AND amount > 0');
             $d['outstanding'] = (int)val("SELECT COALESCE(SUM(GREATEST(r.amount_due - COALESCE((SELECT SUM(amount) FROM payments p WHERE p.reservation_id=r.id),0),0)),0) FROM reservations r WHERE r.status IN ('pending','confirmed')");
             $d['ev_totals'] = array_slice(dash_event_totals(), 0, 6);
+            $d['pay_health'] = dash_pay_health();
             try { $d['att_attention'] = (int)val("SELECT COUNT(*) FROM pay_attempts WHERE status = 'unconfirmed' AND direction = 'collect'"); $d['att_failed_today'] = (int)val("SELECT COUNT(*) FROM pay_attempts WHERE status = 'failed' AND created_at >= CURDATE()"); }
             catch (PDOException $e) { $d['att_attention'] = $d['att_failed_today'] = 0; }
         }
