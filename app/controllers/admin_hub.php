@@ -17,56 +17,6 @@ function event_stats(string $where = '1=1', array $params = [], string $order = 
 }
 function upcoming_filter(): string { return "e.status='published' AND COALESCE(e.end_at,e.start_at) >= NOW()"; }
 
-/* ================= Dashboard ================= */
-function admin_dashboard(): void
-{
-    require_can('dashboard');
-    $u = current_user();
-    $d = ['title' => 'Dashboard', 'u' => $u];
-    $money = can_any(['payments', 'reports']);
-    $res = can_any(['reservations', 'reports']);
-
-    $d['events'] = (can_any(['events', 'reservations', 'reports', 'checkin'])) ? event_stats(upcoming_filter(), [], 'e.start_at ASC', 6) : [];
-    $d['next'] = $d['events'][0] ?? null;
-
-    if ($res) {
-        $days = [];
-        for ($i = 13; $i >= 0; $i--) $days[date('Y-m-d', strtotime("-$i day"))] = ['n' => 0, 'g' => 0];
-        foreach (rows("SELECT DATE(created_at) d, COUNT(*) n, COALESCE(SUM(guests),0) g FROM reservations WHERE created_at >= (CURDATE() - INTERVAL 13 DAY) AND status <> 'rejected' GROUP BY DATE(created_at)") as $r)
-            if (isset($days[$r['d']])) $days[$r['d']] = ['n' => (int)$r['n'], 'g' => (int)$r['g']];
-        $d['daily'] = $days;
-        $d['by_type'] = rows("SELECT type, COUNT(*) n, COALESCE(SUM(guests),0) g FROM reservations WHERE status IN ('pending','confirmed') GROUP BY type ORDER BY g DESC");
-        $d['by_status'] = array_column(rows('SELECT status, COUNT(*) n FROM reservations GROUP BY status'), 'n', 'status');
-        $d['pending_list'] = rows("SELECT r.*, e.title FROM reservations r JOIN events e ON e.id=r.event_id WHERE r.status='pending' ORDER BY r.id DESC LIMIT 6");
-        $d['recent'] = rows('SELECT r.*, e.title FROM reservations r JOIN events e ON e.id=r.event_id ORDER BY r.id DESC LIMIT 7');
-        $d['stat_pending'] = (int)val("SELECT COUNT(*) FROM reservations WHERE status='pending'");
-        $d['stat_guests'] = (int)val("SELECT COALESCE(SUM(r.guests),0) FROM reservations r JOIN events e ON e.id=r.event_id WHERE r.status='confirmed' AND COALESCE(e.end_at,e.start_at) >= NOW()");
-        $d['stat_today'] = (int)val("SELECT COUNT(*) FROM reservations WHERE DATE(created_at) = CURDATE()");
-    }
-    if ($money) {
-        $d['revenue'] = (int)val('SELECT COALESCE(SUM(amount),0) FROM payments');
-        $d['outstanding'] = (int)val("SELECT COALESCE(SUM(GREATEST(r.amount_due - COALESCE((SELECT SUM(amount) FROM payments p WHERE p.reservation_id=r.id),0),0)),0) FROM reservations r WHERE r.status IN ('pending','confirmed')");
-        $d['rev_events'] = event_stats('1=1', [], 'revenue DESC', 6);
-    }
-    if (can('inquiries')) {
-        $scope = inquiry_scope($u['role']);
-        $in = implode(',', array_fill(0, max(1, count($scope)), '?'));
-        $d['stat_inquiries'] = (int)val("SELECT COUNT(*) FROM inquiries WHERE status='new' AND type IN ($in)", $scope ?: ['']);
-        $d['inq_list'] = rows("SELECT * FROM inquiries WHERE status='new' AND type IN ($in) ORDER BY id DESC LIMIT 5", $scope ?: ['']);
-    }
-    if (can('advertising')) {
-        $d['stat_partners'] = (int)val("SELECT COUNT(*) FROM partner_applications WHERE status='pending'");
-        $d['partner_list'] = rows("SELECT id, company, partnership_type, created_at FROM partner_applications WHERE status='pending' ORDER BY id DESC LIMIT 5");
-        $d['stat_sponsors'] = (int)val('SELECT COUNT(*) FROM sponsors WHERE active = 1');
-    }
-    if (can_any(['news', 'pages'])) {
-        $d['stat_articles'] = (int)val("SELECT COUNT(*) FROM articles WHERE status IN ('published','scheduled') AND published_at <= NOW()");
-        $d['stat_drafts'] = (int)val("SELECT COUNT(*) FROM articles WHERE status = 'draft'");
-    }
-    if (can('audit')) $d['activity'] = rows('SELECT l.*, u.name FROM audit_log l LEFT JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT 8');
-    admin_view('dashboard', $d);
-}
-
 /* ================= Reports ================= */
 function admin_reports(): void
 {

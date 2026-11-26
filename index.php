@@ -26,6 +26,7 @@ require __DIR__ . '/app/controllers/gentickets.php';
 require __DIR__ . '/app/controllers/analytics.php';
 require __DIR__ . '/app/controllers/gallery.php';
 require __DIR__ . '/app/controllers/adverts.php';
+require __DIR__ . '/app/controllers/dashboard.php';
 
 header('X-Frame-Options: SAMEORIGIN');
 
