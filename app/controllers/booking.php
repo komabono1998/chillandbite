@@ -118,6 +118,8 @@ function reservation_create(array $e, array $d): array
 /** The first email a guest gets: the ticket (free + instant) or the booking number with how to pay. */
 function reservation_notify(array $e, array $d, string $ref, int $rid, string $status, bool $payingNow = false): void
 {
+    admin_alert("New reservation $ref: {$d['full_name']}", "A new reservation was made on the website.\n\nReference: $ref\nName: {$d['full_name']}\nPhone: {$d['phone']}\nEmail: " . ($d['email'] ?: 'none') . "\nEvent: {$e['title']} (" . fmt_date($e['start_at']) . ")\n" .
+        (!empty($d['package']) ? "Package: {$d['package']}\n" : '') . 'Guests: ' . (int)($d['guests'] ?? 1) . "\nAmount due: " . money((float)($d['amount'] ?? 0)) . "\nStatus: $status\n\nOpen it: " . abs_url('admin/reservations/' . $rid));
     if ($status === 'confirmed') { send_ticket($rid); return; }     // free + instant bookings get their ticket straight away
     if ($payingNow || !$d['email']) return;                          // a paying guest gets the ticket as soon as the payment lands
     send_mail($d['email'], "Chill & Bite booking $ref received", "Hello {$d['full_name']},\n\nYour table is reserved. Your booking number is $ref (keep it safe).\n\n" .

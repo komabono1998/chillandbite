@@ -353,6 +353,16 @@ function send_mail(string $to, string $subject, string $body): bool
     return @mail($to, $subject, $body, $headers);
 }
 
+/** Tell the site owner something happened (new reservation, payment). Goes to the Admin alert email in Settings. Never breaks the visitor's request. */
+function admin_alert(string $subject, string $body): void
+{
+    try {
+        $to = trim(setting('admin_alert_email', 'komabono1998@gmail.com'));
+        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return;
+        send_mail($to, '[Chill & Bite] ' . $subject, $body . "\n\n-- Chill & Bite MEATINGS website\n" . abs_url('admin'));
+    } catch (Throwable $e) { error_log('admin_alert: ' . $e->getMessage()); }
+}
+
 /* ---------- Rendering ---------- */
 require_once ROOT . '/app/views/partials.php';
 require_once ROOT . '/app/content.php';

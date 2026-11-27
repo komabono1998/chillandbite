@@ -3,8 +3,8 @@
   <label class="chk"><input type="checkbox" name="announcement_on" value="1"<?= setting('announcement_on', '1') === '1' ? ' checked' : '' ?>> Show announcement bar</label>
   <?php field('announcement', 'Announcement text', ['value' => setting('announcement')]); ?>
   <div class="form-grid"><?php
-  foreach (['site_name' => 'Site name', 'tagline' => 'Tagline', 'venue' => 'Venue', 'location' => 'Location', 'contact_phone' => 'Contact phone', 'contact_email' => 'Contact email', 'whatsapp' => 'WhatsApp number (with country code)', 'whatsapp_group' => 'WhatsApp group invite link',
-            'social_facebook' => 'Facebook URL', 'social_instagram' => 'Instagram URL', 'social_youtube' => 'YouTube URL', 'social_tiktok' => 'TikTok URL', 'social_x' => 'X URL'] as $k => $l) field($k, $l, ['value' => setting($k)]); ?></div>
+  foreach (['site_name' => 'Site name', 'tagline' => 'Tagline', 'venue' => 'Venue', 'location' => 'Location', 'contact_phone' => 'Contact phone', 'contact_email' => 'Contact email', 'admin_alert_email' => 'Admin alert email (new reservations and payments are sent here)', 'whatsapp' => 'WhatsApp number (with country code)', 'whatsapp_group' => 'WhatsApp group invite link',
+            'social_facebook' => 'Facebook URL', 'social_instagram' => 'Instagram URL', 'social_youtube' => 'YouTube URL', 'social_tiktok' => 'TikTok URL', 'social_x' => 'X URL'] as $k => $l) field($k, $l, ['value' => setting($k, $k === 'admin_alert_email' ? 'komabono1998@gmail.com' : '')]); ?></div>
   <?php field('host_bio', 'Host biography (homepage)', ['type' => 'textarea', 'rows' => 4, 'value' => setting('host_bio')]); ?>
   <h2 id="seo" style="margin:24px 0 6px;font-size:1.1rem">Google and search engines</h2>
   <p class="small muted" style="margin:0 0 10px">To appear in Google, add the site to <b>Google Search Console</b> (search.google.com/search-console), choose &ldquo;URL prefix&rdquo;, then &ldquo;HTML tag&rdquo;. Paste the code from the tag here and save, then press Verify in Search Console and submit the sitemap below.</p>

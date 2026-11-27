@@ -405,7 +405,7 @@ function admin_users_save(): void
 }
 
 /* ================= Settings & audit ================= */
-const SETTING_KEYS = ['site_name', 'tagline', 'announcement', 'venue', 'location', 'contact_phone', 'contact_email', 'whatsapp', 'whatsapp_group', 'host_bio',
+const SETTING_KEYS = ['site_name', 'tagline', 'announcement', 'venue', 'location', 'contact_phone', 'contact_email', 'admin_alert_email', 'whatsapp', 'whatsapp_group', 'host_bio',
     'social_facebook', 'social_instagram', 'social_youtube', 'social_tiktok', 'social_x', 'credit_prefix', 'credit_name', 'credit_org', 'credit_url', 'google_verification', 'bing_verification'];
 function admin_settings(): void { require_can('settings'); admin_view('settings', ['title' => 'Website settings']); }
 function admin_settings_save(): void

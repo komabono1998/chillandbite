@@ -247,7 +247,13 @@ function daraza_settle(int $attemptId, string $outcome, string $msg, ?string $re
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
     if ($done === 1 && $outcome === 'success' && $a && $a['direction'] === 'collect') {
         try {
-            if ($a['tab_id']) paytab_notify($a);
+            if (!$a['tab_id']) {
+                $rr = reservation_with_event((int)$a['reservation_id']);
+                if ($rr) admin_alert('Payment received ' . money((int)$a['amount']) . ' from ' . $rr['full_name'], "A successful online payment was recorded.\n\nAmount: " . money((int)$a['amount']) . "\nPaid by: {$rr['full_name']} ({$a['phone']})\nReference: {$rr['reference']}\nEvent: {$rr['title']}\n" . ($rr['package'] ? "Package: {$rr['package']}\n" : '') .
+                    'Paid so far: ' . money((float)res_paid((int)$a['reservation_id'])) . ' of ' . money((float)$rr['amount_due']) . "\nBooking status: " . ($confirmNow ? 'confirmed, ticket issued' : $rr['status']) . "\nPayment ref: " . ($a['request_id'] ?: 'n/a') . "\n\nOpen it: " . abs_url('admin/reservations/' . (int)$a['reservation_id']));
+            }
+        } catch (Throwable $e) { error_log('admin alert: ' . $e->getMessage()); }
+        try {            if ($a['tab_id']) paytab_notify($a);
             elseif ($confirmNow) send_ticket((int)$a['reservation_id']);          // booked and paid in full: email the ticket
             else daraza_receipt((int)$a['reservation_id'], (int)$a['amount']);    // part payment: email a receipt
         } catch (Throwable $e) { error_log('daraza mail: ' . $e->getMessage()); }
