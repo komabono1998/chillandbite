@@ -7,6 +7,7 @@
     <div><b><?= h(money($wgap['withdrawn'])) ?></b><span>already withdrawn</span></div>
     <div><b style="color:<?= $wgap['gap'] > 0 ? '#d9534f' : '#1f8a4c' ?>"><?= h(money($wgap['gap'])) ?></b><span>in the wallet but not recorded yet</span></div>
   </div>
+  <?php if (!empty($wgap['auto'])): ?><p class="ph-ok">✅ Just now the website read the wallet and filed <?= (int)$wgap['auto'] ?> payment<?= $wgap['auto'] === 1 ? '' : 's' ?> against the booking<?= $wgap['auto'] === 1 ? '' : 's' ?> they were made for.</p><?php endif; ?>
   <?php if ($wgap['gap'] > 0): ?>
   <?php if (!empty($wcand)): ?>
   <h3 class="ev-sub" style="margin:14px 0 6px">1. Match it to a payment someone started on the website</h3>
@@ -31,5 +32,11 @@
     <div><button class="btn btn-primary">Record payment</button></div>
   </form>
   <?php else: ?><p class="ph-ok">Every shilling in the wallet is recorded with the payer's details.</p><?php endif; ?>
+  <?php if (can('withdraw')): $ck = setting('cron_key', ''); if ($ck === '') { $ck = bin2hex(random_bytes(12)); save_setting('cron_key', $ck); } ?>
+  <details class="ph-fails"><summary>Make it fully automatic (even when nobody is logged in)</summary>
+    <p class="small muted">The website already reads the wallet and files matching payments each time this dashboard or Collections opens, and this page refreshes itself every 2 minutes. To also do it in the background, add a cron job in Hostinger (hPanel → Advanced → Cron Jobs), every 5 minutes, with this command:</p>
+    <p class="small"><code>curl -s "<?= h(abs_url('wallet-sync?key=' . $ck)) ?>"</code></p></details>
+  <?php endif; ?>
+  <script>setTimeout(function () { if (!document.querySelector('input:focus')) location.reload(); }, 120000);</script>
 </div>
 <?php endif; ?>
