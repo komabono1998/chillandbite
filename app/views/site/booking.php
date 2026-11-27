@@ -219,7 +219,7 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
       if (j.status === 'success') return end(true, 'Payment received', 'Thank you! Updating your booking...');
       if (j.status === 'failed') return end(false, 'Payment not completed', j.message || 'The payment was not approved.');
       if (j.status === 'unconfirmed') return end(false, 'Waiting for confirmation', j.message);
-      poll = setTimeout(function () { check(token); }, 1500);
+      poll = setTimeout(function () { check(token); }, 1000);
     }).catch(function () { poll = setTimeout(function () { check(token); }, 5000); });
   }
   form.addEventListener('submit', function (e) {

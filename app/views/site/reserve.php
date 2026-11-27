@@ -163,7 +163,7 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
       if (j.status === 'success') return done(j);
       if (j.status === 'failed') return failed(j.message || 'The payment was not approved.');
       if (j.status === 'unconfirmed') { stopTimers(); showState(false, 'Waiting for confirmation', j.message); btn('View my booking', bookingBase + ref, 'btn-primary'); return; }
-      poll = setTimeout(function () { check(ref, token); }, 1500);
+      poll = setTimeout(function () { check(ref, token); }, 1000);
     }).catch(function () { poll = setTimeout(function () { check(ref, token); }, 5000); });
   }
   form.addEventListener('submit', function (e) {

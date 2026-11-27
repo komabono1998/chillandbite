@@ -107,9 +107,9 @@ function pay_wallet_check(string $token): void
     try {
         pay_ensure_schema();
         $at = row('SELECT id, status, direction, created_at, amount, gap_base FROM pay_attempts WHERE token = ?', [$token]);
-        if (!$at || $at['direction'] !== 'collect' || !in_array($at['status'], ['pending', 'unconfirmed'], true) || time() - strtotime((string)$at['created_at']) < 4 || !daraza_enabled()) return;
+        if (!$at || $at['direction'] !== 'collect' || !in_array($at['status'], ['pending', 'unconfirmed'], true) || time() - strtotime((string)$at['created_at']) < 2 || !daraza_enabled()) return;
         $f = ROOT . '/storage/wallet_poll.ts';
-        if (is_file($f) && time() - (int)@filemtime($f) < 3) return;
+        if (is_file($f) && time() - (int)@filemtime($f) < 2) return;
         @touch($f);
         if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
         if ($at['gap_base'] === null) return;

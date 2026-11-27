@@ -79,7 +79,7 @@ function paytabs_render(string $seg): string
         if (j.status === 'success') { stop(); show(true, 'Payment received. Thank you!', 'We have recorded your payment of ' + j.amount + '.' + (form.querySelector('[name=email]').value ? ' A receipt was emailed to you.' : ' Please keep your receipt number.')); rc.hidden = false; rc.querySelector('b').textContent = j.receipt; btn('Make another payment', again); return; }
         if (j.status === 'failed') { stop(); show(false, 'Payment not completed', j.message || 'The payment was not approved.'); btn('Try again', again); return; }
         if (j.status === 'unconfirmed') { stop(); show(false, 'Waiting for confirmation', j.message); return; }
-        poll = setTimeout(function () { check(token); }, 1500);
+        poll = setTimeout(function () { check(token); }, 1000);
       }).catch(function () { poll = setTimeout(function () { check(token); }, 5000); });
     }
     form.addEventListener('submit', function (e) {
