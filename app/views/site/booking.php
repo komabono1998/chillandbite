@@ -196,6 +196,8 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
   var wait = document.getElementById('payWait'), err = document.getElementById('payErr'), go = document.getElementById('payGo'), timer = document.getElementById('payTimer');
   var title = document.getElementById('payWaitTitle'), text = document.getElementById('payWaitText');
   var payUrl = <?= json_encode(url('booking/' . $r['reference'] . '/pay')) ?>, csrf = <?= json_encode(csrf_token()) ?>, tick = null, poll = null, t0 = 0;
+  var runUrl = <?= json_encode(url('pay-run/')) ?>;
+  function run(token) { var f = new FormData(); f.append('_csrf', csrf); fetch(runUrl + token, { method: 'POST', body: f, keepalive: true }).then(function () { clearTimeout(poll); check(token); }).catch(function () {}); }
   function show(m) { err.textContent = m; err.hidden = !m; }
   function stop() { clearInterval(tick); clearTimeout(poll); }
   function fmt(s) { return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
@@ -217,7 +219,7 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
       if (j.status === 'success') return end(true, 'Payment received', 'Thank you! Updating your booking...');
       if (j.status === 'failed') return end(false, 'Payment not completed', j.message || 'The payment was not approved.');
       if (j.status === 'unconfirmed') return end(false, 'Waiting for confirmation', j.message);
-      poll = setTimeout(function () { check(token); }, 3000);
+      poll = setTimeout(function () { check(token); }, 1500);
     }).catch(function () { poll = setTimeout(function () { check(token); }, 5000); });
   }
   form.addEventListener('submit', function (e) {
@@ -227,7 +229,7 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
       if (!x[0] || !x[1].ok) { go.disabled = false; go.classList.remove('is-busy'); return show((x[1] && x[1].error) || 'Could not start the payment. Please try again.'); }
       form.hidden = true; wait.hidden = false; wait.scrollIntoView({ block: 'center', behavior: 'smooth' }); document.getElementById('payShow').textContent = form.querySelector('[name=phone]').value; t0 = Date.now(); timer.textContent = '0:00';
       tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000);
-      check(x[1].token);
+      run(x[1].token); check(x[1].token);
     }).catch(function () { go.disabled = false; go.classList.remove('is-busy'); show('Network problem. Please check your connection and try again.'); });
   });
 })();

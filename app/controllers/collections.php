@@ -98,6 +98,28 @@ function wallet_auto_match(int $gap): int
         return $done;
     } catch (Throwable $e) { error_log('wallet auto match: ' . $e->getMessage()); return 0; }
 }
+/**
+ * Safety net for the payment screen: when a guest's payment has not been confirmed by Daraza's own answer, read the wallet right now
+ * and, if the money is there, file it so the screen confirms immediately. Called on every status check, at most once every 3 seconds.
+ */
+function pay_wallet_check(string $token): void
+{
+    try {
+        pay_ensure_schema();
+        $at = row('SELECT id, status, direction, created_at, amount, gap_base FROM pay_attempts WHERE token = ?', [$token]);
+        if (!$at || $at['direction'] !== 'collect' || !in_array($at['status'], ['pending', 'unconfirmed'], true) || time() - strtotime((string)$at['created_at']) < 4 || !daraza_enabled()) return;
+        $f = ROOT . '/storage/wallet_poll.ts';
+        if (is_file($f) && time() - (int)@filemtime($f) < 3) return;
+        @touch($f);
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+        if ($at['gap_base'] === null) return;
+        $g = wallet_gap(false, true);
+        // the wallet holds this payment's money on top of what it held when the prompt was sent: Daraza received it
+        if ($g && $g['gap'] >= (int)$at['gap_base'] + (int)floor((int)$at['amount'] * 0.95)) {
+            if (daraza_settle((int)$at['id'], 'success', 'Found in the Daraza wallet and confirmed automatically', null, null)) audit('pay.wallet_confirm', '#' . $at['id'] . ' ' . money((int)$at['amount']));
+        }
+    } catch (Throwable $e) { error_log('pay wallet check: ' . $e->getMessage()); }
+}
 /** Called by a scheduled task (hPanel cron) so the wallet is read and filed even when nobody has the dashboard open. */
 function page_wallet_sync(): void
 {

@@ -36,7 +36,7 @@ function paytabs_render(string $seg): string
   <div class="pt-head"><span class="eyebrow">Pay online</span><h2><?= count($tabs) > 1 ? 'Make a payment' : h($tabs[0]['title']) ?></h2></div>
   <?php if (count($tabs) > 1): ?><div class="pt-tabs" role="tablist"><?php foreach ($tabs as $i => $t): ?><button type="button" class="pt-tab<?= $i === 0 ? ' on' : '' ?>" role="tab" data-slug="<?= h($t['slug']) ?>"><?= h($t['title']) ?></button><?php endforeach; ?></div><?php endif; ?>
   <?php foreach ($tabs as $i => $t): ?>
-  <article class="pt-card<?= $i === 0 ? ' on' : '' ?>" data-slug="<?= h($t['slug']) ?>" data-post="<?= h(url('paytab/' . $t['slug'])) ?>" data-status="<?= h(url('paytab/' . $t['slug'] . '/status/')) ?>">
+  <article class="pt-card<?= $i === 0 ? ' on' : '' ?>" data-slug="<?= h($t['slug']) ?>" data-post="<?= h(url('paytab/' . $t['slug'])) ?>" data-status="<?= h(url('paytab/' . $t['slug'] . '/status/')) ?>" data-run="<?= h(url('pay-run/')) ?>">
     <div class="pt-top"><span class="pt-ic" aria-hidden="true">💳</span><div><h3><?= h($t['title']) ?></h3><?php if ($t['blurb']): ?><p><?= h($t['blurb']) ?></p><?php endif; ?></div><div class="pt-amt"><small>Amount</small><b><?= h(money($t['amount'])) ?></b></div></div>
     <form class="pt-form" novalidate><?= csrf_field() ?><?php honeypot(); ?>
       <div class="pt-err alert alert-err" role="alert" hidden></div>
@@ -73,12 +73,13 @@ function paytabs_render(string $seg): string
     }
     function again() { st.hidden = true; form.hidden = false; go.disabled = false; go.classList.remove('is-busy'); rc.hidden = true; }
     function btn(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-primary'; b.textContent = label; b.onclick = fn; acts.appendChild(b); }
+    function run(token) { var f = new FormData(form); fetch(card.dataset.run + token, { method: 'POST', body: f, keepalive: true }).then(function () { clearTimeout(poll); check(token); }).catch(function () {}); }
     function check(token) {
       fetch(card.dataset.status + token, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
         if (j.status === 'success') { stop(); show(true, 'Payment received. Thank you!', 'We have recorded your payment of ' + j.amount + '.' + (form.querySelector('[name=email]').value ? ' A receipt was emailed to you.' : ' Please keep your receipt number.')); rc.hidden = false; rc.querySelector('b').textContent = j.receipt; btn('Make another payment', again); return; }
         if (j.status === 'failed') { stop(); show(false, 'Payment not completed', j.message || 'The payment was not approved.'); btn('Try again', again); return; }
         if (j.status === 'unconfirmed') { stop(); show(false, 'Waiting for confirmation', j.message); return; }
-        poll = setTimeout(function () { check(token); }, 3000);
+        poll = setTimeout(function () { check(token); }, 1500);
       }).catch(function () { poll = setTimeout(function () { check(token); }, 5000); });
     }
     form.addEventListener('submit', function (e) {
@@ -86,7 +87,7 @@ function paytabs_render(string $seg): string
       fetch(card.dataset.post, { method: 'POST', body: new FormData(form), headers: { 'Accept': 'application/json' } }).then(function (r) { return r.json(); }).then(function (j) {
         if (!j.ok) { go.disabled = false; go.classList.remove('is-busy'); err.textContent = j.error || 'Could not start the payment.'; err.hidden = false; return; }
         show(null, 'Check your phone', 'Approve the payment prompt. This can take up to 3 minutes. Please keep this page open.'); card.querySelector('.pt-phone').textContent = form.querySelector('[name=phone]').value;
-        t0 = Date.now(); timer.textContent = '0:00'; stop(); tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000); check(j.token);
+        t0 = Date.now(); timer.textContent = '0:00'; stop(); tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000); run(j.token); check(j.token);
       }).catch(function () { go.disabled = false; go.classList.remove('is-busy'); err.textContent = 'Network problem. Please check your connection and try again.'; err.hidden = false; });
     });
   });
@@ -117,13 +118,14 @@ function post_paytab(array $a): void
     $amount = (int)$tab['amount'];
     $at = daraza_start_tab($tab, $amount, $phone, $name, $mail, trim((string)($_POST['note'] ?? '')));
     audit('paytab.start', $tab['slug'] . ' ' . money($amount));
-    daraza_respond_then(['ok' => true, 'token' => $at['token'], 'amount' => $amount], fn() => daraza_run((int)$at['id']));
+    pay_json(['ok' => true, 'token' => $at['token'], 'amount' => $amount]);
 }
 function page_paytab_status(array $a): void
 {
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) pay_json(['error' => 'bad token'], 404);
     if (rate_limited('paypoll', 20000, 1800)) pay_json(['error' => 'slow down'], 429);
     try { daraza_expire_stale(); } catch (Throwable $e) {}
+    pay_wallet_check($a['token']);
     $at = row('SELECT a.status, a.message, a.amount, a.token FROM pay_attempts a JOIN payment_tabs t ON t.id = a.tab_id WHERE a.token = ? AND t.slug = ?', [$a['token'], $a['slug']]);
     if (!$at) pay_json(['error' => 'not found'], 404);
     $msg = $at['message'];

@@ -45,6 +45,7 @@ $routes = [
     ['GET',  'booking/{ref}/status', 'page_booking_status'],
     ['POST', 'booking/{ref}/pay',    'post_booking_pay'],
     ['GET',  'booking/{ref}/pay/{token}', 'page_pay_status'],
+    ['POST', 'pay-run/{token}', 'page_pay_run'],
     ['POST', 'admin/reservations/{id}/daraza-refund', 'admin_daraza_refund'],
     ['POST', 'admin/pay-attempts/{id}/resolve', 'admin_pay_resolve'],
     ['GET',  'ticket/{token}',       'page_ticket'],

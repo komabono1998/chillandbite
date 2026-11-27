@@ -48,7 +48,28 @@ function post_booking_pay(array $a): void
     $o = pay_begin($r, (string)($_POST['phone'] ?? ''), (string)($_POST['amount'] ?? ''), (string)($_POST['email'] ?? ''));
     if (isset($o['error'])) pay_json(['ok' => false, 'error' => $o['error']], $o['code']);
     // answer the browser now; the customer approves on their phone and the result is recorded when Daraza replies
-    daraza_respond_then(['ok' => true, 'token' => $o['at']['token'], 'amount' => $o['amount'], 'network' => $o['net']], fn() => daraza_run((int)$o['at']['id']));
+    pay_json(['ok' => true, 'token' => $o['at']['token'], 'amount' => $o['amount'], 'network' => $o['net']]);
+}
+/**
+ * The payment page calls this right after the attempt is created. It sends the mobile money prompt and waits for the guest to approve it,
+ * then records the result in this same request (it keeps going even if the guest's browser disconnects). The session is released first
+ * so the page's status checks are not held up behind it.
+ */
+function page_pay_run(array $a): void
+{
+    if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) pay_json(['error' => 'bad token'], 404);
+    ignore_user_abort(true); @set_time_limit(300);
+    if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+    $at = row('SELECT id, status, direction FROM pay_attempts WHERE token = ?', [$a['token']]);
+    if (!$at || $at['direction'] !== 'collect') pay_json(['error' => 'not found'], 404);
+    if ($at['status'] !== 'pending') pay_json(['ok' => true, 'status' => $at['status']]);
+    // only one request may send the prompt, so a guest is never charged twice
+    $claimed = q("UPDATE pay_attempts SET message = 'Waiting for approval on your phone' WHERE id = ? AND status = 'pending' AND (message IS NULL OR message = '')", [(int)$at['id']])->rowCount();
+    if (!$claimed) pay_json(['ok' => true, 'running' => true]);
+    try { pay_ensure_schema(); $g = wallet_gap(false, true); if ($g) q('UPDATE pay_attempts SET gap_base = ? WHERE id = ?', [(int)$g['gap'], (int)$at['id']]); } catch (Throwable $e) {}
+    daraza_run((int)$at['id']);
+    $now = row('SELECT status FROM pay_attempts WHERE id = ?', [(int)$at['id']]);
+    pay_json(['ok' => true, 'status' => $now['status'] ?? 'unconfirmed']);
 }
 /** Polled by the booking page while the guest approves the prompt on their phone. */
 function page_pay_status(array $a): void
@@ -56,6 +77,7 @@ function page_pay_status(array $a): void
     if (!preg_match('/^[a-f0-9]{24}$/', $a['token'])) pay_json(['error' => 'bad token'], 404);
     if (rate_limited('paypoll', 20000, 1800)) pay_json(['error' => 'slow down'], 429);
     try { daraza_expire_stale(); } catch (Throwable $e) {}
+    pay_wallet_check($a['token']);
     $at = row('SELECT a.status, a.message, a.amount, a.created_at, r.reference, r.id AS rid, r.status AS rstatus FROM pay_attempts a JOIN reservations r ON r.id = a.reservation_id WHERE a.token = ? AND r.reference = ? AND a.direction = ?',
         [$a['token'], strtoupper($a['ref']), 'collect']);
     if (!$at) pay_json(['error' => 'not found'], 404);

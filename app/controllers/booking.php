@@ -191,7 +191,7 @@ function post_ticket(array $a): void
         $bad([$o['error']], $o['code']);
     }
     reservation_notify($e, $d, $ref, $rid, $status, true);
-    daraza_respond_then(['ok' => true, 'ref' => $ref, 'token' => $o['at']['token'], 'amount' => $o['amount'], 'booking' => $booking, 'email' => (bool)$d['email']], fn() => daraza_run((int)$o['at']['id']));
+    pay_json(['ok' => true, 'ref' => $ref, 'token' => $o['at']['token'], 'amount' => $o['amount'], 'booking' => $booking, 'email' => (bool)$d['email']]);
 }
 
 function page_booking(array $a): void

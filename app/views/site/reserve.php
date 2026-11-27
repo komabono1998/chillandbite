@@ -139,7 +139,7 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
   }
   function waiting(ref, token) {
     curRef = ref; showState(null, 'Check your phone', 'Approve the payment prompt and enter your PIN. This can take up to 3 minutes. Please keep this page open.');
-    t0 = Date.now(); timer.textContent = '0:00'; stopTimers(); tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000); check(ref, token);
+    t0 = Date.now(); timer.textContent = '0:00'; stopTimers(); tick = setInterval(function () { timer.textContent = fmt(Math.round((Date.now() - t0) / 1000)); }, 1000); run(ref, token); check(ref, token);
   }
   function retry() {
     var fd = new FormData(); fd.append('_csrf', csrf); fd.append('phone', form.querySelector('[name=phone]').value); fd.append('email', form.querySelector('[name=email]').value);
@@ -156,12 +156,14 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
     stopTimers(); showState(true, "You're booked! 🎉", 'Your ticket is ready. ' + (form.querySelector('[name=email]').value ? 'We also emailed it to you.' : 'Save or download it now.'));
     if (j.ticket) { btn('Open my ticket', j.ticket, 'btn-primary'); btn('Download ticket', j.download, 'btn-ghost-dark'); } else btn('View my booking', bookingBase + curRef, 'btn-primary');
   }
+  var runUrl = <?= json_encode(url('pay-run/')) ?>;
+  function run(ref, token) { var f = new FormData(); f.append('_csrf', csrf); fetch(runUrl + token, { method: 'POST', body: f, keepalive: true }).then(function () { clearTimeout(poll); check(ref, token); }).catch(function () {}); }
   function check(ref, token) {
     fetch(bookingBase + ref + '/pay/' + token, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       if (j.status === 'success') return done(j);
       if (j.status === 'failed') return failed(j.message || 'The payment was not approved.');
       if (j.status === 'unconfirmed') { stopTimers(); showState(false, 'Waiting for confirmation', j.message); btn('View my booking', bookingBase + ref, 'btn-primary'); return; }
-      poll = setTimeout(function () { check(ref, token); }, 3000);
+      poll = setTimeout(function () { check(ref, token); }, 1500);
     }).catch(function () { poll = setTimeout(function () { check(ref, token); }, 5000); });
   }
   form.addEventListener('submit', function (e) {

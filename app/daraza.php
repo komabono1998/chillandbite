@@ -133,6 +133,7 @@ function pay_ensure_schema(): void
     if (!$has('pay_attempts', 'tab_id'))
         db()->exec('ALTER TABLE pay_attempts ADD COLUMN tab_id INT UNSIGNED NULL AFTER reservation_id, ADD COLUMN payer_name VARCHAR(140) NULL AFTER tab_id, ADD COLUMN payer_email VARCHAR(190) NULL AFTER payer_name, ADD COLUMN payer_note VARCHAR(255) NULL AFTER payer_email');
     if (!$has('pay_attempts', 'payment_id')) db()->exec('ALTER TABLE pay_attempts ADD COLUMN payment_id INT UNSIGNED NULL');
+    if (!$has('pay_attempts', 'gap_base')) db()->exec('ALTER TABLE pay_attempts ADD COLUMN gap_base INT NULL');
     if (!$nullable('pay_attempts', 'reservation_id')) db()->exec('ALTER TABLE pay_attempts MODIFY reservation_id INT UNSIGNED NULL');
     paytabs_ensure_table();
 }
