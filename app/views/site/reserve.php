@@ -59,7 +59,7 @@ if ($sel === '' && count($cards) === 1) $sel = $cards[0]['v'];
     <div class="form-grid">
       <?php field('full_name', 'Full name', ['required' => true, 'value' => $dv('full_name')]); ?>
       <div class="field"><label for="f_phone"><span id="rsPhoneLabel">Phone number</span> <span aria-hidden="true">*</span></label><input id="f_phone" name="phone" type="tel" inputmode="tel" required value="<?= h($dv('phone')) ?>" placeholder="0772 123 456"><small class="help" id="rsPhoneHelp"></small></div>
-      <?php field('email', 'Email (optional)', ['type' => 'email', 'value' => $dv('email'), 'help' => 'We email your ticket and booking number here.']); ?>
+      <?php field('email', 'Email', ['type' => 'email', 'required' => true, 'value' => $dv('email'), 'help' => 'Your ticket and booking number are emailed here.']); ?>
       <?php field('guests', 'Number of guests', ['type' => 'number', 'required' => true, 'value' => $dv('guests') ?: 1, 'attrs' => 'min="1" max="200"', 'class' => 'guest-field']); ?>
       <?php field('company', 'Company name', ['value' => $dv('company'), 'class' => 'corp']); ?>
     </div>

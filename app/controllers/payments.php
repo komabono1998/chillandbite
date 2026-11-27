@@ -62,7 +62,7 @@ function page_pay_status(array $a): void
     $msg = $at['message'];
     if ($at['status'] === 'unconfirmed') $msg = 'We could not confirm your payment yet. If money left your phone, please do not pay again. Quote ' . $at['reference'] . ' to the team and we will confirm it.';
     $out = ['status' => $at['status'], 'message' => $msg, 'elapsed' => time() - strtotime((string)$at['created_at'])];
-    if ($at['status'] === 'success' && $at['rstatus'] === 'confirmed') { $t = ticket_url((int)$at['rid']); $out['ticket'] = $t; $out['download'] = $t . '?download=1'; }
+    if ($at['status'] === 'success' && $at['rstatus'] === 'confirmed') { $t = ticket_url((int)$at['rid']); $out['ticket'] = $t; $out['download'] = $t . '?download=1'; $out['wa'] = ticket_wa_url((int)$at['rid']); }
     pay_json($out);
 }
 

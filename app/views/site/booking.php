@@ -79,7 +79,7 @@ $steps = [
   <?php if ($st === 'confirmed'): ?>
     <div class="ticket-cta">
       <div><strong>Your ticket is ready</strong><span>Show the QR code at the entrance. One ticket admits <?= (int)$r['guests'] ?> guest<?= (int)$r['guests'] === 1 ? '' : 's' ?>.</span></div>
-      <div class="btn-row"><a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>">Open my ticket</a><a class="btn btn-outline btn-lg" style="border-color:var(--gold);color:var(--gold)" href="<?= h($ticket . '?download=1') ?>">⬇ Download</a></div>
+      <div class="btn-row"><a class="btn btn-primary btn-lg" href="<?= h($ticket) ?>">Open my ticket</a><a class="btn btn-outline btn-lg" style="border-color:var(--gold);color:var(--gold)" href="<?= h($ticket . '?download=1') ?>">⬇ Download</a><?php if ($wa = ticket_wa_url((int)$r['id'])): ?><a class="btn btn-outline btn-lg" style="border-color:var(--gold);color:var(--gold)" target="_blank" rel="noopener" href="<?= h($wa) ?>">💬 Send to my WhatsApp</a><?php endif; ?></div>
     </div>
   <?php endif; ?>
 
@@ -114,7 +114,7 @@ $steps = [
           <form class="pay-box" id="payBox" autocomplete="off">
             <div class="pay-title"><span aria-hidden="true">📲</span> Pay now with mobile money</div>
             <label>Phone number to pay from <input type="tel" name="phone" id="payPhone" value="<?= h($r['phone']) ?>" placeholder="0772 123 456" inputmode="tel" required></label>
-            <?php if (empty($r['email'])): ?><label>Email for your ticket (optional) <input type="email" name="email" placeholder="you@example.com"></label><?php endif; ?>
+            <?php if (empty($r['email'])): ?><label>Email for your ticket <input type="email" name="email" placeholder="you@example.com" required></label><?php endif; ?>
             <label>Amount (UGX) <input type="text" name="amount" id="payAmount" value="<?= (int)$balance ?>" inputmode="numeric" required></label>
             <p class="small muted">MTN Mobile Money or Airtel Money. Pay the full balance or part of it (UGX 500 to 5,000,000 at a time). You will get a prompt on your phone: enter your PIN to approve.</p>
             <button class="btn btn-primary btn-lg" id="payGo" type="submit"><span class="pay-btn-spin" aria-hidden="true"></span><span id="payGoText">Pay <?= h(money($balance)) ?></span></button>
@@ -211,7 +211,7 @@ document.querySelectorAll('.chip-copy').forEach(function (b) {
       if (j.status === 'success' && j.ticket) {
         end(true, 'Payment received. You are booked!', 'Your reservation is confirmed and your ticket is ready. We also emailed it if you gave us an email.', true);
         var row = document.createElement('div'); row.className = 'btn-row'; row.style.justifyContent = 'center'; row.style.marginTop = '12px';
-        row.innerHTML = '<a class="btn btn-primary" href="' + j.ticket + '">Open my ticket</a><a class="btn btn-ghost-dark" href="' + j.download + '">Download ticket</a>'; wait.appendChild(row);
+        row.innerHTML = '<a class="btn btn-primary" href="' + j.ticket + '">Open my ticket</a><a class="btn btn-ghost-dark" href="' + j.download + '">Download ticket</a>' + (j.wa ? '<a class="btn btn-ghost-dark" target="_blank" rel="noopener" href="' + j.wa + '">Send to my WhatsApp</a>' : ''); wait.appendChild(row);
         return;
       }
       if (j.status === 'success') return end(true, 'Payment received', 'Thank you! Updating your booking...');

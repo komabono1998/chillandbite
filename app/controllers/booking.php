@@ -57,7 +57,8 @@ function validate_booking(array $e, array $options, array $in): array
     if ($opt && !($opt['price_per_guest'] > 0 && $opt['min_guests'] < $opt['max_guests'] && !($d['type'] === 'table' && event_packages((int)$e['id'])))) $d['guests'] = max(1, (int)$opt['min_guests']);
     if (mb_strlen($d['full_name']) < 2 || mb_strlen($d['full_name']) > 140) $err[] = 'Please enter your full name.';
     if (!valid_phone($d['phone'])) $err[] = 'Please enter a valid telephone number.';
-    if ($d['email'] !== '' && !filter_var($d['email'], FILTER_VALIDATE_EMAIL)) $err[] = 'The email address looks invalid.';
+    if ($d['email'] === '') $err[] = 'Please enter your email address. Your ticket is sent there.';
+    elseif (!filter_var($d['email'], FILTER_VALIDATE_EMAIL)) $err[] = 'The email address looks invalid.';
     if ($opt) {
         if ($d['guests'] < $opt['min_guests'] || $d['guests'] > $opt['max_guests'])
             $err[] = "Guests for this type must be between {$opt['min_guests']} and {$opt['max_guests']}.";
@@ -178,7 +179,7 @@ function post_ticket(array $a): void
     if ($free) {
         reservation_notify($e, $d, $ref, $rid, $status);
         $out = ['ok' => true, 'free' => true, 'ref' => $ref, 'booking' => $booking, 'status' => $status];
-        if ($status === 'confirmed') { $t = ticket_url($rid); $out['ticket'] = $t; $out['download'] = $t . '?download=1'; }
+        if ($status === 'confirmed') { $t = ticket_url($rid); $out['ticket'] = $t; $out['download'] = $t . '?download=1'; $out['wa'] = ticket_wa_url($rid); }
         pay_json($out);
     }
     $r = row('SELECT * FROM reservations WHERE id = ?', [$rid]);
@@ -230,6 +231,13 @@ function ticket_message(array $r): string
         'Reference: ' . $r['reference'] . "\n" . ($r['package'] ? "Package: {$r['package']}\n" : '') . (($pl = reservation_perks((int)$r['event_id'], $r['package'])) ? 'Includes: ' . implode(' + ', $pl) . "\n" : '') . "Admits: {$r['guests']} guest(s)\n\n" .
         'Open your ticket (show the QR code at the entrance): ' . ticket_url((int)$r['id']) . "\n\n" .
         "Lost this message? Track or download your ticket any time with reference {$r['reference']}: " . abs_url('track') . "\n";
+}
+/** wa.me link that opens the guest's own WhatsApp chat with their ticket message ready to send. */
+function ticket_wa_url(int $reservationId): ?string
+{
+    $r = reservation_with_event($reservationId);
+    if (!$r || $r['status'] !== 'confirmed' || !valid_phone((string)$r['phone'])) return null;
+    return wa_link((string)$r['phone'], ticket_message($r));
 }
 function reservation_with_event(int $id): ?array
 {
