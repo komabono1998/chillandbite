@@ -122,7 +122,8 @@ function wallet_candidates(int $limit = 40): array
 function admin_pay_match(array $a): void
 {
     require_can('payments');
-    $back = ($_POST['back'] ?? '') === 'dash' ? 'admin' : 'admin/collections';
+    $bk = $_POST['back'] ?? '';
+    $back = $bk === 'dash' ? 'admin' : ($bk === 'ledger' ? 'admin?tab=ledger' : 'admin/collections');
     $fail = function (string $m) use ($back): never { flash($m, 'err'); redirect($back); };
     $at = row("SELECT * FROM pay_attempts WHERE id = ? AND direction = 'collect'", [(int)$a['id']]) ?? not_found();
     if (!in_array($at['status'], ['pending', 'unconfirmed', 'failed'], true)) $fail('That payment is already recorded.');

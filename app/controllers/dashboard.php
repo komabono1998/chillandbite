@@ -11,6 +11,7 @@ function dash_tabs(): array
     $t = ['overview' => ['Overview', '🏠']];
     if (can_any(['payments', 'reports', 'collections', 'reservations'])) $t['events'] = ['Collections by event', '💰'];
     if (can_any(['reservations', 'reports', 'collections'])) $t['trail'] = ['Activity trail', '🧾'];
+    if (can_any(['payments', 'collections', 'reservations'])) $t['ledger'] = ['Payments ledger', '📒'];
     if (can('analytics')) $t['visitors'] = ['Visitors', '📈'];
     if (can('withdraw')) $t['withdraw'] = ['Withdraw money', '📲'];
     return $t;
@@ -115,6 +116,24 @@ function dash_trail(array $f, int $per = 40): array
     return ['rows' => array_slice($rowsOut, ($page - 1) * $per, $per), 'more' => count($rowsOut) > $page * $per, 'page' => $page];
 }
 
+/** Every online payment attempt with who made it, what it was for and the payment record it created. */
+function dash_ledger(array $f, int $per = 50): array
+{
+    pay_ensure_schema();
+    $w = "WHERE a.direction = 'collect'"; $p = [];
+    if ($f['status'] === 'success') $w .= " AND a.status = 'success'";
+    elseif ($f['status'] === 'waiting') $w .= " AND a.status IN ('pending','unconfirmed')";
+    elseif ($f['status'] === 'failed') $w .= " AND a.status = 'failed'";
+    if ($f['event']) { $w .= ' AND r.event_id = ?'; $p[] = $f['event']; }
+    if ($f['q'] !== '') { $l = '%' . $f['q'] . '%'; $w .= ' AND (r.reference LIKE ? OR r.full_name LIKE ? OR a.payer_name LIKE ? OR a.phone LIKE ? OR r.phone LIKE ?)'; array_push($p, $l, $l, $l, $l, $l); }
+    $from = "FROM pay_attempts a LEFT JOIN reservations r ON r.id = a.reservation_id LEFT JOIN events e ON e.id = r.event_id LEFT JOIN payment_tabs t ON t.id = a.tab_id LEFT JOIN payments py ON py.id = a.payment_id";
+    $sum = ['success' => ['n' => 0, 'amt' => 0], 'waiting' => ['n' => 0, 'amt' => 0], 'failed' => ['n' => 0, 'amt' => 0]];
+    foreach (rows("SELECT CASE WHEN a.status = 'success' THEN 'success' WHEN a.status = 'failed' THEN 'failed' ELSE 'waiting' END s, COUNT(*) n, COALESCE(SUM(a.amount),0) amt $from WHERE a.direction = 'collect'" . ($f['event'] ? ' AND r.event_id = ' . (int)$f['event'] : '') . ' GROUP BY s') as $x) $sum[$x['s']] = ['n' => (int)$x['n'], 'amt' => (int)$x['amt']];
+    $off = ($f['page'] - 1) * $per;
+    $r = rows("SELECT a.id, a.status, a.message, a.amount, a.phone, a.created_at, a.completed_at, a.payer_name, a.payment_id, a.request_id, r.id rid, r.reference, r.full_name, r.package, e.title ev_title, t.title tab_title, py.id py_id $from $w ORDER BY a.id DESC LIMIT " . ($per + 1) . " OFFSET $off", $p);
+    $more = count($r) > $per; if ($more) array_pop($r);
+    return ['rows' => $r, 'more' => $more, 'sum' => $sum];
+}
 /** Is online payment switched on, are guests trying it, and does the Daraza wallet agree with what is recorded here? */
 function dash_pay_health(): array
 {
@@ -154,6 +173,11 @@ function admin_dashboard(): void
         $d['totals'] = dash_event_totals($d['event_pick']);
         if ($d['event_pick'] && $d['totals']) { $d['pay_rows'] = dash_event_payments($d['event_pick']); $d['att_rows'] = dash_event_attempts($d['event_pick']); }
         $d['all_events'] = rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 40');
+    } elseif ($tab === 'ledger') {
+        $d['lf'] = $lf = ['status' => in_array($_GET['status'] ?? '', ['success', 'waiting', 'failed'], true) ? $_GET['status'] : 'all', 'event' => (int)($_GET['event'] ?? 0), 'q' => trim((string)($_GET['q'] ?? '')), 'page' => max(1, (int)($_GET['page'] ?? 1))];
+        $d['all_events'] = rows('SELECT id, title, start_at FROM events ORDER BY start_at DESC LIMIT 40');
+        $d['ledger'] = dash_ledger($lf);
+        $d['wgap'] = wallet_gap(); $d['wcand'] = [];
     } elseif ($tab === 'trail') {
         $f = ['event' => (int)($_GET['event'] ?? 0), 'kind' => in_array($_GET['kind'] ?? '', ['booking', 'payment', 'attempt', 'admin'], true) ? $_GET['kind'] : 'all', 'q' => (string)($_GET['q'] ?? ''), 'from' => $_GET['from'] ?? '', 'to' => $_GET['to'] ?? '', 'page' => (int)($_GET['page'] ?? 1)];
         $d['f'] = $f; $d['trail'] = dash_trail($f);
