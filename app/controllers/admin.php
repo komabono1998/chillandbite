@@ -28,10 +28,23 @@ function admin_login(): void
         flash('Invalid email or password.', 'err');
         redirect('admin/login');
     }
-    session_regenerate_id(true);
-    $_SESSION['uid'] = (int)$u['id'];
     if (password_needs_rehash($u['password_hash'], PASSWORD_DEFAULT))
         q('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash((string)$_POST['password'], PASSWORD_DEFAULT), $u['id']]);
+    // second step: a one-time code is emailed and must be entered before the session is opened
+    if (otp_required()) {
+        session_regenerate_id(true);
+        unset($_SESSION['uid']);
+        if (!otp_send((int)$u['id'])) { unset($_SESSION['otp']); flash('We could not email the sign-in code. Please try again in a minute.', 'err'); redirect('admin/login'); }
+        redirect('admin/verify');
+    }
+    admin_login_finish($u);
+}
+/** Open the session for a user who has passed every check. */
+function admin_login_finish(array $u): void
+{
+    session_regenerate_id(true);
+    unset($_SESSION['otp']);
+    $_SESSION['uid'] = (int)$u['id'];
     q('UPDATE users SET last_login = NOW() WHERE id = ?', [$u['id']]);
     q('INSERT INTO audit_log (user_id, action, detail, ip) VALUES (?,?,?,?)', [$u['id'], 'login', $u['email'], client_ip()]);
     $next = (string)($_SESSION['next'] ?? '');
@@ -39,6 +52,65 @@ function admin_login(): void
     // Only follow same-site admin paths (no open redirect)
     if (preg_match('#^' . preg_quote(BASE, '#') . '/admin(/[A-Za-z0-9/_-]*)?(\?[A-Za-z0-9=&_%.-]*)?$#', $next)) redirect(substr($next, strlen(BASE)));
     redirect('admin');
+}
+/* ---------- Two-step sign-in: a code emailed to the owner ---------- */
+const OTP_TTL = 600, OTP_TRIES = 5;
+/** Is the emailed code needed? Always, unless the emergency OTP_DISABLE=1 line is in .env, or this server cannot send email at all (so nobody is locked out). */
+function otp_required(): bool
+{
+    if (env('OTP_DISABLE', '0') === '1') return false;
+    $host = strtolower(preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost')));
+    $local = in_array($host, ['localhost', '127.0.0.1', '[::1]'], true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.test');
+    return $local || env('MAIL_ENABLED', '0') === '1';
+}
+function otp_email(): string { $e = trim(setting('otp_email', 'komabono1998@gmail.com')); return filter_var($e, FILTER_VALIDATE_EMAIL) ? $e : 'komabono1998@gmail.com'; }
+function otp_mask(string $e): string { [$a, $b] = explode('@', $e) + [1 => '']; return substr($a, 0, 1) . str_repeat('•', max(3, strlen($a) - 1)) . '@' . $b; }
+/** Create and email a new six-digit code for the user who just gave the right password. */
+function otp_send(int $uid): bool
+{
+    $code = (string)random_int(100000, 999999);
+    $salt = bin2hex(random_bytes(8));
+    $u = row('SELECT name, email FROM users WHERE id = ?', [$uid]);
+    $ok = send_mail(otp_email(), 'Chill & Bite sign-in code: ' . $code, "Your Chill & Bite admin sign-in code is:\n\n    $code\n\nIt works once and expires in " . (OTP_TTL / 60) . " minutes.\n\nSign-in for: " . ($u['name'] ?? '') . ' (' . ($u['email'] ?? '') . ")\nFrom address: " . client_ip() . "\nTime: " . date('j M Y, g:i:s A') . "\n\nIf this was not you, do not share the code and change your password.");
+    if (!$ok) return false;
+    $_SESSION['otp'] = ['uid' => $uid, 'salt' => $salt, 'hash' => hash('sha256', $salt . $code), 'exp' => time() + OTP_TTL, 'tries' => 0, 'sent' => time()];
+    audit_as($uid, 'login.otp_sent', otp_email());
+    return true;
+}
+function audit_as(int $uid, string $action, string $detail): void { try { q('INSERT INTO audit_log (user_id, action, detail, ip) VALUES (?,?,?,?)', [$uid, $action, $detail, client_ip()]); } catch (Throwable $e) {} }
+function admin_verify_form(): void
+{
+    if (current_user()) redirect('admin');
+    if (empty($_SESSION['otp'])) redirect('admin/login');
+    admin_view('verify', ['title' => 'Verify sign-in', 'masked' => otp_mask(otp_email()), 'left' => max(0, (int)$_SESSION['otp']['exp'] - time()), 'wait' => max(0, 45 - (time() - (int)$_SESSION['otp']['sent']))]);
+}
+function admin_verify(): void
+{
+    $o = $_SESSION['otp'] ?? null;
+    if (!$o) redirect('admin/login');
+    if (rate_limited('otp', 20, 900)) { flash('Too many attempts. Please wait 15 minutes.', 'err'); redirect('admin/login'); }
+    $fail = function (string $m): never { flash($m, 'err'); redirect('admin/verify'); };
+    if (time() > (int)$o['exp']) { unset($_SESSION['otp']); flash('That code has expired. Sign in again to get a new one.', 'err'); redirect('admin/login'); }
+    $code = preg_replace('/\D+/', '', (string)($_POST['code'] ?? ''));
+    $_SESSION['otp']['tries'] = (int)$o['tries'] + 1;
+    if (!hash_equals((string)$o['hash'], hash('sha256', $o['salt'] . $code))) {
+        audit_as((int)$o['uid'], 'login.otp_bad', 'try ' . $_SESSION['otp']['tries']);
+        if ($_SESSION['otp']['tries'] >= OTP_TRIES) { unset($_SESSION['otp']); flash('Too many wrong codes. Sign in again.', 'err'); redirect('admin/login'); }
+        $fail('That code is not correct. ' . (OTP_TRIES - $_SESSION['otp']['tries']) . ' tries left.');
+    }
+    $u = row('SELECT * FROM users WHERE id = ? AND active = 1', [(int)$o['uid']]);
+    if (!$u) { unset($_SESSION['otp']); redirect('admin/login'); }
+    admin_login_finish($u);
+}
+function admin_verify_resend(): void
+{
+    $o = $_SESSION['otp'] ?? null;
+    if (!$o) redirect('admin/login');
+    if (time() - (int)$o['sent'] < 45) { flash('Please wait a few seconds before asking for another code.', 'err'); redirect('admin/verify'); }
+    if (rate_limited('otpsend', 6, 900)) { flash('Too many codes requested. Please wait 15 minutes.', 'err'); redirect('admin/login'); }
+    if (!otp_send((int)$o['uid'])) { flash('We could not email the code. Please try again.', 'err'); redirect('admin/verify'); }
+    flash('A new code was sent.');
+    redirect('admin/verify');
 }
 function admin_logout(): void
 {
@@ -405,7 +477,7 @@ function admin_users_save(): void
 }
 
 /* ================= Settings & audit ================= */
-const SETTING_KEYS = ['site_name', 'tagline', 'announcement', 'venue', 'location', 'contact_phone', 'contact_email', 'admin_alert_email', 'whatsapp', 'whatsapp_group', 'host_bio',
+const SETTING_KEYS = ['site_name', 'tagline', 'announcement', 'venue', 'location', 'contact_phone', 'contact_email', 'admin_alert_email', 'otp_email', 'whatsapp', 'whatsapp_group', 'host_bio',
     'social_facebook', 'social_instagram', 'social_youtube', 'social_tiktok', 'social_x', 'credit_prefix', 'credit_name', 'credit_org', 'credit_url', 'google_verification', 'bing_verification'];
 function admin_settings(): void { require_can('settings'); admin_view('settings', ['title' => 'Website settings']); }
 function admin_settings_save(): void

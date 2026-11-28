@@ -3,7 +3,7 @@
   <label class="chk"><input type="checkbox" name="announcement_on" value="1"<?= setting('announcement_on', '1') === '1' ? ' checked' : '' ?>> Show announcement bar</label>
   <?php field('announcement', 'Announcement text', ['value' => setting('announcement')]); ?>
   <div class="form-grid"><?php
-  foreach (['site_name' => 'Site name', 'tagline' => 'Tagline', 'venue' => 'Venue', 'location' => 'Location', 'contact_phone' => 'Contact phone', 'contact_email' => 'Contact email', 'admin_alert_email' => 'Admin alert email (new reservations and payments are sent here)', 'whatsapp' => 'WhatsApp number (with country code)', 'whatsapp_group' => 'WhatsApp group invite link',
+  foreach (['site_name' => 'Site name', 'tagline' => 'Tagline', 'venue' => 'Venue', 'location' => 'Location', 'contact_phone' => 'Contact phone', 'contact_email' => 'Contact email', 'admin_alert_email' => 'Admin alert email (new reservations and payments are sent here)', 'otp_email' => 'Sign-in code email (a one-time code is sent here at every admin login)', 'whatsapp' => 'WhatsApp number (with country code)', 'whatsapp_group' => 'WhatsApp group invite link',
             'social_facebook' => 'Facebook URL', 'social_instagram' => 'Instagram URL', 'social_youtube' => 'YouTube URL', 'social_tiktok' => 'TikTok URL', 'social_x' => 'X URL'] as $k => $l) field($k, $l, ['value' => setting($k, $k === 'admin_alert_email' ? 'komabono1998@gmail.com' : '')]); ?></div>
   <?php field('host_bio', 'Host biography (homepage)', ['type' => 'textarea', 'rows' => 4, 'value' => setting('host_bio')]); ?>
   <h2 id="seo" style="margin:24px 0 6px;font-size:1.1rem">Google and search engines</h2>
