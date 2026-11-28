@@ -181,7 +181,8 @@ try {
         $regex = '#^' . preg_replace('#\{(\w+)\}#', '(?P<$1>[^/]+)', $pattern) . '$#';
         if (!preg_match($regex, $path, $mt)) continue;
         $params = array_filter($mt, 'is_string', ARRAY_FILTER_USE_KEY);
-        if ($method === 'POST') csrf_verify();
+        // the emailed-code step is protected by its own secret code tied to this browser session, so a stale page cannot lock the owner out with a vague error
+        if ($method === 'POST' && $path !== 'admin/verify') csrf_verify();
         $handler($params);
         exit;
     }

@@ -14,6 +14,7 @@ function post_str(string $k, int $max = 255): string { return mb_substr(trim((st
 /* ================= Auth ================= */
 function admin_login_form(): void
 {
+    header('Cache-Control: no-store, private'); header('Pragma: no-cache');
     if (current_user()) redirect('admin');
     admin_view('login', ['title' => 'Staff login']);
 }
@@ -80,6 +81,7 @@ function otp_send(int $uid): bool
 function audit_as(int $uid, string $action, string $detail): void { try { q('INSERT INTO audit_log (user_id, action, detail, ip) VALUES (?,?,?,?)', [$uid, $action, $detail, client_ip()]); } catch (Throwable $e) {} }
 function admin_verify_form(): void
 {
+    header('Cache-Control: no-store, private'); header('Pragma: no-cache');
     if (current_user()) redirect('admin');
     if (empty($_SESSION['otp'])) redirect('admin/login');
     admin_view('verify', ['title' => 'Verify sign-in', 'masked' => otp_mask(otp_email()), 'left' => max(0, (int)$_SESSION['otp']['exp'] - time()), 'wait' => max(0, 45 - (time() - (int)$_SESSION['otp']['sent']))]);
@@ -87,7 +89,7 @@ function admin_verify_form(): void
 function admin_verify(): void
 {
     $o = $_SESSION['otp'] ?? null;
-    if (!$o) redirect('admin/login');
+    if (!$o) { error_log('otp verify: no pending code in this session (cookie sent: ' . (isset($_COOKIE['cb_session']) ? 'yes' : 'no') . ')'); flash('Your sign-in session was lost, so please sign in again. A new code will be emailed.', 'err'); redirect('admin/login'); }
     if (rate_limited('otp', 20, 900)) { flash('Too many attempts. Please wait 15 minutes.', 'err'); redirect('admin/login'); }
     $fail = function (string $m): never { flash($m, 'err'); redirect('admin/verify'); };
     if (time() > (int)$o['exp']) { unset($_SESSION['otp']); flash('That code has expired. Sign in again to get a new one.', 'err'); redirect('admin/login'); }
