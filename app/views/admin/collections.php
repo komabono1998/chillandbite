@@ -107,6 +107,8 @@ $chip = fn($c) => '<span class="ch-chip" style="--c:' . (PAY_CHANNELS[$c][1] ?? 
   })();
   </script>
   <?php else: ?><p class="small muted">Only an administrator can withdraw money.</p><?php endif; ?>
+  <?php $__wd_pending = false; foreach ($r['withdrawals'] as $__w) if ($__w['status'] === 'pending') $__wd_pending = true; ?>
+  <?php if (!empty($__wd_pending)): ?><script>setTimeout(function () { location.reload(); }, 3000);</script><?php endif; ?>
   <?php if ($r['withdrawals']): ?>
   <h3 style="margin-top:18px">Recent withdrawals</h3>
   <div class="tbl-wrap"><table class="tbl"><tr><th>When</th><th>To</th><th>Amount</th><th>Status</th><th>By</th><th></th></tr>

@@ -308,6 +308,7 @@ function daraza_wallet(bool $fresh = false): array
 {
     if (daraza_mock()) return ['balance' => max(0, 2000000 - (int)val("SELECT COALESCE(SUM(amount),0) FROM daraza_withdrawals WHERE status = 'success'")), 'error' => null];
     if (!daraza_enabled()) return ['balance' => null, 'error' => 'Daraza is not set up.'];
+    if (!$fresh) { try { $fresh = (bool)val("SELECT id FROM daraza_withdrawals WHERE created_at > (NOW() - INTERVAL 20 MINUTE) OR status IN ('pending','unconfirmed') LIMIT 1"); } catch (Throwable $e) {} }
     if (!$fresh && !empty($_SESSION['dz_wallet']) && $_SESSION['dz_wallet']['t'] > time() - 60) return $_SESSION['dz_wallet']['v'];
     $j = daraza_get('app_wallet/balance/');
     if (is_array($j) && strcasecmp((string)($j['code'] ?? ''), 'Success') === 0) {

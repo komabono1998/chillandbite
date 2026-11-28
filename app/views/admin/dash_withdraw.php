@@ -63,6 +63,8 @@ $tone = ['success' => ['✅ Sent', '#1f8a4c'], 'failed' => ['❌ Failed', '#d953
 })();
 </script>
 
+<?php $__wd_pending = false; foreach ($wds as $__w) if ($__w['status'] === 'pending') $__wd_pending = true; ?>
+<?php if (!empty($__wd_pending)): ?><script>setTimeout(function () { location.reload(); }, 3000);</script><?php endif; ?>
 <div class="panel"><div class="panel-head"><h2>Transfer history</h2><span class="muted small">Latest 40, newest first</span></div>
 <?php if ($wds): ?><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date &amp; time</th><th>Sent to</th><th>Amount</th><th>Result</th><th>Sent by</th><th></th></tr></thead><tbody>
 <?php foreach ($wds as $w): [$lab, $col] = $tone[$w['status']]; ?><tr>
